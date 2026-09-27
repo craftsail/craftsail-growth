@@ -1,0 +1,26 @@
+# Single container on SQLite. Run from this directory:
+#   CRAFTSAIL_GROWTH_TOKEN=$(openssl rand -hex 24) docker compose -f compose.sqlite.yml up -d
+# The database lives in the data volume and the config (including engine
+# keys saved from the dashboard) in the config volume.
+services:
+  app:
+    # To run your own build instead: docker build -t craftsail-growth:local ..
+    # and set IMAGE=craftsail-growth:local.
+    image: ${IMAGE:-ghcr.io/craftsail/craftsail-growth:latest}
+    restart: unless-stopped
+    ports:
+      - "8765:8765"
+    volumes:
+      - craftsail-growth-config:/app/config
+      - craftsail-growth-data:/app/data
+    environment:
+      CRAFTSAIL_GROWTH_TOKEN: ${CRAFTSAIL_GROWTH_TOKEN:?set CRAFTSAIL_GROWTH_TOKEN before docker compose up}
+      # Password of the first admin (user "admin" unless CRAFTSAIL_GROWTH_USER
+      # is set). Without it the first start creates admin / craftsailgrowth,
+      # which must be changed at the first sign-in.
+      CRAFTSAIL_GROWTH_USER: ${CRAFTSAIL_GROWTH_USER:-admin}
+      CRAFTSAIL_GROWTH_PASSWORD: ${CRAFTSAIL_GROWTH_PASSWORD:-}
+
+volumes:
+  craftsail-growth-config:
+  craftsail-growth-data:

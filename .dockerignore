@@ -1,0 +1,17 @@
+.git
+.claude
+logs
+*.log
+craftsail-growth
+craftsail-growth.exe
+web/node_modules
+web/dist
+.env
+**/.DS_Store
+data
+.idea
+config/*.toml
+!config/default.example.toml
+internal/webembed/dist/*
+!internal/webembed/dist/.gitkeep
+demo

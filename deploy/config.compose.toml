@@ -1,0 +1,41 @@
+# Copy to config/default.toml and edit. config/default.toml is not tracked by git.
+# Engine keys can also be set in the dashboard (Workspace > Model providers); they are written back to this file.
+# Listening on anything but 127.0.0.1 requires the CRAFTSAIL_GROWTH_TOKEN environment variable.
+
+[server.http]
+host = "0.0.0.0"
+port = 8765
+
+[db]
+dialect = "mysql"
+connMaxLifetime = "300s"
+debug = false
+onFail = "error"
+dsn = "craftsail:craftsail@tcp(mysql:3306)/craftsail_growth?charset=utf8mb4&parseTime=True&loc=Local"
+
+[http.default]
+debug = false
+
+[auth]
+user = "admin"
+password = ""
+token = ""
+
+[keys]
+ZHIPUAI_API_KEY = ""
+ARK_API_KEY = ""
+DEEPSEEK_API_KEY = ""
+MOONSHOT_API_KEY = ""
+MINIMAX_API_KEY = ""
+GEMINI_API_KEY = ""
+OPENAI_API_KEY = ""
+ANTHROPIC_API_KEY = ""
+XAI_API_KEY = ""
+PERPLEXITY_API_KEY = ""
+GOOGLE_SA_JSON = ""
+GOOGLE_HTTP_PROXY = ""
+GOOGLE_OAUTH_CLIENT_ID = ""
+GOOGLE_OAUTH_CLIENT_SECRET = ""
+GOOGLE_REFRESH_TOKEN = ""
+# Days to keep raw Google API responses. 0 keeps them forever; facts and daily totals are never pruned.
+GOOGLE_RAW_RETENTION_DAYS = "0"
