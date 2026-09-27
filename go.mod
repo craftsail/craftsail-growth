@@ -11,7 +11,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/crypto v0.33.0
 	golang.org/x/net v0.35.0
-	gorm.io/gorm v1.25.12
+	gorm.io/gorm v1.31.2
 )
 
 require (
