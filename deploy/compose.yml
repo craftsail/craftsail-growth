@@ -1,0 +1,48 @@
+# Production stack: the app plus MySQL 8. For a single container on SQLite
+# use compose.sqlite.yml instead. Run from this directory:
+#   CRAFTSAIL_GROWTH_TOKEN=$(openssl rand -hex 24) docker compose up -d
+# Change the MySQL passwords here and in config.compose.toml before a real
+# deploy. The app runs as uid 10001 and writes engine keys saved in the
+# dashboard back to config.compose.toml, so make it writable:
+#   sudo chown 10001 config.compose.toml
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: craftsail_growth
+      MYSQL_USER: craftsail
+      MYSQL_PASSWORD: craftsail
+      MYSQL_ROOT_PASSWORD: craftsail-root
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - craftsail-growth-mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-ucraftsail", "-pcraftsail"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  app:
+    image: ${IMAGE:-craftsail-growth:local}
+    build:
+      context: ..
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8765:8765"
+    volumes:
+      - ./config.compose.toml:/app/config/default.toml
+    environment:
+      CRAFTSAIL_GROWTH_HOST: "0.0.0.0"
+      CRAFTSAIL_GROWTH_TOKEN: ${CRAFTSAIL_GROWTH_TOKEN:?set CRAFTSAIL_GROWTH_TOKEN before docker compose up}
+      # Password of the first admin (user "admin" unless CRAFTSAIL_GROWTH_USER
+      # is set). Without it the first start creates admin / craftsailgrowth,
+      # which must be changed at the first sign-in.
+      CRAFTSAIL_GROWTH_USER: ${CRAFTSAIL_GROWTH_USER:-admin}
+      CRAFTSAIL_GROWTH_PASSWORD: ${CRAFTSAIL_GROWTH_PASSWORD:-}
+
+volumes:
+  craftsail-growth-mysql:

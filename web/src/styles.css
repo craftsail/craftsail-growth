@@ -1,0 +1,346 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
+@import "tailwindcss";
+
+/*
+ * Design system: teal primary, gray neutrals, rounded-xl controls,
+ * rounded-2xl cards with a soft shadow. Pages use these classes instead of
+ * long utility strings so every screen looks the same.
+ */
+
+@theme {
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --color-primary-50: #f0fdfa;
+  --color-primary-100: #ccfbf1;
+  --color-primary-200: #99f6e4;
+  --color-primary-300: #5eead4;
+  --color-primary-400: #2dd4bf;
+  --color-primary-500: #14b8a6;
+  --color-primary-600: #0d9488;
+  --color-primary-700: #0f766e;
+  --color-primary-800: #115e59;
+  --color-primary-900: #134e4a;
+  --color-primary-950: #042f2e;
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 10px 40px rgba(0, 0, 0, 0.08);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --shadow-glow: 0 0 20px rgba(20, 184, 166, 0.25);
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--color-gray-200);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-gray-50);
+    color: var(--color-gray-900);
+    font-family: var(--font-sans);
+  }
+
+  ::selection {
+    background: rgb(20 184 166 / 0.2);
+    color: var(--color-primary-900);
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: transparent;
+  }
+
+  *:hover::-webkit-scrollbar-thumb {
+    background: rgb(209 213 219 / 0.6);
+  }
+
+  label {
+    @apply text-sm font-medium text-gray-700;
+  }
+
+  a {
+    color: var(--color-primary-600);
+  }
+
+  a:hover {
+    color: var(--color-primary-700);
+  }
+
+  code {
+    @apply rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[13px] text-primary-700;
+  }
+}
+
+@layer components {
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium no-underline;
+    @apply transition-all duration-200 ease-out;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2;
+    @apply disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98] disabled:active:scale-100;
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-md shadow-primary-500/25;
+    @apply hover:from-primary-600 hover:to-primary-700 hover:shadow-lg hover:shadow-primary-500/30;
+  }
+
+  .btn-secondary {
+    @apply border border-gray-200 bg-white text-gray-700 shadow-sm hover:border-gray-300 hover:bg-gray-50;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900;
+  }
+
+  .btn-sm {
+    @apply rounded-lg px-3 py-1.5 text-xs;
+  }
+
+  .btn-icon {
+    @apply rounded-xl p-2;
+  }
+
+  /* Form controls */
+  .input {
+    @apply w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-sm text-gray-900;
+    @apply placeholder:text-gray-400 transition-all duration-200;
+    @apply focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30;
+    @apply disabled:cursor-not-allowed disabled:bg-gray-100;
+  }
+
+  textarea.input {
+    @apply min-h-24 leading-6;
+  }
+
+  .input-hint {
+    @apply mt-1 text-xs text-gray-500;
+  }
+
+  .field {
+    @apply mb-4 flex flex-col gap-1.5;
+  }
+
+  .checkbox-row {
+    @apply mb-4 flex items-center gap-2.5 text-sm text-gray-700;
+  }
+
+  input[type="checkbox"] {
+    @apply h-4 w-4 rounded border-gray-300 accent-primary-600;
+  }
+
+  /* Cards */
+  .card {
+    @apply rounded-2xl border border-gray-100 bg-white shadow-card transition-all duration-300;
+  }
+
+  .card-header {
+    @apply flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-4;
+  }
+
+  .card-title {
+    @apply text-base font-semibold text-gray-900;
+  }
+
+  .card-body {
+    @apply p-5;
+  }
+
+  .card-footer {
+    @apply border-t border-gray-100 px-5 py-4;
+  }
+
+  /* Stat cards */
+  .stat-card {
+    @apply flex items-start gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-card;
+  }
+
+  .stat-label {
+    @apply text-sm text-gray-500;
+  }
+
+  .stat-value {
+    @apply truncate text-2xl font-bold text-gray-900;
+  }
+
+  /* Tables */
+  .table-container {
+    @apply overflow-x-auto rounded-xl border border-gray-200 bg-white;
+  }
+
+  .table {
+    @apply w-full border-collapse text-sm;
+  }
+
+  .table th {
+    @apply border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-xs font-medium tracking-wide text-gray-600;
+  }
+
+  .table td {
+    @apply border-b border-gray-100 px-4 py-3 align-top text-gray-700;
+  }
+
+  .table tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .table tbody tr {
+    @apply transition-colors duration-150 hover:bg-gray-50;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply bg-primary-100 text-primary-700;
+  }
+
+  .badge-success {
+    @apply bg-emerald-100 text-emerald-700;
+  }
+
+  .badge-warning {
+    @apply bg-amber-100 text-amber-700;
+  }
+
+  .badge-danger {
+    @apply bg-red-100 text-red-700;
+  }
+
+  .badge-gray {
+    @apply bg-gray-100 text-gray-700;
+  }
+
+  /* Tabs and segmented controls */
+  .tabs {
+    @apply inline-flex flex-wrap gap-1 rounded-xl bg-gray-100 p-1;
+  }
+
+  .tab {
+    @apply rounded-lg px-3.5 py-1.5 text-sm font-medium text-gray-600 transition-all duration-200 hover:text-gray-900;
+  }
+
+  .tab-active {
+    @apply bg-white text-gray-900 shadow-sm;
+  }
+
+  /* Filter chips */
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition-colors hover:border-gray-300 hover:bg-gray-50;
+  }
+
+  .chip-active {
+    @apply border-primary-200 bg-primary-50 text-primary-700;
+  }
+
+  .page-title {
+    @apply text-3xl font-bold tracking-tight text-gray-900;
+  }
+
+
+  .section-title {
+    @apply text-lg font-semibold text-gray-900;
+  }
+
+  .hint {
+    @apply text-sm leading-6 text-gray-500;
+  }
+
+  .toolbar {
+    @apply mb-4 flex flex-wrap items-center gap-2;
+  }
+
+  /* Alerts */
+  .alert {
+    @apply my-3 rounded-xl border-l-4 px-4 py-3 text-sm;
+  }
+
+  .alert-error {
+    @apply border-l-red-500 bg-red-50 text-red-800;
+  }
+
+  .alert-success {
+    @apply border-l-emerald-500 bg-emerald-50 text-emerald-800;
+  }
+
+  .alert-info {
+    @apply border-l-primary-500 bg-primary-50 text-primary-800;
+  }
+
+  /* Sidebar */
+  .sidebar-link {
+    @apply flex w-full items-center gap-3 overflow-hidden rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-gray-600 no-underline;
+    @apply transition-all duration-200 hover:bg-gray-100 hover:text-gray-900;
+  }
+
+  .sidebar-link-active {
+    @apply bg-primary-50 text-primary-600 hover:bg-primary-100 hover:text-primary-700;
+  }
+
+  /* Secondary navigation inside a card (settings panes) */
+  .subnav-link {
+    @apply flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900;
+  }
+
+  .subnav-link-active {
+    @apply bg-primary-50 font-medium text-primary-700 hover:bg-primary-50;
+  }
+
+  .progress {
+    @apply h-2 overflow-hidden rounded-full bg-gray-200;
+  }
+
+  .code-block {
+    @apply overflow-x-auto rounded-xl bg-gray-900 p-4 font-mono text-[13px] leading-6 text-gray-100;
+  }
+
+  .mesh-gradient {
+    background-image:
+      radial-gradient(at 40% 20%, rgba(20, 184, 166, 0.12) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
+      radial-gradient(at 0% 50%, rgba(20, 184, 166, 0.08) 0px, transparent 50%);
+  }
+}
+
+/* Unlayered on purpose: the description sits directly under the shell's page
+   title, and wrappers such as space-y-* (utilities layer) must not reset its
+   margins. */
+.page-description {
+  margin-top: -1.25rem;
+  margin-bottom: 1.5rem;
+  max-width: 48rem;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  color: var(--color-gray-500);
+}
+
+/* On pages with tabs the description follows the tab bar, not the title. */
+.has-tabs .page-description {
+  margin-top: 0;
+}

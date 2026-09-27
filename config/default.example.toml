@@ -1,0 +1,50 @@
+# Copy to config/default.toml and edit. config/default.toml is not tracked by git.
+# Engine keys can also be set in the dashboard (Workspace > Model providers); they are written back to this file.
+# Listening on anything but 127.0.0.1 requires the CRAFTSAIL_GROWTH_TOKEN environment variable.
+
+[server.http]
+host = "127.0.0.1"
+port = 8765
+
+[db]
+# SQLite is the default: one file, nothing else to run. The directory is
+# created on first start. Back up this file (with the server stopped, or
+# with the sqlite3 .backup command) to back up everything.
+dialect = "sqlite"
+dsn = "data/craftsail-growth.db"
+debug = false
+# For MySQL 8 instead (see deploy/compose.yml or deploy/init.sql):
+# dialect = "mysql"
+# dsn = "USER:PASSWORD@tcp(127.0.0.1:3306)/craftsail_growth?charset=utf8mb4&parseTime=True&loc=Local"
+# connMaxLifetime = "300s"
+
+[http.default]
+debug = false
+
+[auth]
+# user and password seed the first admin on the first start; after that,
+# users live in the database (dashboard: Workspace, Users; server: craftsail-growth user).
+user = "admin"
+password = ""
+# token acts as an admin for scripts and the CLI. Leave empty to allow only
+# signed-in users.
+token = ""
+
+[keys]
+ZHIPUAI_API_KEY = ""
+ARK_API_KEY = ""
+DEEPSEEK_API_KEY = ""
+MOONSHOT_API_KEY = ""
+MINIMAX_API_KEY = ""
+GEMINI_API_KEY = ""
+OPENAI_API_KEY = ""
+ANTHROPIC_API_KEY = ""
+XAI_API_KEY = ""
+PERPLEXITY_API_KEY = ""
+GOOGLE_SA_JSON = ""
+GOOGLE_HTTP_PROXY = ""
+GOOGLE_OAUTH_CLIENT_ID = ""
+GOOGLE_OAUTH_CLIENT_SECRET = ""
+GOOGLE_REFRESH_TOKEN = ""
+# Days to keep raw Google API responses. 0 keeps them forever; facts and daily totals are never pruned.
+GOOGLE_RAW_RETENTION_DAYS = "0"

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>http://quillpad.example/</loc></url>
+<url><loc>http://quillpad.example/features</loc></url>
+<url><loc>http://quillpad.example/pricing</loc></url>
+<url><loc>http://quillpad.example/integrations</loc></url>
+<url><loc>http://quillpad.example/security</loc></url>
+<url><loc>http://quillpad.example/customers</loc></url>
+<url><loc>http://quillpad.example/about</loc></url>
+<url><loc>http://quillpad.example/blog/</loc></url>
+<url><loc>http://quillpad.example/blog/ai-meeting-notes-guide</loc></url>
+<url><loc>http://quillpad.example/blog/remote-team-rituals</loc></url>
+</urlset>

@@ -1,0 +1,19 @@
+# MySQL only, on 127.0.0.1:3306, for running the app from source against
+# MySQL. Set [db] dialect = "mysql" and the dsn in config/default.toml.
+#   docker compose -f deploy/compose.dev-mysql.yml up -d
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: craftsail_growth
+      MYSQL_USER: craftsail
+      MYSQL_PASSWORD: craftsail
+      MYSQL_ROOT_PASSWORD: craftsail-root
+    ports:
+      - "127.0.0.1:3306:3306"
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - craftsail-growth-mysql:/var/lib/mysql
+
+volumes:
+  craftsail-growth-mysql:
