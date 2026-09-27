@@ -17,7 +17,7 @@ COPY internal/ internal/
 COPY --from=web /src/web/dist/ internal/webembed/dist/
 RUN go build -trimpath -ldflags "-s -w" -o /out/craftsail-growth ./cmd/craftsail-growth
 
-FROM alpine:3.20
+FROM alpine:3.24
 RUN apk add --no-cache ca-certificates tzdata \
  && adduser -D -H -u 10001 app \
  && mkdir -p /app/config /app/data \
