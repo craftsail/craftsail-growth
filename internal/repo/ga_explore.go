@@ -59,7 +59,12 @@ func (r *Webstats) gaQuery(ctx context.Context, f GAFilter) (*gorm.DB, []string,
 		q = q.Where("device = ?", f.Device)
 	}
 	if len(f.Events) > 0 {
-		q = q.Where("event_name IN ?", f.Events)
+		// Event names are exact identifiers, including case, on both databases.
+		event := "event_name COLLATE BINARY"
+		if r.DB.Dialector.Name() == "mysql" {
+			event = "CAST(event_name AS BINARY)"
+		}
+		q = q.Where(event+" IN ?", f.Events)
 	}
 	if f.Text != "" {
 		needle := "%" + strings.NewReplacer("!", "!!", "%", "!%", "_", "!_").Replace(strings.ToLower(f.Text)) + "%"
