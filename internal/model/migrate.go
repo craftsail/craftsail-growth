@@ -27,6 +27,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&Metric{},
 		&Task{},
 		&OpportunityScore{},
+		&Observation{}, &ObservationResult{},
 		&Asset{},
 		&Report{},
 		&Job{},

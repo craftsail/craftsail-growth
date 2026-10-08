@@ -3,6 +3,7 @@
 package model
 
 type Task struct {
+	ReleasedAt    *int64         `json:"released_at"`
 	ID            uint64         `gorm:"primaryKey" json:"id"`
 	ProjectID     uint64         `gorm:"uniqueIndex:uk_task_code;uniqueIndex:uk_task_source,priority:1;not null" json:"project_id"`
 	Code          string         `gorm:"size:16;uniqueIndex:uk_task_code;not null" json:"code"`

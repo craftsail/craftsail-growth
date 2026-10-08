@@ -105,6 +105,10 @@ func Mount(engine *gin.Engine, h *Handler) {
 	r("GET", "/projects/:slug/ga-channels", permView, h.getGAChannels)
 	r("GET", "/projects/:slug/ga-landings", permView, h.getGALandings)
 	r("GET", "/projects/:slug/saved-keywords", permView, h.listSavedKeywords)
+	r("GET", "/projects/:slug/observations", permView, h.listObservations)
+	r("GET", "/projects/:slug/tasks/:code/observations", permView, h.listObservations)
+	r("POST", "/projects/:slug/tasks/:code/releases", permEdit, h.releaseTask)
+	r("POST", "/projects/:slug/tasks/:code/observations/:id/evaluate", permEdit, h.evaluateObservation)
 	r("GET", "/projects/:slug/opportunities", permView, h.listOpportunities)
 	r("GET", "/projects/:slug/report", permView, h.getReport)
 

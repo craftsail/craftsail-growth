@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { IconCheck, IconChevronDown } from "@tabler/icons-react";
 import { scoreOpportunity, acceptOpportunity, dismissOpportunity, listOpportunities, patchTask, type OpportunityItem } from "../../api";
+import { ObservationPanel } from "./observations";
 import { CTRReferenceCard } from "../search/ctr-reference";
 import type { CTRReference } from "../../api";
 import { EmptyState } from "../../components/EmptyState";
@@ -166,6 +167,7 @@ export function Opportunities() {
               {it.source === "search" && <Link to={`/p/${slug}/search/${it.detail?.query ? "keywords" : "pages"}?value=${encodeURIComponent(String(it.detail?.query || it.urls?.[0] || ""))}`}>{t("prioritization.evidence")}</Link>}
               {it.source === "audit" && <Link to={`/p/${slug}/audit/issues`}>{t("plan.seeIssues")}</Link>}
             </div>
+            {it.task_code && <ObservationPanel slug={slug} item={it} />}
             {(it.urls?.length ?? 0) > 0 && (
               <ul className="list-disc space-y-0.5 pl-5 text-xs text-gray-600">
                 {it.urls!.slice(0, 20).map((u) => <li key={u} className="break-all">{u}</li>)}

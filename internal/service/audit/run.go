@@ -263,8 +263,12 @@ func (s *Service) Run(ctx context.Context, slug string) (*Report, error) {
 			dims[k] = v
 		}
 		pid := pages[i].ID
+		crawledAt := int64(0)
+		if pages[i].FetchedAt != nil {
+			crawledAt = *pages[i].FetchedAt
+		}
 		apages = append(apages, model.AuditPage{
-			PageID: pid, Score: r.Score, Grade: r.Grade, Dimensions: dims,
+			CrawledAt: crawledAt, PageID: pid, Score: r.Score, Grade: r.Grade, Dimensions: dims,
 			IssueCodes: r.IssueCodes, Blocks: blk,
 			URL: r.URL, Title: r.Title, WordCount: r.WordCount, JSONLDTypes: r.JSONLDTypes,
 		})

@@ -794,3 +794,10 @@ export function getIndexHistory(slug: string, url: string, page: number) { retur
 
 export function setURLPublished(slug: string, url: string, published_at: number | null) { return request(`/api/projects/${slug}/indexing/published`, { method: "PUT", body: JSON.stringify({ url, published_at }) }); }
 export function addIndexSitemap(slug: string, url: string) { return request(`/api/projects/${slug}/indexing/sitemaps`, { method: "POST", body: JSON.stringify({ url }) }); }
+
+export type ObservationMeasurement = {valid: boolean; reason: string; value: number; exposure: number; count: number};
+export type ObservationResult = {id: number; conclusion: string; reason: string; followup: ObservationMeasurement; control_followup: ObservationMeasurement; notes: string; created_at: number};
+export type TaskObservation = {id: number; task_code: string; hypothesis: string; metric: string; guardrails: string; owner: string; notes: string; released_at: number; urls: string[]; qids: string[]; control_urls: string[]; baseline_from: string; baseline_through: string; followup_from: string; followup_through: string; baseline: ObservationMeasurement; control_baseline: ObservationMeasurement; results: ObservationResult[] | null};
+export function listObservations(slug: string, code?: string) {return request<{items: TaskObservation[]}>(`/api/projects/${slug}/${code ? `tasks/${encodeURIComponent(code)}/` : ""}observations`);}
+export function releaseTask(slug: string, code: string, input: Record<string, unknown>) {return request<TaskObservation>(`/api/projects/${slug}/tasks/${encodeURIComponent(code)}/releases`,{method:"POST",body:JSON.stringify(input)});}
+export function evaluateObservation(slug: string, code: string, id: number, notes: string) {return request<ObservationResult>(`/api/projects/${slug}/tasks/${encodeURIComponent(code)}/observations/${id}/evaluate`,{method:"POST",body:JSON.stringify({refresh:true,notes})});}
