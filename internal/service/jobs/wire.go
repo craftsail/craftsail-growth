@@ -98,7 +98,11 @@ func Bind(s *Service, db *gorm.DB) {
 					log(res.IndexNote)
 				}
 				if err == nil && res.Pending {
-					return &Deferred{After: 15 * time.Second}
+					after := 15 * time.Second
+					if res.RetryAt > 0 {
+						after = max(time.Second, time.Until(time.Unix(res.RetryAt, 0)))
+					}
+					return &Deferred{After: after}
 				}
 			}
 			return err

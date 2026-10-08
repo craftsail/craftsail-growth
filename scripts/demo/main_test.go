@@ -3,7 +3,10 @@
 package main
 
 import (
+	"context"
+	"github.com/craftsail/craftsail-growth/internal/service/webstats"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/glebarez/sqlite"
@@ -51,6 +54,29 @@ func TestDemoBuildsEveryPage(t *testing.T) {
 			}
 			if n := count(&model.Report{}); n != 1 {
 				t.Errorf("reports = %d", n)
+			}
+			var demos []model.Project
+			if err := db.Where("demo_scenario <> ?", "").Find(&demos).Error; err != nil || len(demos) != 3 {
+				t.Fatalf("demo scenarios %d %v", len(demos), err)
+			}
+			for _, scenario := range []string{"new-site", "established"} {
+				board, err := webstats.New(db).SearchBoard(context.Background(), "quillpad-"+scenario)
+				if err != nil {
+					t.Fatal(err)
+				}
+				expected := strings.ReplaceAll(scenario, "-", "_")
+				if board.Observation.Mode != expected || !board.Period.Comparable {
+					t.Fatalf("scenario %s %#v", scenario, board)
+				}
+				decline := false
+				for _, op := range board.Ops {
+					if op.Type == "traffic_drop" {
+						decline = true
+					}
+				}
+				if decline != (scenario == "established") {
+					t.Fatalf("scenario %s decline=%v", scenario, decline)
+				}
 			}
 			var sampled int64
 			db.Model(&model.Sample{}).Distinct("sampled_on").Count(&sampled)

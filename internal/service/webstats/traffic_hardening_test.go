@@ -50,6 +50,13 @@ func TestTrafficQuotaSharedAcrossServicesAndFamilies(t *testing.T) {
 		t.Fatal(err)
 	}
 	backoffTraffic(ca, "gsc", "3600")
+	if got := b.trafficRetryAt(context.Background(), "sc-domain:example.com", "123", errors.New("gsc HTTP 429 quota")); got != now.Add(time.Hour).Unix() {
+		t.Fatalf("retry %d", got)
+	}
+	if got := b.trafficRetryAt(context.Background(), "sc-domain:example.com", "123", errors.Join(errors.New("gsc HTTP 429 quota"), errors.New("ga HTTP 401 unauthorized"))); got != 0 {
+		t.Fatal("auth failure hidden by quota")
+	}
+
 	if class, _ := classifyErr(reserveTraffic(cb, "gsc")); class != "rate_limited" {
 		t.Fatal("shared backoff ignored")
 	}

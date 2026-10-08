@@ -105,6 +105,7 @@ export function AppShell({
                 ))}
               </nav>
             )}
+            {current?.demo_scenario && <div className="mb-5 rounded-lg border border-primary-200 bg-primary-50 p-4 text-sm text-gray-700">{t("demoGuide.banner")} <Link className="text-primary-700 underline" to={`/p/${current.slug}/overview#demo-guide`}>{t("demoGuide.title")}</Link></div>}
             <Outlet context={{ project: current, projects, onProject, onCreated }} />
           </main>
         </div>

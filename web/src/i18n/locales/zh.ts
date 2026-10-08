@@ -4,6 +4,25 @@
 import type { Messages } from "./en";
 
 export const zh: Messages = {
+  demoGuide: {
+  "title": "五分钟演示导览",
+  "banner": "演示项目：AI 回答和 Google 数值均为模拟数据，不代表已连接真实账号或真实增长。",
+  "intro": "沿着一条证据走完流程。不会自动启动任务；打开这些步骤不记录激活，也不证明效果。",
+  "geo": "AI 与体检场景",
+  "new_site": "低流量新站",
+  "established": "完整历史站点",
+  "evidence": "1. 找到一条证据",
+  "evidenceText": "打开{page}。新站场景说明为何低流量只作观察；历史站点场景检查持续下降。",
+  "compare": "2. 检查能否比较",
+  "compareText": "打开{page}，核对时间范围、覆盖、样本量和来源。缺失记录不是零。",
+  "action": "3. 选择一项行动",
+  "actionText": "打开{page}，阅读证据和验收条件，确认有帮助后接受一项行动。推荐不代表收益承诺。",
+  "release": "4. 区分完成与效果",
+  "releaseText": "在{page}完成修改后，按实际上线时间记录假设和固定窗口。可比证据充足前，观察保持待评估。",
+  "review": "5. 下周复盘",
+  "reviewText": "打开{page}，检查已完成工作、待观察事项及下周最多三项重点。报告语言切换不改变采样语言。",
+  "switch": "对照两个搜索场景"
+},
   gaSegments: {
   "country": "国家（GA4 名称）",
   "events": "价值事件名称（逗号分隔）",

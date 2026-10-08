@@ -110,7 +110,7 @@ func TestSearchDimensionsTypesAndBrandFilters(t *testing.T) {
 	facts := []model.GscFact{
 		{ProjectID: p.ID, Property: prop, Slice: "country", SearchType: "image", Day: day, Country: "bra", Clicks: 12},
 		{ProjectID: p.ID, Property: prop, Slice: "country", SearchType: "web", Day: day, Country: "bra", Clicks: 999},
-		{ProjectID: p.ID, Property: prop, Slice: "country_device", SearchType: "image", Day: day, Country: "bra", Device: "mobile", Clicks: 7},
+		{ProjectID: p.ID, Property: prop, Slice: "country_device", SearchType: "image", Day: day, Country: "BRA", Device: "MOBILE", Clicks: 7},
 		{ProjectID: p.ID, Property: prop, Slice: "query", SearchType: "image", Day: day, Query: "ACME logo", Clicks: 10},
 		{ProjectID: p.ID, Property: prop, Slice: "query", SearchType: "image", Day: day, Query: "generic logo", Clicks: 20},
 	}

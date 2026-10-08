@@ -63,6 +63,25 @@
       "citation": "AI citations",
       "metric": "Metric change"
     },
+    "demoGuide": {
+      "title": "Five-minute guided demo",
+      "banner": "Demo project: AI answers and Google figures are simulated, not a connected account or evidence of real growth.",
+      "intro": "Follow one evidence trail. Nothing starts automatically; opening these steps does not record activation or prove an effect.",
+      "geo": "AI and audit scenario",
+      "new_site": "Low-traffic new site",
+      "established": "Site with complete history",
+      "evidence": "1. Find one piece of evidence",
+      "evidenceText": "Open {page}. In the new-site scenario, explain why sparse traffic is an observation. In the historical scenario, inspect the sustained decline.",
+      "compare": "2. Check whether comparison is valid",
+      "compareText": "Open {page}; check the date range, coverage, sample size and source. A missing record is not zero.",
+      "action": "3. Choose one action",
+      "actionText": "Open {page}, read its evidence and acceptance condition, then accept one action if it helps. The recommendation is not a promised outcome.",
+      "release": "4. Separate completion from effect",
+      "releaseText": "In {page}, finish the change and record its actual release with a hypothesis and fixed window. The observation stays pending until enough comparable evidence exists.",
+      "review": "5. Review the next week",
+      "reviewText": "Open {page}; inspect completed work, pending observations and the next three priorities. Switching report language does not change sample language.",
+      "switch": "Compare the two search scenarios"
+    },
     "sampling": {
       "title": "Sampling language and audience",
       "language": "Sampling language",
@@ -361,6 +380,25 @@
       "searchSource": "搜索",
       "citation": "AI 引用",
       "metric": "指标变化"
+    },
+    "demoGuide": {
+      "title": "五分钟演示导览",
+      "banner": "演示项目：AI 回答和 Google 数值均为模拟数据，不代表已连接真实账号或真实增长。",
+      "intro": "沿着一条证据走完流程。不会自动启动任务；打开这些步骤不记录激活，也不证明效果。",
+      "geo": "AI 与体检场景",
+      "new_site": "低流量新站",
+      "established": "完整历史站点",
+      "evidence": "1. 找到一条证据",
+      "evidenceText": "打开{page}。新站场景说明为何低流量只作观察；历史站点场景检查持续下降。",
+      "compare": "2. 检查能否比较",
+      "compareText": "打开{page}，核对时间范围、覆盖、样本量和来源。缺失记录不是零。",
+      "action": "3. 选择一项行动",
+      "actionText": "打开{page}，阅读证据和验收条件，确认有帮助后接受一项行动。推荐不代表收益承诺。",
+      "release": "4. 区分完成与效果",
+      "releaseText": "在{page}完成修改后，按实际上线时间记录假设和固定窗口。可比证据充足前，观察保持待评估。",
+      "review": "5. 下周复盘",
+      "reviewText": "打开{page}，检查已完成工作、待观察事项及下周最多三项重点。报告语言切换不改变采样语言。",
+      "switch": "对照两个搜索场景"
     },
     "sampling": {
       "title": "采样语言与目标人群",
@@ -892,6 +930,25 @@
       "searchSource": "Busca",
       "citation": "Citações de IA",
       "metric": "Mudança de métrica"
+    },
+    "demoGuide": {
+      "title": "Demonstração guiada de cinco minutos",
+      "banner": "Projeto de demonstração: respostas de IA e dados do Google são simulados, não representam uma conta conectada nem crescimento real.",
+      "intro": "Siga uma trilha de evidências. Nada inicia automaticamente; abrir estas etapas não registra ativação nem comprova efeito.",
+      "geo": "Cenário de IA e auditoria",
+      "new_site": "Site novo com pouco tráfego",
+      "established": "Site com histórico completo",
+      "evidence": "1. Encontre uma evidência",
+      "evidenceText": "Abra {page}. No site novo, explique por que pouco tráfego é apenas observação. No histórico completo, examine a queda sustentada.",
+      "compare": "2. Confira se a comparação é válida",
+      "compareText": "Abra {page}; confira período, cobertura, amostra e origem. Um registro ausente não é zero.",
+      "action": "3. Escolha uma ação",
+      "actionText": "Abra {page}, leia evidências e critérios de aceite; aceite uma ação se for útil. A recomendação não promete resultado.",
+      "release": "4. Separe conclusão de efeito",
+      "releaseText": "Em {page}, conclua a mudança e registre a publicação real com hipótese e janela fixa. A observação fica pendente até haver evidência comparável suficiente.",
+      "review": "5. Revise na próxima semana",
+      "reviewText": "Abra {page}; confira trabalho concluído, observações pendentes e até três prioridades. Mudar o idioma do relatório não altera a amostragem.",
+      "switch": "Compare os dois cenários de pesquisa"
     },
     "sampling": {
       "title": "Idioma de amostragem e público",

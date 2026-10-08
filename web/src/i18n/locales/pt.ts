@@ -4,6 +4,25 @@
 import type { Messages } from "./en";
 
 export const pt: Messages = {
+  demoGuide: {
+  "title": "Demonstração guiada de cinco minutos",
+  "banner": "Projeto de demonstração: respostas de IA e dados do Google são simulados, não representam uma conta conectada nem crescimento real.",
+  "intro": "Siga uma trilha de evidências. Nada inicia automaticamente; abrir estas etapas não registra ativação nem comprova efeito.",
+  "geo": "Cenário de IA e auditoria",
+  "new_site": "Site novo com pouco tráfego",
+  "established": "Site com histórico completo",
+  "evidence": "1. Encontre uma evidência",
+  "evidenceText": "Abra {page}. No site novo, explique por que pouco tráfego é apenas observação. No histórico completo, examine a queda sustentada.",
+  "compare": "2. Confira se a comparação é válida",
+  "compareText": "Abra {page}; confira período, cobertura, amostra e origem. Um registro ausente não é zero.",
+  "action": "3. Escolha uma ação",
+  "actionText": "Abra {page}, leia evidências e critérios de aceite; aceite uma ação se for útil. A recomendação não promete resultado.",
+  "release": "4. Separe conclusão de efeito",
+  "releaseText": "Em {page}, conclua a mudança e registre a publicação real com hipótese e janela fixa. A observação fica pendente até haver evidência comparável suficiente.",
+  "review": "5. Revise na próxima semana",
+  "reviewText": "Abra {page}; confira trabalho concluído, observações pendentes e até três prioridades. Mudar o idioma do relatório não altera a amostragem.",
+  "switch": "Compare os dois cenários de pesquisa"
+},
   gaSegments: {
   "country": "País (nome no GA4)",
   "events": "Eventos de valor (separados por vírgulas)",

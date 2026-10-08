@@ -2,7 +2,7 @@
 
 // Command demo fills a fresh SQLite database with a fictional brand,
 // Quillpad, so the dashboard can be tried and screenshotted without engine
-// keys. Everything except the engines' answers runs through the real code:
+// keys. Google fixtures and engine answers are simulated; the remaining workflow uses real code:
 // a local copy of the brand's website is crawled and audited, and each
 // simulated day goes through sample.Run with generated answers, so runs,
 // citations, metrics and opportunities are computed as in production.
@@ -101,6 +101,10 @@ func run(dbPath, user, pass string) error {
 	if err != nil {
 		return err
 	}
+	p.DemoScenario = "geo"
+	if err := project.New(db).Save(ctx, p); err != nil {
+		return err
+	}
 	boot := bootstrap.New(db)
 	if _, err := boot.SaveBrand(ctx, p.Slug, "Quillpad", brand()); err != nil {
 		return err
@@ -154,7 +158,10 @@ func run(dbPath, user, pass string) error {
 		}
 	}
 	_, err = report.New(db).Build(ctx, p.Slug)
-	return err
+	if err != nil {
+		return err
+	}
+	return seedSearchScenarios(ctx, db, time.Now())
 }
 
 // backdate moves one run and everything it wrote from today to day, so the

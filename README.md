@@ -79,9 +79,11 @@ make demo                 # needs Go 1.23+ and Node.js 20+
 ```
 
 Sign in as `demo` / `quillpad-demo-2026`. `make demo DEMO_LANG=zh` gives
-Chinese prompts and Chinese engines. Only the engines' answers are
-simulated; crawling, the audit, citation analysis, metrics and the action
-plan run the real code.
+Chinese prompts and Chinese engines. AI answers and two Google search scenarios
+use clearly labeled fixtures; crawling, audit, citation analysis, metrics and
+the action plan run the real code. The overview includes a five-step guide
+and low-traffic / complete-history scenarios. No Google or paid model calls
+are made. See the [demo walkthrough](docs/demo-walkthrough.md).
 
 ## Quick start
 

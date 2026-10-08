@@ -142,9 +142,9 @@ func factFromGSC(slice, searchType string, dims []string, row gscAPIRow) model.G
 		case "page":
 			fact.Page = val
 		case "country":
-			fact.Country = val
+			fact.Country = strings.ToLower(val)
 		case "device":
-			fact.Device = val
+			fact.Device = strings.ToLower(val)
 		case "searchAppearance":
 			fact.SearchAppearance = val
 		}

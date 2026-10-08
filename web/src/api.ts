@@ -3,6 +3,7 @@
 type Envelope<T> = { code: number; msg: string; data: T };
 
 export type Project = {
+ demo_scenario?:string;
  google_history_start?: string;
  sampling_language?: string; site_language?: string; report_language?: string; target_region?: string;
   id: number;

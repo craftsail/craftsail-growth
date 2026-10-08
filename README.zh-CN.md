@@ -72,7 +72,7 @@ cd craftsail-growth
 make demo DEMO_LANG=zh    # 需要 Go 1.23+ 和 Node.js 20+
 ```
 
-用 `demo` / `quillpad-demo-2026` 登录。只有 AI 的回答是模拟的，抓取、体检、引用分析、指标计算和行动计划都走真实代码。
+用 `demo` / `quillpad-demo-2026` 登录。AI 回答和两个 Google 搜索场景使用明确标识的模拟数据；抓取、体检、引用分析、指标计算和行动计划走真实代码。总览提供五步导览，可切换“低流量新站”和“完整历史站点”对照覆盖与诊断。不会连接 Google 或调用付费模型。详见[演示验收路线](docs/demo-walkthrough.md)。
 
 ## 快速开始
 

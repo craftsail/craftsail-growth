@@ -41,6 +41,7 @@ func New(db *gorm.DB) *Service {
 }
 
 type RunResult struct {
+	RetryAt   int64  `json:"retry_at,omitempty"`
 	Pending   bool   `json:"pending"`
 	Requests  int    `json:"requests"`
 	Batches   int    `json:"batches"`
@@ -107,9 +108,19 @@ func (s *Service) run(ctx context.Context, slug string) (*RunResult, error) {
 			s.archivePage(ctx, p.ID, source, report, request, body, now)
 		}
 	}
-	if official := s.SyncOfficial(ctx, p.ID, token, gscSite, gaProp, now); official != "" {
-		notes = append(notes, official)
-		failures = append(failures, errors.New(official))
+	ctx = s.trafficQuotaContext(ctx, gscSite, gaProp)
+	for _, source := range []string{"gsc", "ga4"} {
+		official := ""
+		if source == "gsc" && gscSite != "" {
+			official = s.syncGSCOfficial(ctx, p.ID, token, gscSite, now)
+		}
+		if source == "ga4" && gaProp != "" {
+			official = s.syncGAOfficial(ctx, p.ID, token, gaProp, now)
+		}
+		if official != "" {
+			notes = append(notes, official)
+			failures = append(failures, errors.New(official))
+		}
 	}
 	if live && token != "test" {
 		note, syncErr := s.SyncFacts(ctx, p.ID, token, gscSite, gaProp, now)
@@ -142,7 +153,13 @@ func (s *Service) run(ctx context.Context, slug string) (*RunResult, error) {
 			res.GaRows = len(facts)
 		}
 	}
-	return res, errors.Join(failures...)
+	failure := errors.Join(failures...)
+	if retry := s.trafficRetryAt(context.WithoutCancel(ctx), gscSite, gaProp, failure); retry > 0 {
+		res.Pending = true
+		res.RetryAt = retry
+		return res, nil
+	}
+	return res, failure
 }
 
 // Snapshot is stored rows plus the monitoring report. Windows and Official come from date-only totals.

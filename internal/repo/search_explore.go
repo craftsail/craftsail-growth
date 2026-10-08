@@ -75,10 +75,10 @@ func (r *Webstats) searchQuery(ctx context.Context, f SearchFilter) (*gorm.DB, e
 		q = q.Where(condition, args...)
 	}
 	if f.Country != "" {
-		q = q.Where("country = ?", f.Country)
+		q = q.Where("LOWER(country) = ?", strings.ToLower(f.Country))
 	}
 	if f.Device != "" {
-		q = q.Where("device = ?", f.Device)
+		q = q.Where("LOWER(device) = ?", strings.ToLower(f.Device))
 	}
 	exact := func(column, value string) {
 		if value == "" {

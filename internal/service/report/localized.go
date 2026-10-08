@@ -85,6 +85,9 @@ func (s *Service) weeklyMarkdown(ctx context.Context, p *model.Project, lang str
 	heading := func(key string) { fmt.Fprintf(&b, "\n## %s\n\n", t(key)) }
 	line := func(value string) { fmt.Fprintf(&b, "- %s\n", value) }
 	fmt.Fprintf(&b, "# %s · %s · %s\n\n%s\n", markdownText(p.Name), t("title"), now.Format("2006-01-02"), t("weekly"))
+	if p.DemoScenario != "" {
+		fmt.Fprintf(&b, "\n%s\n", reportText(lang, "demoGuide.banner"))
+	}
 	web := webstats.New(s.db)
 	board, boardErr := web.SearchBoard(ctx, p.Slug)
 	heading("health")

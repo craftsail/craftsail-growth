@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -58,4 +59,44 @@ func backoffTraffic(ctx context.Context, api, retryAfter string) {
 	saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
 	defer cancel()
 	_ = q.service.rows.BackoffGoogle(saveCtx, q.properties[api], "traffic/"+api, until.Unix())
+}
+
+// Defer only quota-only failures; auth, storage and unsupported configuration
+// errors still stop the job even when another source is rate limited.
+func (s *Service) trafficRetryAt(ctx context.Context, gsc, ga string, err error) int64 {
+	var onlyQuota func(error) bool
+	onlyQuota = func(e error) bool {
+		if e == nil {
+			return false
+		}
+		if joined, ok := e.(interface{ Unwrap() []error }); ok {
+			for _, child := range joined.Unwrap() {
+				if !onlyQuota(child) {
+					return false
+				}
+			}
+			return true
+		}
+		class, _ := classifyErr(e)
+		return class == "rate_limited" || strings.Contains(e.Error(), ": rate_limited")
+	}
+	if !onlyQuota(err) {
+		return 0
+	}
+	var retry int64
+	gsc, _ = GSCPropertyKey(gsc)
+	ga, _ = GAPropertyKey(ga)
+	for api, property := range map[string]string{"gsc": gsc, "ga": ga} {
+		if property == "" {
+			continue
+		}
+		q, e := s.rows.GoogleQuota(ctx, property, "traffic/"+api)
+		if e != nil {
+			return 0
+		}
+		if q != nil && q.BlockedUntil > s.now().Unix() && q.BlockedUntil > retry {
+			retry = q.BlockedUntil
+		}
+	}
+	return retry
 }

@@ -2,6 +2,25 @@
 
 // UI strings. Edit en.ts, zh.ts and pt.ts together: zh and pt are typed against en, so a missing key fails the build.
 export const en = {
+  demoGuide: {
+  "title": "Five-minute guided demo",
+  "banner": "Demo project: AI answers and Google figures are simulated, not a connected account or evidence of real growth.",
+  "intro": "Follow one evidence trail. Nothing starts automatically; opening these steps does not record activation or prove an effect.",
+  "geo": "AI and audit scenario",
+  "new_site": "Low-traffic new site",
+  "established": "Site with complete history",
+  "evidence": "1. Find one piece of evidence",
+  "evidenceText": "Open {page}. In the new-site scenario, explain why sparse traffic is an observation. In the historical scenario, inspect the sustained decline.",
+  "compare": "2. Check whether comparison is valid",
+  "compareText": "Open {page}; check the date range, coverage, sample size and source. A missing record is not zero.",
+  "action": "3. Choose one action",
+  "actionText": "Open {page}, read its evidence and acceptance condition, then accept one action if it helps. The recommendation is not a promised outcome.",
+  "release": "4. Separate completion from effect",
+  "releaseText": "In {page}, finish the change and record its actual release with a hypothesis and fixed window. The observation stays pending until enough comparable evidence exists.",
+  "review": "5. Review the next week",
+  "reviewText": "Open {page}; inspect completed work, pending observations and the next three priorities. Switching report language does not change sample language.",
+  "switch": "Compare the two search scenarios"
+},
   gaSegments: {
   "country": "Country (GA4 name)",
   "events": "Value event names (comma separated)",

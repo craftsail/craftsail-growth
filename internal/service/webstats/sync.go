@@ -17,6 +17,9 @@ import (
 // v3 refetches legacy coverage after the daily/appearance request contract changed.
 const currentSyncVersion = 3
 
+// SyncRequestVersion lets offline demo fixtures use the same coverage contract.
+const SyncRequestVersion = currentSyncVersion
+
 var ErrMetricRestricted = errors.New("Google restricted a requested metric; previous data retained")
 
 var ErrIncompleteReport = errors.New("Google report reached its row limit; previous data retained")

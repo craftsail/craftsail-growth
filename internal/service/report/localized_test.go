@@ -18,6 +18,10 @@ func TestLocalizedWeeklyReportsWithoutGoogleAndSavedLanguage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	p.DemoScenario = "geo"
+	if err := projects.Save(ctx, p); err != nil {
+		t.Fatal(err)
+	}
 	svc := New(db)
 	for _, lang := range []string{"en", "zh", "pt"} {
 		out, err := svc.Build(ctx, p.Slug, lang)
@@ -31,6 +35,9 @@ func TestLocalizedWeeklyReportsWithoutGoogleAndSavedLanguage(t *testing.T) {
 			if !strings.Contains(out.Markdown, reportText(lang, "weeklyReport."+key)) {
 				t.Fatal("missing section", lang, key)
 			}
+		}
+		if !strings.Contains(out.Markdown, reportText(lang, "demoGuide.banner")) {
+			t.Fatal("demo provenance missing")
 		}
 		if strings.Contains(out.Markdown, "{source}") || strings.Contains(out.Markdown, "{value}") {
 			t.Fatal("unresolved placeholders")

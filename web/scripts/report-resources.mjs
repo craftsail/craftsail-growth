@@ -9,7 +9,7 @@ import ts from 'typescript';
 import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 function readModule(file){const exports={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText,{exports});return exports;}
-const catalog={};for(const lang of ['en','zh','pt']){const messages=readModule(`${root}/web/src/i18n/locales/${lang}.ts`)[lang];catalog[lang]={weeklyReport:messages.weeklyReport,sampling:messages.sampling,observation:messages.observation,plan:messages.plan,prioritization:messages.prioritization,nav:messages.nav};if(lang!=='en')catalog[lang].rules=readModule(`${root}/web/src/i18n/rules/${lang}.ts`)[lang];}
+const catalog={};for(const lang of ['en','zh','pt']){const messages=readModule(`${root}/web/src/i18n/locales/${lang}.ts`)[lang];catalog[lang]={weeklyReport:messages.weeklyReport,demoGuide:messages.demoGuide,sampling:messages.sampling,observation:messages.observation,plan:messages.plan,prioritization:messages.prioritization,nav:messages.nav};if(lang!=='en')catalog[lang].rules=readModule(`${root}/web/src/i18n/rules/${lang}.ts`)[lang];}
 const theme=fs.readFileSync(`${root}/web/node_modules/tailwindcss/theme.css`,'utf8')+'\n'+fs.readFileSync(`${root}/web/src/styles.css`,'utf8');
 const colors=new Map([...theme.matchAll(/(--color-[\w-]+):\s*([^;]+);/g)].map(m=>[m[1],m[2]]));
 const needed=['gray-50','gray-100','gray-200','gray-500','gray-700','gray-900','white','primary-50','primary-700','amber-700'];

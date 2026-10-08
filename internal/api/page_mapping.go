@@ -9,6 +9,10 @@ import (
 )
 
 func (h *Handler) mapLanding(c *gin.Context) {
+	if h.web == nil {
+		writeErr(c, errWeb())
+		return
+	}
 	in, ok := searchInput(c)
 	if !ok {
 		return

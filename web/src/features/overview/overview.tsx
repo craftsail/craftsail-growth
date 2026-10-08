@@ -9,6 +9,7 @@ import { AreaSeries } from "../../components/charts/series";
 import { LayerStatus } from "../../components/metrics/LayerStatus";
 import { RateStat } from "../../components/metrics/RateStat";
 import { keepSearch, useMeasure } from "../measure/data";
+import { DemoGuide } from "./demo-guide";
 import { FirstCheck } from "./first-check";
 import { FilterBar } from "../measure/filters";
 
@@ -45,6 +46,7 @@ export function Overview() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5">
+      {ctx?.project?.demo_scenario && <DemoGuide project={ctx.project} />}
       {ctx?.project && <FirstCheck key={slug} project={ctx.project} onAudit={setAudit} />}
       <FilterBar {...m} onChange={m.setFilter} />
       {m.err && <p className="text-sm text-red-700">{m.err}</p>}
