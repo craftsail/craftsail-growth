@@ -42,14 +42,14 @@ type Reports struct{ DB *gorm.DB }
 
 func (r *Reports) Upsert(ctx context.Context, row *model.Report) error {
 	var old model.Report
-	err := r.DB.WithContext(ctx).Where("project_id = ? AND report_on = ?", row.ProjectID, row.ReportOn.Format("2006-01-02")).First(&old).Error
+	err := r.DB.WithContext(ctx).Where("project_id = ? AND date(report_on) = ?", row.ProjectID, row.ReportOn.Format("2006-01-02")).First(&old).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return r.DB.WithContext(ctx).Create(row).Error
 	}
 	if err != nil {
 		return err
 	}
-	old.Markdown, old.HTML = row.Markdown, row.HTML
+	old.Markdown, old.HTML, old.Language = row.Markdown, row.HTML, row.Language
 	return r.DB.WithContext(ctx).Save(&old).Error
 }
 

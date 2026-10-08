@@ -489,8 +489,8 @@ export async function runningJob(slug: string, actions: string[]): Promise<JobRo
 
 
 
-export function buildReport(slug: string) {
-  return request<{ markdown: string; html: string; on: string }>(`/api/projects/${slug}/report`, { method: "POST" });
+export function buildReport(slug: string, language = "en") {
+  return request<{ markdown: string; html: string; on: string; language: string }>(`/api/projects/${slug}/report?language=${encodeURIComponent(language)}`, { method: "POST" });
 }
 
 export function getReport(slug: string) {

@@ -5,6 +5,7 @@ package model
 import "time"
 
 type Report struct {
+	Language  string    `gorm:"size:8" json:"language"`
 	ID        uint64    `gorm:"primaryKey" json:"id"`
 	ProjectID uint64    `gorm:"uniqueIndex:uk_report;not null" json:"project_id"`
 	ReportOn  time.Time `gorm:"type:date;uniqueIndex:uk_report;not null" json:"report_on"`

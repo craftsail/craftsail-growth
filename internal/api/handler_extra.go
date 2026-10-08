@@ -186,7 +186,12 @@ func (h *Handler) buildReport(c *gin.Context) {
 		writeErr(c, fmt.Errorf("report service not configured"))
 		return
 	}
-	out, err := h.report.Build(c.Request.Context(), c.Param("slug"))
+	language := c.Query("language")
+	if language != "" && language != "en" && language != "zh" && language != "pt" {
+		fail(c, resp.CodeBadRequest, http.StatusBadRequest, "unsupported report language")
+		return
+	}
+	out, err := h.report.Build(c.Request.Context(), c.Param("slug"), language)
 	if err != nil {
 		writeErr(c, err)
 		return

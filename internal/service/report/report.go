@@ -47,21 +47,42 @@ func New(db *gorm.DB) *Service {
 }
 
 type Out struct {
+	Language string `json:"language"`
 	Markdown string `json:"markdown"`
 	HTML     string `json:"html"`
 	On       string `json:"on"`
 }
 
-func (s *Service) Build(ctx context.Context, slug string) (*Out, error) {
+func (s *Service) Build(ctx context.Context, slug string, languages ...string) (*Out, error) {
 	p, err := s.projects.Get(ctx, slug)
 	if err != nil {
 		return nil, err
 	}
-	md, cards := s.markdown(ctx, p)
-	h := Document(p.Name+" · AI visibility report", md, cards)
+	language := p.ReportLanguage
+	if language == "" {
+		language = "en"
+	}
+	if len(languages) > 0 && languages[0] != "" {
+		language = languages[0]
+	}
+	if language != "en" && language != "zh" && language != "pt" {
+		return nil, fmt.Errorf("unsupported report language")
+	}
+	md, cards, err := s.weeklyMarkdown(ctx, p, language)
+	if err != nil {
+		return nil, err
+	}
+	h := DocumentLanguage(p.Name+" · "+reportText(language, "weeklyReport.title"), md, cards, language)
 	on := time.Now()
-	_ = s.reports.Upsert(ctx, &model.Report{ProjectID: p.ID, ReportOn: on, Markdown: md, HTML: h})
-	return &Out{Markdown: md, HTML: h, On: on.Format("2006-01-02")}, nil
+	if err := s.reports.Upsert(ctx, &model.Report{ProjectID: p.ID, ReportOn: on, Markdown: md, HTML: h, Language: language}); err != nil {
+		return nil, err
+	}
+	if len(languages) > 0 && languages[0] != "" {
+		if err := (&repo.Projects{DB: s.db}).SetReportLanguage(ctx, p.ID, language); err != nil {
+			return nil, err
+		}
+	}
+	return &Out{Language: language, Markdown: md, HTML: h, On: on.Format("2006-01-02")}, nil
 }
 
 func (s *Service) Latest(ctx context.Context, slug string) (*model.Report, error) {

@@ -1,0 +1,1279 @@
+{
+  "en": {
+    "weeklyReport": {
+      "english": "English",
+      "chinese": "Simplified Chinese",
+      "portuguese": "Português",
+      "google": "Google Search and GA4 (supporting data)",
+      "imports": "Import status",
+      "importSnapshot": "Last stored import snapshot; coverage above reflects the report ledger.",
+      "finalized": "{source} property `{property}`: final data through {through} ({calendar}).",
+      "daily": "Daily totals: {impressions} impressions, {clicks} clicks.",
+      "official": "Totals come from official daily totals, never from summing query rows.",
+      "gscTotals": "Search Console: {impressions} impressions, {clicks} clicks",
+      "gaTotals": "GA4: {sessions} sessions, {events} key events; at least {ai} sessions from AI referrers.",
+      "pacific": "Pacific time",
+      "propertyTime": "property time zone",
+      "aiChange": "{access}: {beforeX}/{beforeN} → {afterX}/{afterN} answers in consecutive 30-day windows. Descriptive only; composition may differ.",
+      "title": "Weekly growth review",
+      "language": "Report language",
+      "health": "Data health",
+      "stage": "Project focus",
+      "new_site": "New site: discovery, indexing and impressions",
+      "established": "Established site: search opportunities and channel quality",
+      "ai": "AI visibility",
+      "engines": "By engine",
+      "changes": "Largest measured changes",
+      "actions": "Actions updated this week",
+      "observations": "Due observations",
+      "next": "Next week’s focus",
+      "rulesTitle": "How to read this report",
+      "rules": "API and web answers are separate. Search totals come from date-only reports; visible query rows do not equal total demand. GSC and GA4 use different calendars and attribution, so clicks and sessions are not an exact funnel. Observed changes do not prove causes. Missing data are not zero.",
+      "none": "No usable data or recorded actions in this section.",
+      "unavailable": "Source unavailable; review its connection or sync status.",
+      "coverage": "{source}: {from} to {through}, {covered}/{total} days covered.",
+      "quality": "Comparable periods: {value}. Unknown or restricted quality blocks diagnostic comparisons.",
+      "yes": "yes",
+      "no": "no",
+      "visibility": "Visibility: **{value}%** ({x} of {n} unbranded answers; 95% CI {lo}-{hi}%)",
+      "small": "(small sample)",
+      "recognition": "Branded recognition: {value}% of {n} branded answers",
+      "aiWindow": "Last 30 days; answers are attributed to their sample dates.",
+      "search": "Search Console: {clicks} clicks, {impressions} impressions ({from} to {through}).",
+      "delta": "Clicks: {before} → {after} ({delta}%). Full comparable 28-day windows.",
+      "indexing": "Known URLs: {known}; inspected: {inspected}; last observed indexed: {indexed}. This is inventory coverage, not a site-wide indexing rate.",
+      "channel": "Channel",
+      "sessions": "Sessions",
+      "events": "Key events",
+      "perSession": "Events per session (not a user conversion rate)",
+      "window": "{from} to {through} · {timezone}",
+      "state": "State",
+      "due": "Due: {date}",
+      "links": "Open source evidence",
+      "weekly": "Last 7 days of activity; measurement windows are listed separately.",
+      "currentLanguage": "Saved report: {language}",
+      "open": "Open",
+      "doing": "In progress",
+      "done": "Done",
+      "verified": "Verified",
+      "regressed": "Regressed",
+      "dismissed": "Dismissed",
+      "audit": "Site audit",
+      "searchSource": "Search",
+      "citation": "AI citations",
+      "metric": "Metric change"
+    },
+    "observation": {
+      "api": "API",
+      "web": "Web",
+      "title": "Release and effect observations",
+      "note": "Task progress and observed effects are separate. A release freezes its baseline and settings. Corrections create another record. Results describe associations, not causes.",
+      "new": "Record a release",
+      "hypothesis": "Hypothesis",
+      "metric": "Primary metric",
+      "clicks": "Google clicks",
+      "impressions": "Google impressions",
+      "visibility": "AI mentions",
+      "technical": "Technical issue cleared",
+      "guardrails": "Guardrails to review manually",
+      "urls": "Target URLs (one per line)",
+      "qids": "Fixed prompt IDs (comma separated)",
+      "controls": "Control URLs (optional, one per line)",
+      "owner": "Owner",
+      "effort": "Hours invested",
+      "released": "Released at",
+      "wait": "Waiting days (0–90)",
+      "window": "Window days (28–90)",
+      "engine": "Engine code",
+      "access": "Access",
+      "notes": "Notes",
+      "record": "Freeze baseline and record release",
+      "evaluate": "Evaluate / append a new version",
+      "baseline": "Frozen baseline",
+      "followup": "Observation window",
+      "pending": "Awaiting observation",
+      "improved": "Observed improvement",
+      "declined": "Observed decline",
+      "insufficient": "Insufficient evidence",
+      "incomparable": "Not comparable",
+      "rules": "Search: complete windows, at least 1,000 impressions in each; changes ≥25% and ≥50 clicks (or 500 impressions) are heuristic review thresholds. The release day is excluded; evaluation allows time for Google finalization. AI: same prompts, model, access, strategy and prompt proportions, at least 30 answers. Guardrails and controls require your review.",
+      "empty": "No release recorded. Completing a task does not start an effect claim.",
+      "reason": "Reason: {reason}",
+      "version": "Result #{id} · {date}",
+      "notMeasured": "Not measured",
+      "observed": "{value} / {exposure}",
+      "saved": "Release recorded with a frozen baseline.",
+      "windowReason": "The fixed observation window has not matured.",
+      "fresh_audit": "Run a new crawl and audit of all target URLs after release.",
+      "baselineReason": "The frozen baseline is incomplete; this observation cannot establish improvement.",
+      "coverage": "Waiting for complete, usable Google data. Reconnect or finish syncing, then evaluate again.",
+      "sample_changed": "The model, prompt or sampling settings changed.",
+      "sample_metadata": "Sampling metadata is missing.",
+      "property_changed": "The Google property changed.",
+      "prompt_changed": "The selected prompt set was edited or disabled.",
+      "scope_changed": "The measurement scope changed.",
+      "sample_mix": "The proportions of prompts changed.",
+      "small_sample": "The sample is too small.",
+      "within_noise": "The observed difference remains within uncertainty.",
+      "below_threshold": "The change is below the agreed review threshold.",
+      "technical_clear": "A fresh crawl and audit found no target issue.",
+      "technical_remaining": "The target issue remains.",
+      "observed_change": "A change was observed; other changes and external factors may explain it.",
+      "overlapping_changes": "Another recorded change affects these URLs or prompts in the measurement window.",
+      "missing_page": "Some target pages lack audit evidence.",
+      "no_audit": "No audit is available."
+    },
+    "plan": {
+      "description": "What to do next to be mentioned and cited more, and whether it worked. Accept a suggestion to track it; the next period checks it automatically.",
+      "tiles": {
+        "suggested": "Suggested",
+        "urgent": "{n} to fix first",
+        "inProgress": "In progress",
+        "awaiting": "{n} awaiting the next check",
+        "verified": "Verified",
+        "regressed": "{n} slipped back"
+      },
+      "tabs": {
+        "suggested": "Suggested",
+        "progress": "In progress",
+        "verified": "Verified",
+        "dismissed": "Dismissed"
+      },
+      "sources": {
+        "all": "All",
+        "audit": "Site audit",
+        "citation": "AI citations",
+        "search": "Search",
+        "metric": "Metric change"
+      },
+      "groups": {
+        "P0": "Fix first",
+        "P1": "Worth doing",
+        "P2": "Nice to have"
+      },
+      "steps": {
+        "open": "Accepted",
+        "doing": "In progress",
+        "done": "Done",
+        "verified": "Verified",
+        "regressed": "Regressed",
+        "dismissed": "Dismissed"
+      },
+      "actions": {
+        "accept": "Accept",
+        "dismiss": "Dismiss",
+        "start": "Start",
+        "markDone": "Mark done",
+        "reopen": "Reopen",
+        "restore": "Restore",
+        "showDetails": "Details",
+        "hideDetails": "Hide details"
+      },
+      "why": "Why it matters",
+      "how": "How to fix",
+      "doneWhen": "Done when",
+      "alsoCovers": "Also covers",
+      "similar_one": "+{n} similar search",
+      "similar_other": "+{n} similar searches",
+      "moreUrls": "and {n} more",
+      "openQuestion": "Open the question",
+      "seeIssues": "See it in Site audit",
+      "checks": {
+        "issue": "Verified when the next audit no longer finds {code}.",
+        "prompt": "Verified when visibility on this question rises beyond the noise (the 95% interval of the change is above zero).",
+        "notDown": "Verified when visibility is back within the noise of the baseline.",
+        "manual": "You decide: mark it done when finished."
+      },
+      "empty": {
+        "suggested": "No suggestions right now. Run a period to audit the site, sample answers and sync Google.",
+        "progress": "Nothing in progress. Accept a suggestion to start tracking it.",
+        "verified": "Nothing verified yet. Accepted actions are checked at the end of each period.",
+        "dismissed": "Nothing dismissed."
+      },
+      "connectPerplexity": "Connect Perplexity",
+      "hintNoSearch": "AI citation gaps need an engine that searches the web and returns sources, such as Perplexity or Doubao with its content plugin. The engines connected now answer from memory, so this source stays empty.",
+      "titles": {
+        "striking_distance": "Ranking candidate to review: {q}",
+        "traffic_drop": "Review the sustained drop in search clicks",
+        "search_candidate_why": "Position {position}, with {impressions} impressions. Review search intent and the associated page before choosing an action.",
+        "search_decline_why": "Clicks fell from {previous} to {current} across fully covered 28-day periods, with declines in both recent weeks. Inspect affected pages before choosing a change.",
+        "low_ctr": "Low click-through: {q}",
+        "content_decay": "Clicks declining: {q}",
+        "cannibalization": "Several pages compete for: {q}",
+        "visibility_down": "Visibility dropped",
+        "citation_social": "Show up in the discussion: {q}",
+        "citation_outreach": "Get into the reviews: {q}",
+        "citation_refresh": "Refresh an owned page that is sometimes cited: {q}",
+        "citation_creation": "Write a comparison: {q}",
+        "citation_recover": "Recover owned pages that stopped being cited"
+      }
+    },
+    "prioritization": {
+      "weekly": "This week’s focus",
+      "ranking": "Up to three actions. Technical faults come first within each priority, then stage, evidence, human ICE, reach and effort. ICE is a judgment, not ROI.",
+      "ice": "Your estimate (1–10)",
+      "impact": "Impact",
+      "confidence": "Confidence",
+      "ease": "Ease",
+      "effort": "Estimated hours (optional)",
+      "evidence": "Open search evidence",
+      "ctrTitle": "This site’s CTR reference",
+      "ctrNote": "Visible nonbrand queries only; the target query is excluded. At least 10 other queries and 1,000 impressions per rank band are required. These are heuristic thresholds.",
+      "ctrReady": "Rank {band} · {scope} · {from} to {through} · v{version} · CTR {ctr}",
+      "site": "whole site (broader reference)",
+      "segment": "matching country/device",
+      "ctrMissing": "No usable reference: {reason}. No opportunity clicks are calculated.",
+      "quality": "incomplete coverage or unknown/restricted quality",
+      "insufficient": "insufficient reference sample",
+      "brand": "branded query",
+      "rank": "outside reference rank bands",
+      "queries_one": "{n} reference query",
+      "queries_other": "{n} reference queries",
+      "scenario": "At this site’s reference CTR ({ctr}%), the current impressions imply {clicks} additional clicks as a scenario. This is not a forecast or evidence that a title change will work."
+    },
+    "nav": {
+      "sections": {
+        "measure": "AI visibility",
+        "improve": "Improve",
+        "project": "Project",
+        "workspace": "Workspace"
+      },
+      "overview": "Overview",
+      "visibility": "Visibility",
+      "sov": "Share of voice",
+      "citations": "Citations",
+      "fanout": "Query fan-out",
+      "answers": "Answers",
+      "question": "Question",
+      "actionPlan": "Action plan",
+      "audit": "Site audit",
+      "search": "Search traffic",
+      "reports": "Reports",
+      "brand": "Brand",
+      "competitors": "Competitors",
+      "questions": "Questions",
+      "schedule": "Schedule & runs",
+      "projects": "Projects",
+      "providers": "Model providers",
+      "users": "Users",
+      "google": "Google Search & GA4",
+      "help": "Help",
+      "tabs": {
+        "indexing": "Indexing",
+        "channels": "GA4 channels",
+        "landings": "GA4 landing pages",
+        "readiness": "Readiness",
+        "issues": "Issues",
+        "pages": "Pages",
+        "performance": "Performance",
+        "keywords": "Keywords"
+      }
+    }
+  },
+  "zh": {
+    "weeklyReport": {
+      "english": "English",
+      "chinese": "简体中文",
+      "portuguese": "Português",
+      "google": "Google 搜索与 GA4（辅助数据）",
+      "imports": "导入状态",
+      "importSnapshot": "最近保存的导入快照；上方覆盖信息以报表台账为准。",
+      "finalized": "{source} 资源 `{property}`：最终数据截至 {through}（{calendar}）。",
+      "daily": "日期总量：{impressions} 次展示、{clicks} 次点击。",
+      "official": "总量来自官方独立日期报表，不通过查询行相加得到。",
+      "gscTotals": "Search Console：{impressions} 次展示、{clicks} 次点击",
+      "gaTotals": "GA4：{sessions} 次会话、{events} 次关键事件；AI 引荐会话至少 {ai} 次。",
+      "pacific": "太平洋时间",
+      "propertyTime": "资源时区",
+      "aiChange": "{access}：连续两个 30 天窗口的回答为 {beforeX}/{beforeN} → {afterX}/{afterN}。仅描述事实，样本构成可能不同。",
+      "title": "每周增长复盘",
+      "language": "报告语言",
+      "health": "数据健康",
+      "stage": "项目重点",
+      "new_site": "新站：发现、收录与展示",
+      "established": "成熟站：搜索机会与渠道质量",
+      "ai": "AI 可见性",
+      "engines": "按引擎查看",
+      "changes": "可测量的主要变化",
+      "actions": "本周更新的行动",
+      "observations": "到期观察",
+      "next": "下周重点",
+      "rulesTitle": "如何阅读这份报告",
+      "rules": "API 与网页回答分别统计。搜索总量来自独立日期报表，可见查询不等于全部需求。GSC 与 GA4 的日历和归因不同，点击和会话不是精确漏斗。观察到变化不证明因果。缺失数据不是零。",
+      "none": "本节暂无可用数据或已记录行动。",
+      "unavailable": "数据源暂不可用，请检查连接或同步状态。",
+      "coverage": "{source}：{from} 至 {through}，覆盖 {covered}/{total} 天。",
+      "quality": "跨期可比：{value}。质量未知或受限时不生成诊断比较。",
+      "yes": "是",
+      "no": "否",
+      "visibility": "可见性：**{value}%**（{x}/{n} 个非品牌回答；95% 区间 {lo}-{hi}%）",
+      "small": "（小样本）",
+      "recognition": "品牌识别：{n} 个品牌回答中的 {value}%",
+      "aiWindow": "最近 30 天，按回答采样日期归属。",
+      "search": "Search Console：{clicks} 次点击、{impressions} 次展示（{from} 至 {through}）。",
+      "delta": "点击：{before} → {after}（{delta}%）。两个完整、可比的 28 天窗口。",
+      "indexing": "已知 URL：{known}；已检查：{inspected}；最近观察到收录：{indexed}。这是清单覆盖，不是全站收录率。",
+      "channel": "渠道",
+      "sessions": "会话",
+      "events": "关键事件次数",
+      "perSession": "每次会话事件次数（不是用户转化率）",
+      "window": "{from} 至 {through} · {timezone}",
+      "state": "状态",
+      "due": "到期：{date}",
+      "links": "打开来源证据",
+      "weekly": "最近 7 天的执行活动；测量窗口分别标明。",
+      "currentLanguage": "已保存报告：{language}",
+      "open": "待开始",
+      "doing": "进行中",
+      "done": "已完成",
+      "verified": "已验收",
+      "regressed": "已退步",
+      "dismissed": "已忽略",
+      "audit": "站点体检",
+      "searchSource": "搜索",
+      "citation": "AI 引用",
+      "metric": "指标变化"
+    },
+    "observation": {
+      "api": "API",
+      "web": "Web",
+      "title": "上线与效果观察",
+      "note": "任务进度与效果观察独立。上线时冻结基线和配置，修正需新增记录。结果说明相关变化，不证明因果。",
+      "new": "记录一次上线",
+      "hypothesis": "假设",
+      "metric": "主指标",
+      "clicks": "Google 点击",
+      "impressions": "Google 展示",
+      "visibility": "AI 提及",
+      "technical": "技术问题消除",
+      "guardrails": "需要人工复核的护栏",
+      "urls": "目标 URL（每行一个）",
+      "qids": "固定问题 ID（逗号分隔）",
+      "controls": "对照 URL（可选，每行一个）",
+      "owner": "负责人",
+      "effort": "投入工时",
+      "released": "上线时间",
+      "wait": "等待天数（0–90）",
+      "window": "窗口天数（28–90）",
+      "engine": "引擎代码",
+      "access": "访问方式",
+      "notes": "备注",
+      "record": "冻结基线并记录上线",
+      "evaluate": "评估 / 追加新版本",
+      "baseline": "冻结基线",
+      "followup": "观察窗口",
+      "pending": "待观察",
+      "improved": "观察到改善",
+      "declined": "观察到下降",
+      "insufficient": "证据不足",
+      "incomparable": "不可比较",
+      "rules": "搜索：两个窗口完整且各有至少 1,000 次展示；变化达到 25% 且至少 50 次点击（或 500 次展示）是经验复核门槛。排除上线当天，并留出 Google 数据成熟时间。AI：固定问题、模型、访问方式、策略和问题占比，至少 30 个回答。护栏及对照需人工复核。",
+      "empty": "尚未记录上线。完成任务不会自动宣称效果改善。",
+      "reason": "原因：{reason}",
+      "version": "结果 #{id} · {date}",
+      "notMeasured": "尚未测量",
+      "observed": "{value} / {exposure}",
+      "saved": "已记录上线并冻结基线。",
+      "windowReason": "固定观察窗口尚未成熟。",
+      "fresh_audit": "请在上线后重新抓取并审计所有目标 URL。",
+      "baselineReason": "冻结基线不完整，本次观察无法据此认定改善。",
+      "coverage": "等待完整、可用的 Google 数据。重新连接或完成同步后再评估。",
+      "sample_changed": "模型、问题或采样配置发生了变化。",
+      "sample_metadata": "缺少采样元数据。",
+      "property_changed": "Google 资源发生了变化。",
+      "prompt_changed": "选定问题被修改或停用。",
+      "scope_changed": "测量口径发生了变化。",
+      "sample_mix": "不同问题的采样占比发生了变化。",
+      "small_sample": "样本量不足。",
+      "within_noise": "观察到的差异仍在不确定范围内。",
+      "below_threshold": "变化未达到预先约定的复核门槛。",
+      "technical_clear": "新的抓取与审计未再发现目标问题。",
+      "technical_remaining": "目标问题仍然存在。",
+      "observed_change": "观察到了变化，其他修改和外部因素也可能解释它。",
+      "overlapping_changes": "测量窗口内另有已记录修改影响这些 URL 或问题。",
+      "missing_page": "部分目标页面缺少审计证据。",
+      "no_audit": "暂无审计。"
+    },
+    "plan": {
+      "description": "下一步做什么能让 AI 更多地提到和引用你，以及做完是否见效。接受建议后跟踪执行进度，记录上线后按固定窗口观察效果。",
+      "tiles": {
+        "suggested": "待处理建议",
+        "urgent": "{n} 条需优先处理",
+        "inProgress": "进行中",
+        "awaiting": "{n} 条等待下期验收",
+        "verified": "已验收",
+        "regressed": "{n} 条已回退"
+      },
+      "tabs": {
+        "suggested": "建议",
+        "progress": "进行中",
+        "verified": "已验收",
+        "dismissed": "已忽略"
+      },
+      "sources": {
+        "all": "全部",
+        "audit": "站点体检",
+        "citation": "AI 引用",
+        "search": "搜索",
+        "metric": "指标变化"
+      },
+      "groups": {
+        "P0": "优先处理",
+        "P1": "值得做",
+        "P2": "有空再做"
+      },
+      "steps": {
+        "open": "已接受",
+        "doing": "进行中",
+        "done": "已完成",
+        "verified": "已验收",
+        "regressed": "已回退",
+        "dismissed": "已忽略"
+      },
+      "actions": {
+        "accept": "接受",
+        "dismiss": "忽略",
+        "start": "开始",
+        "markDone": "标记完成",
+        "reopen": "重新打开",
+        "restore": "恢复",
+        "showDetails": "详情",
+        "hideDetails": "收起"
+      },
+      "why": "为什么重要",
+      "how": "怎么修",
+      "doneWhen": "验收标准",
+      "alsoCovers": "同时覆盖",
+      "similar_one": "另有 {n} 个相似搜索",
+      "similar_other": "另有 {n} 个相似搜索",
+      "moreUrls": "还有 {n} 个",
+      "openQuestion": "查看这个问题",
+      "seeIssues": "在站点体检中查看",
+      "checks": {
+        "issue": "下一次体检不再发现 {code} 即验收通过。",
+        "prompt": "这个问题的可见性显著上升（变化的 95% 区间高于零）即验收通过。",
+        "notDown": "可见性回到基线的噪声范围内即验收通过。",
+        "manual": "由你判断：完成后标记为已完成。"
+      },
+      "empty": {
+        "suggested": "暂时没有建议。运行一期，完成站点体检、回答采样和 Google 同步后再来看。",
+        "progress": "没有进行中的事项。接受一条建议即可开始跟踪。",
+        "verified": "还没有验收通过的事项。已接受的事项会在每期结束时验收。",
+        "dismissed": "没有已忽略的建议。"
+      },
+      "connectPerplexity": "连接 Perplexity",
+      "hintNoSearch": "AI 引用缺口需要一个会联网搜索并返回来源的引擎，例如 Perplexity，或开通了内容插件的豆包。当前连接的引擎只凭模型记忆作答，所以这一类建议会一直为空。",
+      "titles": {
+        "striking_distance": "待评估的排名机会：{q}",
+        "traffic_drop": "检查搜索点击持续下降",
+        "search_candidate_why": "平均排名 {position}，曝光 {impressions} 次。先检查搜索意图和关联页面，再决定是否采取行动。",
+        "search_decline_why": "在数据覆盖完整的 28 天周期中，点击从 {previous} 降至 {current}，最近两周也均有下降。先检查受影响的页面，再决定改动。",
+        "low_ctr": "点击率偏低：{q}",
+        "content_decay": "点击在下降：{q}",
+        "cannibalization": "多个页面在抢同一个搜索：{q}",
+        "visibility_down": "可见性下降",
+        "citation_social": "参与讨论：{q}",
+        "citation_outreach": "进入评测榜单：{q}",
+        "citation_refresh": "更新偶尔被引用的自有页面：{q}",
+        "citation_creation": "写一篇对比文章：{q}",
+        "citation_recover": "找回不再被引用的自有页面"
+      }
+    },
+    "prioritization": {
+      "weekly": "本周重点",
+      "ranking": "最多推荐三个行动。同一优先级内先处理技术故障，再考虑阶段、证据、人工 ICE、影响范围和投入。ICE 是判断，不是 ROI。",
+      "ice": "你的估计（1–10）",
+      "impact": "影响",
+      "confidence": "信心",
+      "ease": "容易程度",
+      "effort": "预计工时（可选）",
+      "evidence": "查看搜索证据",
+      "ctrTitle": "本站 CTR 参考",
+      "ctrNote": "仅使用可见非品牌查询，排除目标查询本身。每个排名档至少需要 10 个其他查询和 1,000 次展示；这些是经验门槛。",
+      "ctrReady": "排名 {band} · {scope} · {from} 至 {through} · v{version} · CTR {ctr}",
+      "site": "全站（较宽参考）",
+      "segment": "匹配国家/设备",
+      "ctrMissing": "暂无可用参考：{reason}。不计算机会点击。",
+      "quality": "覆盖不全或数据质量未知/受限",
+      "insufficient": "参考样本不足",
+      "brand": "品牌查询",
+      "rank": "超出参考排名档",
+      "queries_one": "{n} 个参考查询",
+      "queries_other": "{n} 个参考查询",
+      "scenario": "按本站参考 CTR（{ctr}%），当前展示对应额外 {clicks} 次点击的情景估计。这不是预测，也不能证明修改标题会有效。"
+    },
+    "nav": {
+      "sections": {
+        "measure": "AI 可见性",
+        "improve": "优化",
+        "project": "项目设置",
+        "workspace": "工作区"
+      },
+      "overview": "概览",
+      "visibility": "可见性",
+      "sov": "声量份额",
+      "citations": "引用来源",
+      "fanout": "搜索扩展",
+      "answers": "回答",
+      "question": "问题详情",
+      "actionPlan": "行动计划",
+      "audit": "站点体检",
+      "search": "搜索流量",
+      "reports": "报告",
+      "brand": "品牌",
+      "competitors": "竞品",
+      "questions": "问题库",
+      "schedule": "计划与运行",
+      "projects": "项目",
+      "providers": "模型服务商",
+      "users": "用户",
+      "google": "Google 搜索与 GA4",
+      "help": "帮助",
+      "tabs": {
+        "indexing": "收录",
+        "channels": "GA4 渠道",
+        "landings": "GA4 落地页",
+        "readiness": "就绪度",
+        "issues": "问题",
+        "pages": "页面",
+        "performance": "表现",
+        "keywords": "关键词"
+      }
+    },
+    "rules": {
+      "AI_UA_BLOCKED": {
+        "title": "WAF 或 CDN 拒绝 AI 爬虫",
+        "why": "浏览器能打开首页，但真实的 AI 爬虫 UA 收到 403/406，尽管 robots.txt 允许它们。",
+        "fix": "在防爬虫规则里放行这些 UA，然后重新抓取。"
+      },
+      "BROKEN_INTERNAL_LINK": {
+        "title": "站内链接指向失效地址",
+        "why": "爬虫顺着链接发现页面；失效链接浪费请求，还会让目标页被隐藏。",
+        "fix": "把链接改到可访问的地址，或删除它。"
+      },
+      "CANONICAL_MISMATCH": {
+        "title": "canonical 指向了别的地址",
+        "why": "信号会合并到目标地址，所以展示的不会是这个页面。",
+        "fix": "确认这是有意合并；否则把 canonical 指向本页。"
+      },
+      "CLIENT_ERROR": {
+        "title": "页面返回 4xx",
+        "why": "4xx 页面不会被收录；如果还在链接或 sitemap 里，会浪费抓取。",
+        "fix": "恢复页面，或从链接和 sitemap 中移除并重定向到最接近的可用页面。"
+      },
+      "DUPLICATE_BODY": {
+        "title": "多个页面正文几乎相同",
+        "why": "搜索引擎只收录重复内容中的一个版本，你想要的那个可能落选。",
+        "fix": "保留一个规范版本，其余用 301 或 canonical 指向它。"
+      },
+      "DUPLICATE_META_DESCRIPTION": {
+        "title": "多个页面描述相同",
+        "why": "Google 建议每个页面使用独立的描述。",
+        "fix": "为每个页面写专属描述，或删掉重复的。"
+      },
+      "DUPLICATE_TITLE": {
+        "title": "多个页面标题相同",
+        "why": "标题相同让页面难以区分，往往说明存在重复地址。",
+        "fix": "每个页面写不同的标题，或用 canonical、301 合并重复页。"
+      },
+      "FEW_EXTERNAL_LINKS": {
+        "title": "引用的来源太少",
+        "why": "在 GEO-bench 实验中，标注来源是效果最强的改写方式之一。",
+        "fix": "为你的论断链接出处。"
+      },
+      "FEW_H2": {
+        "title": "小节太少",
+        "why": "被引用最多的四分之一页面平均有 10.6 个标题。仅为相关性。",
+        "fix": "把长内容拆成若干小节，每节回答一个问题。"
+      },
+      "HREFLANG_LOW": {
+        "title": "多语言站点几乎没有 hreflang",
+        "why": "hreflang 告诉引擎该展示哪个语言版本；没有它，各版本会互相竞争。",
+        "fix": "在各语言版本之间添加相互指向的 hreflang。"
+      },
+      "IMAGES_MISSING_ALT": {
+        "title": "图片缺少 alt 文本",
+        "why": "Google 用 alt 文本理解图片，无障碍也需要它。",
+        "fix": "为有信息量的图片写 alt 描述；装饰性图片用 alt=\"\"。"
+      },
+      "LANG_IMBALANCE": {
+        "title": "各语言内容量差距很大",
+        "why": "站点同时发布中英文内容，但其中一种语言的内容页少得多。",
+        "fix": "先补齐薄弱的一侧，从与你的问题相关的页面开始。"
+      },
+      "LLMS_TXT_BROKEN_LINKS": {
+        "title": "llms.txt 链接到失效或被屏蔽的页面",
+        "why": "一份指向 404 或禁止访问路径的地图，比没有更糟。",
+        "fix": "修复或删除失效条目。"
+      },
+      "LOW_CONTENT_PAGE": {
+        "title": "功能页文字很少",
+        "why": "登录、购物车、联系页本来就短；列出来只是为了不把它们误判为空壳页。",
+        "fix": "除非这个页面需要排名，否则无需处理。"
+      },
+      "LOW_LIST_DENSITY": {
+        "title": "几乎没有列表",
+        "why": "被引用最多的四分之一页面列表密度为 0.43，最少的四分之一只有 0.05。仅为相关性。",
+        "fix": "把枚举内容改成 ul/ol 列表。"
+      },
+      "LOW_RELEVANCE": {
+        "title": "标题没用上问题里的用词",
+        "why": "与查询的相关度是影响力最强的单一预测因子（r = 0.432）。",
+        "fix": "在 title、H1 和 H2 里使用买家会用的词。"
+      },
+      "MISSING_H1": {
+        "title": "内容页没有 H1",
+        "why": "主标题是 Google 生成标题链接的信号之一，也向读者说明主题。",
+        "fix": "添加一个说明页面主题的 H1。"
+      },
+      "MISSING_META_DESCRIPTION": {
+        "title": "缺少 meta 描述",
+        "why": "Google 可能用描述作为摘要；没有时会从正文截取。",
+        "fix": "写一两句话的摘要。"
+      },
+      "MISSING_TITLE": {
+        "title": "缺少 <title>",
+        "why": "title 元素是 Google 生成标题链接的主要来源。",
+        "fix": "添加独立、描述性的标题。"
+      },
+      "MULTIPLE_H1": {
+        "title": "有多个 H1",
+        "why": "通常是模板问题，例如把 logo 标成了 H1。Google 不会因此降权，列出只为清晰。",
+        "fix": "只为主标题保留一个 H1。"
+      },
+      "NOINDEX": {
+        "title": "页面设置了 noindex",
+        "why": "noindex 告诉搜索引擎不要展示该页，也会让它进不了基于索引的 AI 功能。",
+        "fix": "需要被发现的页面去掉 noindex。"
+      },
+      "NON_200_STATUS": {
+        "title": "页面返回非 200 的成功或跳转码",
+        "why": "爬虫对 202 和 3xx 的处理与 200 不同。",
+        "fix": "直接用 200 返回规范地址。"
+      },
+      "NO_AUTHOR_ENTITY": {
+        "title": "文章标记缺少作者",
+        "why": "Google 的内容指南关心内容由谁创作；Article 标记可以说明。",
+        "fix": "在 Article 标记里加上作者，并在页面显示署名。"
+      },
+      "NO_CANONICAL": {
+        "title": "没有 canonical",
+        "why": "存在重复时，没有它搜索引擎会自己挑选规范地址。",
+        "fix": "添加指向自身的 rel=canonical。"
+      },
+      "NO_COMPARISON": {
+        "title": "没有对比内容",
+        "why": "在吸收数据集中，对比型页面的平均影响力高 55.3%。",
+        "fix": "增加一个按同一标准对比各选项的表格。"
+      },
+      "NO_DATE": {
+        "title": "没有可见日期",
+        "why": "中文引擎研究中，时效类查询被引内容的半衰期约 39 天；日期让读者和引擎判断新鲜度。",
+        "fix": "显示发布和更新日期，并加入 Article 标记。"
+      },
+      "NO_DEFINITION": {
+        "title": "没有定义句",
+        "why": "在吸收数据集中，含定义的页面平均影响力高 57.3%。",
+        "fix": "开头用一句话说明主题是什么。"
+      },
+      "NO_HOWTO": {
+        "title": "没有操作步骤",
+        "why": "在吸收数据集中，操作指南类内容的平均影响力高 41.2%。",
+        "fix": "在需要读者动手的地方加上编号步骤。"
+      },
+      "NO_JSONLD": {
+        "title": "没有结构化数据",
+        "why": "结构化数据帮助引擎给页面归类。Google 表示 AI 功能并不要求它。",
+        "fix": "首页加 Organization，合适的页面加 Article 或 Product。"
+      },
+      "NO_LLMS_TXT": {
+        "title": "没有 /llms.txt",
+        "why": "llms.txt 是 2024 年的提案，不是标准，也没有引擎说明会读取它。成本低，收益不确定。",
+        "fix": "可选：用品牌事实生成并发布 /llms.txt。"
+      },
+      "NO_NUMBERS": {
+        "title": "具体数字太少",
+        "why": "在 GEO-bench 实验中，加入统计数据是效果最强的改写之一；含数字的页面在吸收数据集中影响力高 61.6%。",
+        "fix": "加入带单位、日期和出处的数字。"
+      },
+      "NO_QUOTABLE_PASSAGE": {
+        "title": "没有可独立引用的段落",
+        "why": "检索按段落而不是按页面选材。规则：至少 60 词且含数字、定义或步骤的小节。该规则为本项目自定。",
+        "fix": "改写两三个关键小节，让第一句直接回答小节标题。"
+      },
+      "NO_SITEMAP": {
+        "title": "没有 sitemap.xml",
+        "why": "sitemap 告诉爬虫哪些地址重要；大型或内链较弱的站点受益最大。",
+        "fix": "发布只列规范地址的 /sitemap.xml。"
+      },
+      "ORPHAN_PAGE": {
+        "title": "没有页面链接到这里",
+        "why": "只能通过 sitemap 到达的页面更难被发现，也缺少站内上下文。",
+        "fix": "从相关页面添加指向它的链接。"
+      },
+      "PAGE_UNREACHABLE": {
+        "title": "页面无法抓取",
+        "why": "网络错误或超时意味着爬虫拿不到内容。",
+        "fix": "检查这个地址的 DNS、TLS 和服务器日志。"
+      },
+      "REDIRECT_CHAIN": {
+        "title": "到达页面前跳转了两次以上",
+        "why": "每次跳转都增加延迟，爬虫也会放弃过长的跳转链。",
+        "fix": "直接跳到最终地址，并更新站内链接。"
+      },
+      "ROBOTS_BLOCKS_AI": {
+        "title": "robots.txt 屏蔽了 AI 爬虫",
+        "why": "按 RFC 9309，匹配的 Disallow 组会阻止该爬虫抓取对应路径。",
+        "fix": "添加明确放行 GPTBot、OAI-SearchBot、ClaudeBot、PerplexityBot、Google-Extended 以及你关注的地区爬虫的 User-agent 组。"
+      },
+      "SCHEMA_CONTENT_MISMATCH": {
+        "title": "结构化数据与可见内容不符",
+        "why": "Google 的规范要求标记描述的是用户看得到的内容。",
+        "fix": "删除该标记，或补上对应的可见内容。"
+      },
+      "SERVER_ERROR": {
+        "title": "服务器错误（5xx）",
+        "why": "Google 说明反复出现 5xx 会降低抓取频率，甚至让地址掉出索引。",
+        "fix": "修复服务器错误；页面已下线则返回 404/410。"
+      },
+      "SHORT_CONTENT": {
+        "title": "内容页偏短",
+        "why": "在引用数据集中，前四分之一页面平均 1,943 词，后四分之一只有 170 词。这是相关性，不是目标。",
+        "fix": "补充读者需要的实质内容（数字、对比、步骤），不要注水。"
+      },
+      "SITEMAP_LOW_VALUE_URLS": {
+        "title": "sitemap 里有参数、搜索或翻页地址",
+        "why": "sitemap 应只列出你希望被收录的规范地址。",
+        "fix": "把这些地址从 sitemap 中移除。"
+      },
+      "SITEMAP_NOT_DECLARED": {
+        "title": "robots.txt 没有声明 sitemap",
+        "why": "有了 Sitemap: 这一行，任何爬虫不用告知也能找到 sitemap。",
+        "fix": "在 robots.txt 里加上 `Sitemap: https://example.com/sitemap.xml`。"
+      },
+      "SLOW_RESPONSE": {
+        "title": "服务器响应慢",
+        "why": "HTML 超过 3 秒才返回；爬虫在慢站点上抓取的页面更少。3 秒阈值为本项目规则。",
+        "fix": "在边缘缓存 HTML，或排查慢的路由。"
+      },
+      "SPA_SHELL": {
+        "title": "静态 HTML 里没有内容",
+        "why": "Google 在延迟队列里渲染 JavaScript，很多 AI 爬虫只读静态 HTML，所以纯前端渲染的页面看起来是空的。",
+        "fix": "内容页使用服务端渲染或预渲染。"
+      },
+      "TITLE_TOO_LONG": {
+        "title": "标题过长",
+        "why": "Google 没有长度上限，但会按显示宽度截断。此处阈值约为 60 个拉丁字符或 32 个中日韩字符。",
+        "fix": "把关键词放在最前面。"
+      },
+      "XROBOTS_NOINDEX": {
+        "title": "X-Robots-Tag 响应头含 noindex",
+        "why": "该响应头与 meta 标签效果相同，但在源码里看不到，常由 CDN 注入。",
+        "fix": "在服务器或 CDN 上删除这条响应头规则。"
+      }
+    }
+  },
+  "pt": {
+    "weeklyReport": {
+      "english": "English",
+      "chinese": "Chinês simplificado",
+      "portuguese": "Português",
+      "google": "Google Search e GA4 (dados de apoio)",
+      "imports": "Estado da importação",
+      "importSnapshot": "Último registro de importação; a cobertura acima reflete o histórico dos relatórios.",
+      "finalized": "Propriedade {source} `{property}`: dados finais até {through} ({calendar}).",
+      "daily": "Totais diários: {impressions} impressões, {clicks} cliques.",
+      "official": "Totais vêm dos totais diários oficiais, nunca da soma das linhas de consultas.",
+      "gscTotals": "Search Console: {impressions} impressões, {clicks} cliques",
+      "gaTotals": "GA4: {sessions} sessões, {events} eventos principais; pelo menos {ai} sessões de referências de IA.",
+      "pacific": "horário do Pacífico",
+      "propertyTime": "fuso da propriedade",
+      "aiChange": "{access}: {beforeX}/{beforeN} → {afterX}/{afterN} respostas em janelas consecutivas de 30 dias. Apenas descritivo; a composição pode variar.",
+      "title": "Revisão semanal de crescimento",
+      "language": "Idioma do relatório",
+      "health": "Qualidade dos dados",
+      "stage": "Foco do projeto",
+      "new_site": "Site novo: descoberta, indexação e impressões",
+      "established": "Site consolidado: oportunidades de busca e qualidade dos canais",
+      "ai": "Visibilidade em IA",
+      "engines": "Por mecanismo",
+      "changes": "Maiores mudanças medidas",
+      "actions": "Ações atualizadas nesta semana",
+      "observations": "Observações vencidas",
+      "next": "Foco da próxima semana",
+      "rulesTitle": "Como ler este relatório",
+      "rules": "Respostas de API e web são separadas. Totais de busca vêm de relatórios por data; consultas visíveis não representam toda a demanda. GSC e GA4 usam calendários e atribuições diferentes: cliques e sessões não formam um funil exato. Mudanças observadas não comprovam causas. Dados ausentes não são zero.",
+      "none": "Sem dados utilizáveis ou ações registradas nesta seção.",
+      "unavailable": "Fonte indisponível; verifique a conexão ou a sincronização.",
+      "coverage": "{source}: {from} a {through}, {covered}/{total} dias cobertos.",
+      "quality": "Períodos comparáveis: {value}. Qualidade desconhecida ou restrita bloqueia comparações diagnósticas.",
+      "yes": "sim",
+      "no": "não",
+      "visibility": "Visibilidade: **{value}%** ({x} de {n} respostas sem marca; IC de 95% {lo}-{hi}%)",
+      "small": "(amostra pequena)",
+      "recognition": "Reconhecimento de marca: {value}% de {n} respostas de marca",
+      "aiWindow": "Últimos 30 dias; respostas atribuídas às datas de amostragem.",
+      "search": "Search Console: {clicks} cliques, {impressions} impressões ({from} a {through}).",
+      "delta": "Cliques: {before} → {after} ({delta}%). Janelas completas e comparáveis de 28 dias.",
+      "indexing": "URLs conhecidas: {known}; inspecionadas: {inspected}; indexadas na última observação: {indexed}. É cobertura do inventário, não taxa de indexação do site inteiro.",
+      "channel": "Canal",
+      "sessions": "Sessões",
+      "events": "Eventos principais",
+      "perSession": "Eventos por sessão (não é taxa de conversão de usuários)",
+      "window": "{from} a {through} · {timezone}",
+      "state": "Estado",
+      "due": "Prazo: {date}",
+      "links": "Abrir evidências da fonte",
+      "weekly": "Atividade dos últimos 7 dias; janelas de medição indicadas separadamente.",
+      "currentLanguage": "Relatório salvo: {language}",
+      "open": "Aberta",
+      "doing": "Em andamento",
+      "done": "Concluída",
+      "verified": "Verificada",
+      "regressed": "Regrediu",
+      "dismissed": "Descartada",
+      "audit": "Auditoria do site",
+      "searchSource": "Busca",
+      "citation": "Citações de IA",
+      "metric": "Mudança de métrica"
+    },
+    "observation": {
+      "api": "API",
+      "web": "Web",
+      "title": "Publicação e observações de efeito",
+      "note": "O progresso da tarefa e os efeitos são separados. A publicação congela a referência e as configurações. Correções criam outro registro. Resultados indicam associações, não causas.",
+      "new": "Registrar publicação",
+      "hypothesis": "Hipótese",
+      "metric": "Métrica principal",
+      "clicks": "Cliques do Google",
+      "impressions": "Impressões do Google",
+      "visibility": "Menções de IA",
+      "technical": "Problema técnico resolvido",
+      "guardrails": "Limites para revisão manual",
+      "urls": "URLs alvo (uma por linha)",
+      "qids": "IDs fixos de perguntas (separados por vírgula)",
+      "controls": "URLs de controle (opcional, uma por linha)",
+      "owner": "Responsável",
+      "effort": "Horas investidas",
+      "released": "Publicado em",
+      "wait": "Dias de espera (0–90)",
+      "window": "Dias da janela (28–90)",
+      "engine": "Código do mecanismo",
+      "access": "Acesso",
+      "notes": "Notas",
+      "record": "Congelar referência e registrar",
+      "evaluate": "Avaliar / adicionar nova versão",
+      "baseline": "Referência congelada",
+      "followup": "Janela de observação",
+      "pending": "Aguardando observação",
+      "improved": "Melhoria observada",
+      "declined": "Queda observada",
+      "insufficient": "Evidência insuficiente",
+      "incomparable": "Não comparável",
+      "rules": "Pesquisa: janelas completas com pelo menos 1.000 impressões em cada; variações ≥25% e ≥50 cliques (ou 500 impressões) são limites heurísticos. Excluímos o dia da publicação e aguardamos a finalização do Google. IA: mesmas perguntas, modelo, acesso, estratégia e proporções, com pelo menos 30 respostas. Limites e controles exigem revisão manual.",
+      "empty": "Nenhuma publicação registrada. Concluir uma tarefa não comprova efeito.",
+      "reason": "Motivo: {reason}",
+      "version": "Resultado #{id} · {date}",
+      "notMeasured": "Não medido",
+      "observed": "{value} / {exposure}",
+      "saved": "Publicação registrada com referência congelada.",
+      "windowReason": "A janela fixa ainda não terminou.",
+      "fresh_audit": "Rastreie e audite todas as URLs alvo após a publicação.",
+      "baselineReason": "A referência congelada está incompleta; não permite confirmar melhoria.",
+      "coverage": "Aguardando dados completos e utilizáveis do Google. Reconecte ou conclua a sincronização e avalie novamente.",
+      "sample_changed": "Modelo, pergunta ou configuração de amostragem mudou.",
+      "sample_metadata": "Faltam metadados de amostragem.",
+      "property_changed": "A propriedade do Google mudou.",
+      "prompt_changed": "As perguntas selecionadas foram alteradas ou desativadas.",
+      "scope_changed": "O escopo da medição mudou.",
+      "sample_mix": "As proporções das perguntas mudaram.",
+      "small_sample": "A amostra é pequena demais.",
+      "within_noise": "A diferença permanece dentro da incerteza.",
+      "below_threshold": "A mudança está abaixo do limite de revisão definido.",
+      "technical_clear": "O novo rastreamento e a auditoria não encontraram o problema alvo.",
+      "technical_remaining": "O problema alvo permanece.",
+      "observed_change": "Uma mudança foi observada; outras alterações e fatores externos podem explicá-la.",
+      "overlapping_changes": "Outra alteração registrada afeta estas URLs ou perguntas na janela.",
+      "missing_page": "Algumas páginas alvo não têm evidências de auditoria.",
+      "no_audit": "Não há auditoria disponível."
+    },
+    "plan": {
+      "description": "O que fazer a seguir para ser mais mencionado e citado, e se funcionou. Aceite uma sugestão para acompanhar o progresso e registre a publicação para observar efeitos em uma janela fixa.",
+      "tiles": {
+        "suggested": "Sugestões",
+        "urgent": "{n} para corrigir primeiro",
+        "inProgress": "Em andamento",
+        "awaiting": "{n} aguardando a próxima verificação",
+        "verified": "Verificadas",
+        "regressed": "{n} regrediram"
+      },
+      "tabs": {
+        "suggested": "Sugestões",
+        "progress": "Em andamento",
+        "verified": "Verificadas",
+        "dismissed": "Descartadas"
+      },
+      "sources": {
+        "all": "Todas",
+        "audit": "Auditoria do site",
+        "citation": "Citações em IA",
+        "search": "Busca",
+        "metric": "Mudança de métrica"
+      },
+      "groups": {
+        "P0": "Corrigir primeiro",
+        "P1": "Vale a pena",
+        "P2": "Se sobrar tempo"
+      },
+      "steps": {
+        "open": "Aceita",
+        "doing": "Em andamento",
+        "done": "Concluída",
+        "verified": "Verificada",
+        "regressed": "Regrediu",
+        "dismissed": "Descartada"
+      },
+      "actions": {
+        "accept": "Aceitar",
+        "dismiss": "Descartar",
+        "start": "Começar",
+        "markDone": "Marcar como concluída",
+        "reopen": "Reabrir",
+        "restore": "Restaurar",
+        "showDetails": "Detalhes",
+        "hideDetails": "Ocultar detalhes"
+      },
+      "why": "Por que importa",
+      "how": "Como corrigir",
+      "doneWhen": "Concluída quando",
+      "alsoCovers": "Também cobre",
+      "similar_one": "+{n} busca semelhante",
+      "similar_other": "+{n} buscas semelhantes",
+      "moreUrls": "e mais {n}",
+      "openQuestion": "Abrir a pergunta",
+      "seeIssues": "Ver na auditoria do site",
+      "checks": {
+        "issue": "Verificada quando a próxima auditoria não encontrar mais {code}.",
+        "prompt": "Verificada quando a visibilidade nesta pergunta sobe além do ruído (o intervalo de 95% da mudança fica acima de zero).",
+        "notDown": "Verificada quando a visibilidade volta ao nível de ruído da linha de base.",
+        "manual": "Você decide: marque como concluída ao terminar."
+      },
+      "empty": {
+        "suggested": "Nenhuma sugestão no momento. Execute um período para auditar o site, amostrar respostas e sincronizar o Google.",
+        "progress": "Nada em andamento. Aceite uma sugestão para começar a acompanhá-la.",
+        "verified": "Nada verificado ainda. As ações aceitas são verificadas ao fim de cada período.",
+        "dismissed": "Nada descartado."
+      },
+      "connectPerplexity": "Conectar Perplexity",
+      "hintNoSearch": "As lacunas de citação em IA precisam de um mecanismo que pesquise na web e retorne fontes, como Perplexity ou Doubao com o plugin de conteúdo. Os mecanismos conectados agora respondem de memória, então esta fonte fica vazia.",
+      "titles": {
+        "striking_distance": "Candidato de ranking para analisar: {q}",
+        "traffic_drop": "Analisar a queda persistente de cliques na busca",
+        "search_candidate_why": "Posição {position}, com {impressions} impressões. Analise a intenção de busca e a página associada antes de escolher uma ação.",
+        "search_decline_why": "Os cliques caíram de {previous} para {current} em períodos de 28 dias com cobertura completa, com quedas nas duas semanas recentes. Analise as páginas afetadas antes de escolher uma alteração.",
+        "low_ctr": "Taxa de cliques baixa: {q}",
+        "content_decay": "Cliques em queda: {q}",
+        "cannibalization": "Várias páginas disputam: {q}",
+        "visibility_down": "A visibilidade caiu",
+        "citation_social": "Participe da discussão: {q}",
+        "citation_outreach": "Entre nas avaliações: {q}",
+        "citation_refresh": "Atualize uma página própria citada às vezes: {q}",
+        "citation_creation": "Escreva uma comparação: {q}",
+        "citation_recover": "Recupere páginas próprias que deixaram de ser citadas"
+      }
+    },
+    "prioritization": {
+      "weekly": "Foco desta semana",
+      "ranking": "Até três ações. Em cada prioridade, falhas técnicas vêm primeiro, seguidas de fase, evidências, ICE manual, alcance e esforço. ICE é uma avaliação, não ROI.",
+      "ice": "Sua estimativa (1–10)",
+      "impact": "Impacto",
+      "confidence": "Confiança",
+      "ease": "Facilidade",
+      "effort": "Horas estimadas (opcional)",
+      "evidence": "Abrir evidências de pesquisa",
+      "ctrTitle": "Referência de CTR deste site",
+      "ctrNote": "Somente consultas visíveis sem marca; a consulta alvo é excluída. Cada faixa exige pelo menos 10 outras consultas e 1.000 impressões. São limites heurísticos.",
+      "ctrReady": "Posição {band} · {scope} · {from} a {through} · v{version} · CTR {ctr}",
+      "site": "site inteiro (referência mais ampla)",
+      "segment": "país/dispositivo correspondente",
+      "ctrMissing": "Sem referência utilizável: {reason}. Não calculamos cliques potenciais.",
+      "quality": "cobertura incompleta ou qualidade desconhecida/restrita",
+      "insufficient": "amostra de referência insuficiente",
+      "brand": "consulta de marca",
+      "rank": "fora das faixas de posição",
+      "queries_one": "{n} consulta de referência",
+      "queries_other": "{n} consultas de referência",
+      "scenario": "Com o CTR de referência deste site ({ctr}%), as impressões atuais sugerem {clicks} cliques adicionais em um cenário. Não é uma previsão nem evidência de que mudar o título funcionará."
+    },
+    "nav": {
+      "sections": {
+        "measure": "Visibilidade em IA",
+        "improve": "Melhorar",
+        "project": "Projeto",
+        "workspace": "Espaço de trabalho"
+      },
+      "overview": "Visão geral",
+      "visibility": "Visibilidade",
+      "sov": "Participação de voz",
+      "citations": "Citações",
+      "fanout": "Expansão de buscas",
+      "answers": "Respostas",
+      "question": "Pergunta",
+      "actionPlan": "Plano de ação",
+      "audit": "Auditoria do site",
+      "search": "Tráfego de busca",
+      "reports": "Relatórios",
+      "brand": "Marca",
+      "competitors": "Concorrentes",
+      "questions": "Perguntas",
+      "schedule": "Agenda e execuções",
+      "projects": "Projetos",
+      "providers": "Provedores de modelos",
+      "users": "Usuários",
+      "google": "Google Search e GA4",
+      "help": "Ajuda",
+      "tabs": {
+        "indexing": "Indexação",
+        "channels": "Canais GA4",
+        "landings": "Páginas de entrada GA4",
+        "readiness": "Prontidão",
+        "issues": "Problemas",
+        "pages": "Páginas",
+        "performance": "Desempenho",
+        "keywords": "Palavras-chave"
+      }
+    },
+    "rules": {
+      "AI_UA_BLOCKED": {
+        "title": "WAF ou CDN rejeita os user agents de rastreadores de IA",
+        "why": "A página inicial carrega no navegador, mas retorna 403/406 para os user agents reais de rastreadores de IA, mesmo com o robots.txt permitindo.",
+        "fix": "Libere esses user agents nas regras de proteção contra bots e rastreie de novo."
+      },
+      "BROKEN_INTERNAL_LINK": {
+        "title": "Link interno quebrado",
+        "why": "Rastreadores seguem links para descobrir páginas; links quebrados desperdiçam requisições e escondem o destino.",
+        "fix": "Aponte o link para a URL ativa ou remova-o."
+      },
+      "CANONICAL_MISMATCH": {
+        "title": "Canonical aponta para outra URL",
+        "why": "Os sinais são consolidados no destino, então esta página não será a exibida.",
+        "fix": "Confirme se a consolidação é intencional; caso contrário, aponte o canonical para esta URL."
+      },
+      "CLIENT_ERROR": {
+        "title": "Página retorna 4xx",
+        "why": "URLs 4xx não são indexadas; se estiverem em links ou no sitemap, desperdiçam rastreamento.",
+        "fix": "Restaure a página ou remova-a dos links e do sitemap e redirecione para a página ativa mais próxima."
+      },
+      "DUPLICATE_BODY": {
+        "title": "Páginas com texto quase idêntico",
+        "why": "Mecanismos de busca indexam só uma versão de conteúdo duplicado; a que você quer pode perder.",
+        "fix": "Mantenha uma versão canônica e aplique 301 ou canonical nas demais."
+      },
+      "DUPLICATE_META_DESCRIPTION": {
+        "title": "Páginas com a mesma meta description",
+        "why": "O Google recomenda uma descrição única por página.",
+        "fix": "Escreva uma descrição específica por página ou remova a duplicada."
+      },
+      "DUPLICATE_TITLE": {
+        "title": "Páginas com o mesmo título",
+        "why": "Títulos idênticos dificultam distinguir as páginas e costumam indicar URLs duplicadas.",
+        "fix": "Escreva um título distinto por página ou consolide duplicatas com canonical ou 301."
+      },
+      "FEW_EXTERNAL_LINKS": {
+        "title": "Cita poucas fontes",
+        "why": "Citar fontes esteve entre as reescritas mais eficazes no experimento GEO-bench.",
+        "fix": "Adicione links para as fontes das suas afirmações."
+      },
+      "FEW_H2": {
+        "title": "Poucas seções",
+        "why": "As páginas mais citadas (quartil superior) tinham em média 10,6 títulos. Apenas correlação.",
+        "fix": "Divida o conteúdo longo em seções que respondam a uma pergunta cada."
+      },
+      "HREFLANG_LOW": {
+        "title": "Site multilíngue com pouco hreflang",
+        "why": "O hreflang diz aos mecanismos qual versão de idioma exibir; sem ele, as versões competem entre si.",
+        "fix": "Adicione links hreflang recíprocos entre as versões de idioma."
+      },
+      "IMAGES_MISSING_ALT": {
+        "title": "Imagens sem texto alternativo",
+        "why": "O Google usa o texto alt para entender imagens, e a acessibilidade exige isso.",
+        "fix": "Descreva imagens informativas no alt; use alt=\"\" nas decorativas."
+      },
+      "LANG_IMBALANCE": {
+        "title": "Idiomas muito desiguais",
+        "why": "O site publica em chinês e inglês, mas um dos idiomas tem bem menos páginas de conteúdo.",
+        "fix": "Reduza a diferença no idioma mais fraco, começando pelas páginas ligadas às suas perguntas."
+      },
+      "LLMS_TXT_BROKEN_LINKS": {
+        "title": "llms.txt aponta para páginas quebradas ou bloqueadas",
+        "why": "Um mapa que aponta para 404 ou caminhos bloqueados é pior do que nenhum.",
+        "fix": "Corrija ou remova as entradas quebradas."
+      },
+      "LOW_CONTENT_PAGE": {
+        "title": "Página funcional com pouco texto",
+        "why": "Páginas de login, carrinho e contato costumam ser curtas; aparecem aqui só para não serem confundidas com páginas vazias.",
+        "fix": "Nenhuma ação necessária, a menos que a página precise ranquear."
+      },
+      "LOW_LIST_DENSITY": {
+        "title": "Quase sem listas",
+        "why": "Páginas mais citadas tinham densidade de listas de 0,43 contra 0,05 nas menos citadas. Apenas correlação.",
+        "fix": "Transforme enumerações em listas ul/ol."
+      },
+      "LOW_RELEVANCE": {
+        "title": "Títulos não usam as palavras das perguntas",
+        "why": "A relevância para a consulta foi o preditor isolado mais forte de influência (r = 0,432).",
+        "fix": "Use as palavras dos compradores no title, no H1 e nos H2."
+      },
+      "MISSING_H1": {
+        "title": "Página de conteúdo sem H1",
+        "why": "O título principal é um dos sinais que o Google usa para os links de título e mostra o tema ao leitor.",
+        "fix": "Adicione um H1 que diga o tema da página."
+      },
+      "MISSING_META_DESCRIPTION": {
+        "title": "Sem meta description",
+        "why": "O Google pode usar a descrição no snippet; sem ela, o trecho vem do texto da página.",
+        "fix": "Adicione um resumo de uma ou duas frases."
+      },
+      "MISSING_TITLE": {
+        "title": "Sem <title>",
+        "why": "O elemento title é a principal fonte do Google para os links de título.",
+        "fix": "Adicione um título único e descritivo."
+      },
+      "MULTIPLE_H1": {
+        "title": "Mais de um H1",
+        "why": "Geralmente é erro de template, como o logo marcado como H1. O Google não penaliza; listado para clareza.",
+        "fix": "Mantenha um único H1 para o título principal."
+      },
+      "NOINDEX": {
+        "title": "Página com meta robots noindex",
+        "why": "noindex diz aos mecanismos para não mostrar a página, o que também a exclui dos recursos de IA baseados no índice.",
+        "fix": "Remova o noindex das páginas que devem ser encontradas."
+      },
+      "NON_200_STATUS": {
+        "title": "Página retorna código de sucesso diferente de 200 ou redirecionamento",
+        "why": "Rastreadores tratam respostas 202 e 3xx de forma diferente de 200.",
+        "fix": "Sirva a URL canônica diretamente com 200."
+      },
+      "NO_AUTHOR_ENTITY": {
+        "title": "Marcação de artigo sem autor",
+        "why": "As diretrizes do Google perguntam quem criou o conteúdo; a marcação Article pode informar.",
+        "fix": "Adicione author à marcação Article e mostre a assinatura."
+      },
+      "NO_CANONICAL": {
+        "title": "Sem link canonical",
+        "why": "Sem ele, os mecanismos escolhem sozinhos a URL canônica quando há duplicatas.",
+        "fix": "Adicione um rel=canonical autorreferente."
+      },
+      "NO_COMPARISON": {
+        "title": "Sem comparação",
+        "why": "Páginas comparativas tiveram influência média 55,3% maior no conjunto de dados de absorção.",
+        "fix": "Adicione uma tabela comparando as opções pelos mesmos critérios."
+      },
+      "NO_DATE": {
+        "title": "Sem data visível",
+        "why": "No estudo de mecanismos chineses, o conteúdo citado para consultas sensíveis ao tempo teve meia-vida de cerca de 39 dias; a data ajuda a julgar a atualidade.",
+        "fix": "Mostre as datas de publicação e atualização e inclua-as na marcação Article."
+      },
+      "NO_DEFINITION": {
+        "title": "Sem frase de definição",
+        "why": "Páginas com definição tiveram influência média 57,3% maior no conjunto de dados de absorção.",
+        "fix": "Comece com uma frase que diga o que é o assunto."
+      },
+      "NO_HOWTO": {
+        "title": "Sem passos",
+        "why": "Conteúdo de passo a passo teve influência média 41,2% maior no conjunto de dados de absorção.",
+        "fix": "Adicione passos numerados onde o leitor precisa agir."
+      },
+      "NO_JSONLD": {
+        "title": "Sem dados estruturados",
+        "why": "Dados estruturados ajudam os mecanismos a classificar a página. O Google diz que não são obrigatórios para recursos de IA.",
+        "fix": "Adicione Organization na página inicial e Article ou Product onde fizer sentido."
+      },
+      "NO_LLMS_TXT": {
+        "title": "Sem /llms.txt",
+        "why": "O llms.txt é uma proposta de 2024, não um padrão, e nenhum mecanismo documenta que o lê. Custo baixo, benefício incerto.",
+        "fix": "Opcional: publique um /llms.txt gerado a partir dos fatos da marca."
+      },
+      "NO_NUMBERS": {
+        "title": "Poucos números concretos",
+        "why": "Adicionar estatísticas esteve entre as reescritas mais eficazes no GEO-bench; páginas com números tiveram influência 61,6% maior no conjunto de absorção.",
+        "fix": "Adicione números com fonte, unidade e data."
+      },
+      "NO_QUOTABLE_PASSAGE": {
+        "title": "Sem trecho autossuficiente",
+        "why": "A recuperação escolhe trechos, não páginas. Regra: uma seção de ao menos 60 palavras com número, definição ou passo. A regra é deste projeto.",
+        "fix": "Reescreva duas ou três seções-chave para que a primeira frase responda ao título."
+      },
+      "NO_SITEMAP": {
+        "title": "Sem sitemap.xml",
+        "why": "O sitemap diz aos rastreadores quais URLs importam; sites grandes ou mal interligados são os que mais ganham.",
+        "fix": "Publique um /sitemap.xml só com URLs canônicas."
+      },
+      "ORPHAN_PAGE": {
+        "title": "Nenhuma página rastreada aponta para cá",
+        "why": "Páginas acessíveis só pelo sitemap são mais difíceis de descobrir e recebem pouco contexto interno.",
+        "fix": "Adicione um link a partir de uma página relacionada."
+      },
+      "PAGE_UNREACHABLE": {
+        "title": "Página não pôde ser acessada",
+        "why": "Erros de rede e timeouts significam que nenhum rastreador recebe o conteúdo.",
+        "fix": "Verifique DNS, TLS e os logs do servidor para esta URL."
+      },
+      "REDIRECT_CHAIN": {
+        "title": "Dois ou mais redirecionamentos antes da página",
+        "why": "Cada salto aumenta a latência, e rastreadores param de seguir cadeias longas.",
+        "fix": "Redirecione direto para a URL final e atualize os links internos."
+      },
+      "ROBOTS_BLOCKS_AI": {
+        "title": "robots.txt bloqueia rastreadores de IA",
+        "why": "Pela RFC 9309, um grupo Disallow correspondente impede esse rastreador de acessar os caminhos listados.",
+        "fix": "Adicione um grupo User-agent que permita GPTBot, OAI-SearchBot, ClaudeBot, PerplexityBot, Google-Extended e os rastreadores regionais que você quer atingir."
+      },
+      "SCHEMA_CONTENT_MISMATCH": {
+        "title": "Dados estruturados não batem com o conteúdo visível",
+        "why": "As diretrizes do Google exigem que a marcação descreva conteúdo visível ao usuário.",
+        "fix": "Remova a marcação ou adicione o conteúdo visível correspondente."
+      },
+      "SERVER_ERROR": {
+        "title": "Erro de servidor (5xx)",
+        "why": "O Google documenta que respostas 5xx repetidas reduzem o rastreamento e podem tirar URLs do índice.",
+        "fix": "Corrija o erro do servidor ou retorne 404/410 se a página não existe mais."
+      },
+      "SHORT_CONTENT": {
+        "title": "Página de conteúdo curta",
+        "why": "No conjunto de citações, as páginas do quartil superior tinham em média 1.943 palavras e as do inferior 170. É correlação, não meta.",
+        "fix": "Acrescente substância útil (números, comparações, passos), não enchimento."
+      },
+      "SITEMAP_LOW_VALUE_URLS": {
+        "title": "Sitemap lista URLs de parâmetro, busca ou paginação",
+        "why": "Sitemaps devem listar só as URLs canônicas que você quer indexadas.",
+        "fix": "Remova essas URLs do sitemap."
+      },
+      "SITEMAP_NOT_DECLARED": {
+        "title": "robots.txt não declara o sitemap",
+        "why": "Uma linha Sitemap: permite que qualquer rastreador encontre o sitemap sem aviso.",
+        "fix": "Adicione `Sitemap: https://example.com/sitemap.xml` ao robots.txt."
+      },
+      "SLOW_RESPONSE": {
+        "title": "Resposta lenta do servidor",
+        "why": "O HTML levou mais de 3 segundos; rastreadores buscam menos páginas em hosts lentos. O limite de 3 s é regra deste projeto.",
+        "fix": "Faça cache do HTML na borda ou investigue a rota lenta."
+      },
+      "SPA_SHELL": {
+        "title": "HTML estático sem conteúdo",
+        "why": "O Google renderiza JavaScript numa fila atrasada e muitos rastreadores de IA leem só HTML estático, então uma página só no cliente parece vazia.",
+        "fix": "Use renderização no servidor ou pré-renderização nas páginas de conteúdo."
+      },
+      "TITLE_TOO_LONG": {
+        "title": "Título longo",
+        "why": "O Google não tem limite de tamanho, mas corta pela largura de exibição. Limite aqui: cerca de 60 caracteres latinos ou 32 CJK.",
+        "fix": "Coloque a frase-chave primeiro."
+      },
+      "XROBOTS_NOINDEX": {
+        "title": "Cabeçalho X-Robots-Tag com noindex",
+        "why": "O cabeçalho tem o mesmo efeito da meta tag, mas não aparece no código-fonte; costuma ser injetado pelo CDN.",
+        "fix": "Remova a regra do cabeçalho no servidor ou no CDN."
+      }
+    }
+  }
+}

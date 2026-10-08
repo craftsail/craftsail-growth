@@ -135,6 +135,10 @@ func (s *Service) materialize(ctx context.Context, slug, key, status string, rev
 			Status: status, Source: it.Source, SourceKey: &k, Acceptance: it.Acceptance, Affected: it.URLs,
 			Baseline: it.Baseline, BaselineCount: len(it.URLs),
 		}
+		if t.Baseline == nil {
+			t.Baseline = map[string]any{}
+		}
+		t.Baseline["opportunity_detail"] = it.Detail
 		var createErr error
 		// A reviewed title alone is not evidence. Keep ordinary acceptance
 		// behavior, but record value only for a diagnostic with support.
@@ -165,6 +169,11 @@ func itemFromTask(t model.Task) Item {
 	}
 	return Item{
 		Key: key, Source: t.Source, Kind: kind, Priority: t.Priority, Title: t.Title, Why: t.Why, Fix: t.Action,
-		URLs: t.Affected, Acceptance: t.Acceptance, Status: t.Status, TaskCode: t.Code,
+		Detail: taskDetail(t), URLs: t.Affected, Acceptance: t.Acceptance, Status: t.Status, TaskCode: t.Code,
 	}
+}
+
+func taskDetail(t model.Task) map[string]any {
+	m, _ := t.Baseline["opportunity_detail"].(map[string]any)
+	return m
 }

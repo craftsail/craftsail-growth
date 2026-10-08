@@ -32,7 +32,7 @@ export function Overview() {
   useEffect(() => {
     if (!slug) return;
     let disposed = false;
-    listOpportunities(slug, { status: "new" }).then((d) => { if (!disposed) setOpps(d.items || []); }).catch(() => { if (!disposed) setOpps([]); });
+    listOpportunities(slug).then((d) => { if (!disposed) setOpps((d.items || []).filter(it=>it.recommended)); }).catch(() => { if (!disposed) setOpps([]); });
     listRuns(slug).then((d) => { if (!disposed) setRuns(d.items || []); }).catch(() => { if (!disposed) setRuns([]); });
     return () => { disposed = true; };
   }, [slug, audit?.id]);
@@ -110,17 +110,17 @@ export function Overview() {
         </section>
         <section className="card p-5">
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="card-title">{t("overview.nextSteps")}</h2>
+            <h2 className="card-title">{t("prioritization.weekly")}</h2>
             <Link to={`/p/${slug}/opportunities`} className="text-sm">{t("overview.all")}</Link>
           </div>
           {opps === null ? <p className="text-sm text-gray-500">{t("common.loading")}</p> : opps.length === 0 ? (
             <p className="text-sm text-gray-500">{t("overview.noOpen")}</p>
           ) : (
             <ul className="space-y-1.5">
-              {opps.slice(0, 5).map((o) => (
+              {opps.slice(0, 3).map((o) => (
                 <li key={o.key} className="flex items-start gap-2 text-sm">
                   <span className="mt-0.5 rounded border border-gray-300 px-1 text-[11px] font-semibold text-gray-700">{o.priority}</span>
-                  <Link to={`/p/${slug}/opportunities?key=${encodeURIComponent(o.key)}`} className="text-gray-800">{oppTitle(o)}</Link>
+                  <Link to={`/p/${slug}/opportunities?tab=${o.status ? "progress" : "suggested"}&key=${encodeURIComponent(o.key)}`} className="text-gray-800">{oppTitle(o)}</Link>
                 </li>
               ))}
             </ul>

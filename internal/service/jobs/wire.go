@@ -132,7 +132,8 @@ func Bind(s *Service, db *gorm.DB) {
 		}})
 	s.RegisterSpec("report", Spec{Label: "Build report", Desc: "Markdown and HTML",
 		Run: func(ctx context.Context, slug string, args map[string]any, log func(string)) error {
-			out, err := report.New(db).Build(ctx, slug)
+			language, _ := args["language"].(string)
+			out, err := report.New(db).Build(ctx, slug, language)
 			if out != nil {
 				log("report " + out.On)
 			}
