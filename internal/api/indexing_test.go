@@ -93,3 +93,35 @@ func TestIndexReadPermissionsFiltersAndPropertyEdit(t *testing.T) {
 		t.Fatal("GET mutated inventory")
 	}
 }
+
+func TestIndexLifecycleEditPermissions(t *testing.T) {
+	w := newWorld(t)
+	w.h.web = webstats.New(w.db)
+	ctx := context.Background()
+	p, _ := w.h.projects.Get(ctx, "alpha")
+	p.GscSite = "sc-domain:a.com"
+	w.h.projects.Save(ctx, p)
+	r := &repo.Webstats{DB: w.db}
+	if err := r.DiscoverIndexURLs(ctx, []model.IndexURL{{ProjectID: p.ID, Property: p.GscSite, URL: "https://a.com/a", FromCrawl: true}}); err != nil {
+		t.Fatal(err)
+	}
+	engine := testEngine(w.h)
+	for _, tc := range []struct{ method, path, body string }{{"PUT", "published", `{"url":"https://a.com/a","published_at":1700000000}`}, {"POST", "sitemaps", `{"url":"https://a.com/sitemap.xml"}`}} {
+		path := "/api/projects/alpha/indexing/" + tc.path
+		if res := call(engine, tc.method, path, tc.body, w.viewer); res.Code != 403 {
+			t.Fatalf("viewer %d", res.Code)
+		}
+		if res := call(engine, tc.method, path, tc.body, w.outsider); res.Code != 404 {
+			t.Fatalf("outsider %d", res.Code)
+		}
+		if res := call(engine, tc.method, path, tc.body, w.editor); res.Code != 200 {
+			t.Fatalf("editor %d %s", res.Code, res.Body.String())
+		}
+	}
+	if res := call(engine, "POST", "/api/projects/alpha/indexing/sitemaps", `{"url":"https://outside.example/sitemap.xml"}`, w.editor); res.Code != 400 {
+		t.Fatal(res.Code)
+	}
+	if res := call(engine, "PUT", "/api/projects/alpha/indexing/published", `{"url":"https://a.com/a","published_at":9999999999}`, w.editor); res.Code != 400 {
+		t.Fatal(res.Code)
+	}
+}

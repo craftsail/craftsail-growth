@@ -173,6 +173,15 @@ Environment variables override the file:
 or OAuth (`GOOGLE_OAUTH_CLIENT_ID` / `_SECRET`). You connect it in the dashboard
 under Workspace → Google Search & GA4.
 
+URL discovery and index inspection run independently with `craftsail-growth indexing --slug example`
+or the Indexing tab. XML/gzip sitemap work and inspection batches resume after restart.
+`GOOGLE_INDEX_DAILY_BUDGET` (default 1800, maximum 2000) and
+`GOOGLE_INDEX_MINUTE_BUDGET` (default 120, maximum 600) are shared per property
+across projects using this database. Requests with uncertain outcomes still consume a
+reservation. `GOOGLE_INDEX_HISTORY_DAYS` optionally prunes inspection attempts;
+unset keeps all history. Latest successful results and first observed dates are retained.
+
+
 ## Command line
 
 The binary is also a CLI and works against the same database:

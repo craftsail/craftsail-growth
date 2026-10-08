@@ -359,6 +359,7 @@ export const en: HelpDoc = {
     ),
   }),
   buttons: ({ n, page }) => ({
+    indexing: <>{n("tips.indexing")}</>,
     serve: <>Use it after setting up a project or changing a lot at once. Progress and the log are under Jobs on {page("settings/schedule", "nav.schedule")}; only one job runs per project at a time. With a schedule on, this runs by itself.</>,
     sample: <>One round only. For tighter intervals, raise “Runs per question and engine per day” and let the schedule run. Each call costs tokens; see the cost formula under {n("nav.providers")}.</>,
     syncGoogle: <>Needs Google connected and properties chosen on {page("settings/google", "nav.google")}. Google's data lags about three days.</>,

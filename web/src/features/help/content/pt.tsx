@@ -360,6 +360,7 @@ export const pt: HelpDoc = {
     ),
   }),
   buttons: ({ n, page }) => ({
+    indexing: <>{n("tips.indexing")}</>,
     serve: <>Use depois de configurar um projeto ou mudar muita coisa de uma vez. O progresso e o log ficam em Tarefas, em {page("settings/schedule", "nav.schedule")}; roda uma tarefa por projeto de cada vez. Com a agenda ligada, roda sozinho.</>,
     sample: <>Só uma rodada. Para intervalos mais estreitos, aumente “Execuções por pergunta e mecanismo por dia” e deixe a agenda rodar. Cada chamada gasta tokens; veja a fórmula de custo em {n("nav.providers")}.</>,
     syncGoogle: <>Precisa do Google conectado e das propriedades escolhidas em {page("settings/google", "nav.google")}. Os dados do Google chegam com uns três dias de atraso.</>,

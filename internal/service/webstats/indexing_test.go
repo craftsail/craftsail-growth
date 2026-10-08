@@ -71,6 +71,7 @@ func TestIndexRotationAcrossThousandURLsAndRestart(t *testing.T) {
 	}
 	for i := 0; i < 34; i++ {
 		s = New(db)
+		s.Now = func() time.Time { return now.Add(time.Duration(i+1) * time.Minute) }
 		s.Client = &Client{HTTP: &http.Client{Transport: rt}}
 		if _, err := s.inspectDue(ctx, "tok", 1, "sc-domain:a.com", now); err != nil {
 			t.Fatal(err)
@@ -120,7 +121,8 @@ func TestInspectionFailurePreservesVerdictAndStopsQuotaBurst(t *testing.T) {
 	rt.status = 429
 	rt.body = `{"error":{"message":"Quota exceeded"}}`
 	note, err := s.inspectDue(ctx, "tok", 1, "sc-domain:a.com", now.Add(8*24*time.Hour))
-	if err != nil || note == "" {
+	var quotaWait *QuotaWait
+	if !errors.As(err, &quotaWait) || note == "" {
 		t.Fatalf("%s %v", note, err)
 	}
 	if rt.urls["https://a.com/a"]+rt.urls["https://a.com/b"] != 3 {

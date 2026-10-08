@@ -771,11 +771,20 @@ export function confirmProgress(slug: string, body: { kind: "brand" | "questions
 }
 
 export type IndexURL = {
+  from_sitemap: boolean; content_group: string; published_at: number | null; first_impression_at: number | null; last_impression_at: number | null;
+  sitemaps: string[] | null; crawl: { status_code: number; final_url: string; fetched_at: number | null; fetch_error: string; analysis: Record<string, string> } | null;
+
   id: number; url: string; property: string; from_crawl: boolean; from_search: boolean;
   first_seen_at: number; last_attempt_at: number; last_success_at: number; first_indexed_at: number | null;
   next_inspect_at: number; verdict: string; last_error: string; latest: GscIndexRow | null;
 };
-export type IndexInventory = { property: string; items: IndexURL[]; total: number; known: number; inspected: number; indexed: number; due: number; page: number; page_size: number };
+export type IndexInventory = {
+  sitemaps: { id: number; url: string; is_index: boolean; fetched_at: number; next_fetch_at: number; last_error: string; discovered: number }[];
+  quota: { blocked_until: number; reason: string } | null; published_mature: number; indexed_within_week: number;
+  property: string; items: IndexURL[]; total: number; known: number; inspected: number; indexed: number; due: number; page: number; page_size: number };
 export type IndexHistory = { items: { id: number; checked_at: number; error: string; result: GscIndexRow | null }[]; total: number; page: number; page_size: number };
 export function getIndexInventory(slug: string, params: URLSearchParams) { return request<IndexInventory>(`/api/projects/${slug}/indexing?${params}`); }
 export function getIndexHistory(slug: string, url: string, page: number) { return request<IndexHistory>(`/api/projects/${slug}/indexing/history?${new URLSearchParams({ url, page: String(page), page_size: "20" })}`); }
+
+export function setURLPublished(slug: string, url: string, published_at: number | null) { return request(`/api/projects/${slug}/indexing/published`, { method: "PUT", body: JSON.stringify({ url, published_at }) }); }
+export function addIndexSitemap(slug: string, url: string) { return request(`/api/projects/${slug}/indexing/sitemaps`, { method: "POST", body: JSON.stringify({ url }) }); }

@@ -12,8 +12,8 @@ function when(sec: number | null | undefined, intl: string) {
   return new Date(sec * 1000).toLocaleString(intl, { hour12: false });
 }
 
-const ACTIONS = ["serve", "sample", "webstats", "crawl", "audit", "verify"];
-const ACTION_TIPS = { serve: "serve", sample: "sample", webstats: "syncGoogle", crawl: "crawl", audit: "audit", verify: "verify" } as const;
+const ACTIONS = ["serve", "sample", "webstats", "indexing", "crawl", "audit", "verify"];
+const ACTION_TIPS = { serve: "serve", sample: "sample", webstats: "syncGoogle", indexing: "indexing", crawl: "crawl", audit: "audit", verify: "verify" } as const;
 const KNOWN_ACTIONS = [...ACTIONS, "bootstrap", "report", "first-check"];
 const JOB_STATUS = ["running", "queued", "done", "failed", "error", "stopped", "interrupted", "ok"];
 

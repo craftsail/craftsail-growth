@@ -360,6 +360,7 @@ export const zh: HelpDoc = {
     ),
   }),
   buttons: ({ n, page }) => ({
+    indexing: <>{n("tips.indexing")}</>,
     serve: <>在建好项目或一次改动较多之后使用。进度和日志在{page("settings/schedule", "nav.schedule")}的任务列表里；每个项目同一时间只运行一个任务。开启定期运行后会自动执行。</>,
     sample: <>只跑一轮。想让区间更窄，就提高“每个问题每个引擎每天采样次数”并让定期运行去完成。每次调用都消耗 token，成本公式见{n("nav.providers")}。</>,
     syncGoogle: <>需要先在{page("settings/google", "nav.google")}里连接 Google 并选好资源。Google 的数据大约延迟三天。</>,

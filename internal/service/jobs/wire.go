@@ -73,6 +73,22 @@ func Bind(s *Service, db *gorm.DB) {
 			}
 			return err
 		}})
+	s.RegisterSpec("indexing", Spec{Resumable: true, Label: "Discover URLs and inspect indexing", Desc: "Read sitemaps and rotate URL Inspection independently of traffic history", Slow: true,
+		Run: func(ctx context.Context, slug string, args map[string]any, log func(string)) error {
+			out, err := webstats.New(db).RunIndexBatch(ctx, slug, time.Unix(int64(intArg(args, "_started_at")), 0))
+			if out != nil {
+				if out.Note != "" {
+					log(out.Note)
+				}
+				if !out.Connected {
+					log("URL inventory updated; connect Google to inspect indexing")
+				}
+				if err == nil && out.Pending {
+					return &Deferred{After: max(time.Second, time.Until(time.Unix(out.RetryAt, 0)))}
+				}
+			}
+			return err
+		}})
 	s.RegisterSpec("webstats", Spec{Resumable: true, Label: "Sync Google", Desc: "Pull Search Console and GA4 into the local database", Slow: true,
 		Run: func(ctx context.Context, slug string, args map[string]any, log func(string)) error {
 			res, err := webstats.New(db).RunBatch(ctx, slug, webstats.BatchOptions{RefreshBefore: time.Unix(int64(intArg(args, "_started_at")), 0)})

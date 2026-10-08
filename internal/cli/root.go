@@ -38,7 +38,7 @@ func Execute() {
 		serverCmd(), uiCmd(), periodServeCmd(),
 		listCmd(), initCmd(), newCmd(),
 		crawlCmd(), auditCmd(), bootstrapCmd(),
-		sampleCmd(), webstatsCmd(), sampleSheetCmd(), sampleImportCmd(),
+		sampleCmd(), webstatsCmd(), indexingCmd(), sampleSheetCmd(), sampleImportCmd(),
 		opportunitiesCmd(), taskCmd(), generateCmd(),
 		verifyCmd(), reportCmd(), statusCmd(), userCmd(),
 	)

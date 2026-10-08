@@ -5,6 +5,14 @@ package model
 // IndexURL is a durable inventory entry. FirstSeenAt is discovery, never publication.
 // KeyHash includes property and URL so changing properties cannot inherit a verdict.
 type IndexURL struct {
+	FromSitemap       bool     `json:"from_sitemap"`
+	ContentGroup      string   `gorm:"size:32" json:"content_group"`
+	PublishedAt       *int64   `json:"published_at"`
+	FirstImpressionAt *int64   `json:"first_impression_at"`
+	LastImpressionAt  *int64   `json:"last_impression_at"`
+	Sitemaps          []string `gorm:"-" json:"sitemaps"`
+	Crawl             *Page    `gorm:"-" json:"crawl"`
+
 	ID             uint64    `gorm:"primaryKey" json:"id"`
 	ProjectID      uint64    `gorm:"uniqueIndex:uk_index_url;not null" json:"project_id"`
 	KeyHash        string    `gorm:"size:64;uniqueIndex:uk_index_url;not null" json:"key_hash"`

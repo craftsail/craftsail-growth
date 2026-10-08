@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -23,6 +24,7 @@ type Service struct {
 	projects *project.Service
 	rows     *repo.Webstats
 	Client   *Client
+	SiteHTTP *http.Client
 	// Date-only totals. Nil uses Client. Query rows must not be passed here.
 	FetchGSCDate func(ctx context.Context, token, site, start, end string) ([]model.GscFact, string, int, bool, error)
 	FetchGADate  func(ctx context.Context, token, property, start, end string) ([]model.GaDaily, int, bool, error)
@@ -119,13 +121,6 @@ func (s *Service) run(ctx context.Context, slug string) (*RunResult, error) {
 	pending, pendingErr := s.pendingSync(context.WithoutCancel(ctx), p.ID, gscSite, gaProp)
 	if pendingErr != nil {
 		failures = append(failures, pendingErr)
-	}
-	if live && token != "test" && gscSite != "" && ctx.Err() == nil && len(failures) == 0 && !pending {
-		if note, err := s.pullIndex(ctx, token, p.ID, gscSite, now); err != nil {
-			failures = append(failures, err)
-		} else if note != "" {
-			notes = append(notes, note)
-		}
 	}
 
 	if days, err := strconv.Atoi(strings.TrimSpace(os.Getenv("GOOGLE_RAW_RETENTION_DAYS"))); err == nil && days > 0 {
@@ -400,21 +395,6 @@ func (s *Service) accessTokenContext(ctx context.Context, needGoogle bool) (stri
 		return s.client().UserAccessTokenContext(ctx)
 	}
 	return s.client().AccessTokenContext(ctx, os.Getenv("GOOGLE_SA_JSON"))
-}
-
-func (s *Service) pullIndex(ctx context.Context, token string, projectID uint64, site string, now time.Time) (string, error) {
-	maps, err := s.client().FetchSitemapsContext(ctx, token, site)
-	if err != nil {
-		return "", syncBudgetError(ctx, err)
-	}
-	for i := range maps {
-		maps[i].ProjectID = projectID
-		maps[i].FetchedAt = now.Unix()
-	}
-	if err := s.rows.UpsertSitemaps(ctx, maps); err != nil {
-		return "", err
-	}
-	return s.inspectDue(ctx, token, projectID, site, now)
 }
 
 // window ends 3 days ago (GSC lag). start is 27 days before end.

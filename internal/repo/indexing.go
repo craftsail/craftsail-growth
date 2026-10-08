@@ -4,6 +4,7 @@ package repo
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -49,10 +50,10 @@ func (r *Webstats) IndexCandidates(ctx context.Context, projectID uint64, proper
 
 func (r *Webstats) DiscoverIndexURLs(ctx context.Context, rows []model.IndexURL) error {
 	// Merge each source independently, retaining earlier provenance and scheduling.
-	for _, crawl := range []bool{true, false} {
+	for _, source := range []string{"from_crawl", "from_search", "from_sitemap"} {
 		batch := []model.IndexURL{}
 		for _, row := range rows {
-			if row.FromCrawl == crawl {
+			if source == "from_crawl" && row.FromCrawl || source == "from_search" && row.FromSearch || source == "from_sitemap" && row.FromSitemap {
 				row.KeyHash = model.RowKey(row.Property, row.URL)
 				batch = append(batch, row)
 			}
@@ -60,11 +61,7 @@ func (r *Webstats) DiscoverIndexURLs(ctx context.Context, rows []model.IndexURL)
 		if len(batch) == 0 {
 			continue
 		}
-		source := "from_search"
-		if crawl {
-			source = "from_crawl"
-		}
-		if err := r.DB.WithContext(ctx).Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "project_id"}, {Name: "key_hash"}}, DoUpdates: clause.AssignmentColumns([]string{"last_seen_at", source})}).CreateInBatches(&batch, upsertBatchSize).Error; err != nil {
+		if err := r.DB.WithContext(ctx).Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "project_id"}, {Name: "key_hash"}}, DoUpdates: clause.AssignmentColumns([]string{"last_seen_at", source, "content_group"})}).CreateInBatches(&batch, upsertBatchSize).Error; err != nil {
 			return err
 		}
 	}
@@ -122,6 +119,11 @@ func (r *Webstats) RecordInspection(ctx context.Context, target model.IndexURL, 
 }
 
 type IndexInventory struct {
+	Sitemaps          []model.SitemapScan `json:"sitemaps"`
+	Quota             *model.GoogleQuota  `json:"quota"`
+	PublishedMature   int64               `json:"published_mature"`
+	IndexedWithinWeek int64               `json:"indexed_within_week"`
+
 	Property  string           `json:"property"`
 	Items     []model.IndexURL `json:"items"`
 	Total     int64            `json:"total"`
@@ -133,7 +135,7 @@ type IndexInventory struct {
 	PageSize  int              `json:"page_size"`
 }
 
-func (r *Webstats) IndexInventory(ctx context.Context, projectID uint64, property, query, state string, page, size int, now int64) (*IndexInventory, error) {
+func (r *Webstats) IndexInventory(ctx context.Context, projectID uint64, property, query, state string, page, size int, now int64, groups ...string) (*IndexInventory, error) {
 	out := &IndexInventory{Property: property, Items: []model.IndexURL{}, Page: page, PageSize: size}
 	base := func() *gorm.DB {
 		return r.DB.WithContext(ctx).Model(&model.IndexURL{}).Where("project_id = ? AND "+r.indexBinary("property")+" = ?", projectID, property)
@@ -149,7 +151,16 @@ func (r *Webstats) IndexInventory(ctx context.Context, projectID uint64, propert
 	if err := base().Where("next_inspect_at <= ?", now).Count(&out.Due).Error; err != nil {
 		return nil, err
 	}
+	if err := base().Where("published_at IS NOT NULL AND published_at <= ?", now-7*86400).Count(&out.PublishedMature).Error; err != nil {
+		return nil, err
+	}
+	if err := base().Where("published_at IS NOT NULL AND published_at <= ? AND first_indexed_at >= published_at AND first_indexed_at <= published_at + ?", now-7*86400, 7*86400).Count(&out.IndexedWithinWeek).Error; err != nil {
+		return nil, err
+	}
 	db := base()
+	if len(groups) > 0 && groups[0] != "" {
+		db = db.Where("content_group = ?", groups[0])
+	}
 	if query != "" {
 		escaped := strings.NewReplacer("!", "!!", "%", "!%", "_", "!_").Replace(strings.ToLower(query))
 		db = db.Where("LOWER(url) LIKE ? ESCAPE '!'", "%"+escaped+"%")
@@ -190,6 +201,9 @@ func (r *Webstats) IndexInventory(ctx context.Context, projectID uint64, propert
 			out.Items[i].Latest = byKey[out.Items[i].KeyHash]
 		}
 	}
+	if err := r.enrichIndexInventory(ctx, projectID, property, out); err != nil {
+		return nil, err
+	}
 	return out, nil
 }
 
@@ -215,4 +229,84 @@ func (r *Webstats) IndexHistory(ctx context.Context, projectID uint64, property,
 		}
 	}
 	return out, nil
+}
+
+// RefreshIndexImpressions records observed dates from the independent page grain.
+// It does not infer publication dates or a complete historical absence of traffic.
+func (r *Webstats) RefreshIndexImpressions(ctx context.Context, pid uint64, property string, now int64) error {
+	type observed struct{ URL, FirstDay, LastDay string }
+	var facts []observed
+	expr := r.indexBinary("page")
+	if err := r.DB.WithContext(ctx).Model(&model.GscFact{}).Select(expr+" AS url, MIN(date(day)) AS first_day, MAX(date(day)) AS last_day").Where("project_id = ? AND "+r.indexBinary("property")+" = ? AND slice = ? AND search_type = ? AND impressions > 0", pid, property, "page", "web").Group(expr).Scan(&facts).Error; err != nil {
+		return err
+	}
+	incoming := func(field string) string {
+		if r.DB.Dialector.Name() == "mysql" {
+			return "VALUES(" + field + ")"
+		}
+		return "excluded." + field
+	}
+	rows := []model.IndexURL{}
+	for _, f := range facts {
+		first, e1 := time.Parse("2006-01-02", f.FirstDay)
+		last, e2 := time.Parse("2006-01-02", f.LastDay)
+		if e1 != nil || e2 != nil {
+			return fmt.Errorf("invalid stored impression date")
+		}
+		a, b := first.Unix(), last.Unix()
+		rows = append(rows, model.IndexURL{ProjectID: pid, Property: property, KeyHash: model.RowKey(property, f.URL), URL: f.URL, FromSearch: true, FirstSeenAt: now, LastSeenAt: now, FirstImpressionAt: &a, LastImpressionAt: &b})
+	}
+	if len(rows) == 0 {
+		return nil
+	}
+	a, b := incoming("first_impression_at"), incoming("last_impression_at")
+	return r.DB.WithContext(ctx).Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "project_id"}, {Name: "key_hash"}}, DoUpdates: clause.Assignments(map[string]any{"first_impression_at": gorm.Expr("CASE WHEN first_impression_at IS NULL OR first_impression_at > " + a + " THEN " + a + " ELSE first_impression_at END"), "last_impression_at": gorm.Expr("CASE WHEN last_impression_at IS NULL OR last_impression_at < " + b + " THEN " + b + " ELSE last_impression_at END"), "from_search": true})}).CreateInBatches(&rows, upsertBatchSize).Error
+}
+func (r *Webstats) enrichIndexInventory(ctx context.Context, pid uint64, property string, out *IndexInventory) error {
+	var err error
+	out.Sitemaps, err = r.SitemapStatus(ctx, pid, property)
+	if err != nil {
+		return err
+	}
+	out.Quota, err = r.GoogleQuota(ctx, property, "inspection")
+	if err != nil {
+		return err
+	}
+	if len(out.Items) == 0 {
+		return nil
+	}
+	keys := []string{}
+	urls := []string{}
+	for _, row := range out.Items {
+		keys = append(keys, row.KeyHash)
+		urls = append(urls, row.URL)
+	}
+	type membership struct{ URLKey, URL string }
+	var maps []membership
+	if err := r.DB.WithContext(ctx).Table("sitemap_urls AS u").Select("u.url_key, s.url").Joins("JOIN sitemap_scans AS s ON s.id = u.sitemap_id AND s.project_id = u.project_id").Where("u.project_id = ? AND u.url_key IN ? AND u.present = ?", pid, keys, true).Scan(&maps).Error; err != nil {
+		return err
+	}
+	byKey := map[string][]string{}
+	for _, m := range maps {
+		byKey[m.URLKey] = append(byKey[m.URLKey], m.URL)
+	}
+	var pages []model.Page
+	if err := r.DB.WithContext(ctx).Select("url", "status_code", "final_url", "fetched_at", "fetch_error", "analysis").Where("project_id = ? AND url IN ?", pid, urls).Find(&pages).Error; err != nil {
+		return err
+	}
+	byURL := map[string]*model.Page{}
+	for i := range pages {
+		p := &pages[i]
+		limited := map[string]any{}
+		for _, k := range []string{"canonical", "meta_robots", "x_robots_tag"} {
+			limited[k] = p.Analysis[k]
+		}
+		p.Analysis = limited
+		byURL[p.URL] = p
+	}
+	for i := range out.Items {
+		out.Items[i].Sitemaps = byKey[out.Items[i].KeyHash]
+		out.Items[i].Crawl = byURL[out.Items[i].URL]
+	}
+	return nil
 }

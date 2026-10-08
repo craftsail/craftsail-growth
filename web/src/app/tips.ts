@@ -9,6 +9,7 @@ import type { TopicId } from "../features/help/kit";
 export const TIPS = {
   serve: { topic: "schedule", label: "schedule.actions.serve" },
   sample: { topic: "schedule", label: "schedule.actions.sample" },
+  indexing: { topic: "schedule", label: "schedule.actions.indexing" },
   syncGoogle: { topic: "schedule", label: "schedule.actions.webstats" },
   crawl: { topic: "schedule", label: "schedule.actions.crawl" },
   audit: { topic: "schedule", label: "schedule.actions.audit" },

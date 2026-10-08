@@ -308,3 +308,17 @@ G2 剩余：低维 GA4 渠道/落地页模板、模板兼容性预检、GSC 高�
 本批边界：清单来源仍是抓取与已有 GSC 页面，只有流量历史补齐后的同步阶段才更新，并非 sitemap 全量清单。独立检查任务、递归 sitemap/压缩文件发现、全局同资源每日与每分钟配额/退避、发布时间与首次展示生命周期仍待后续批次。30 条只是每批请求上限，不是每日共享配额；重启恢复针对已落库结果，尚不宣称外部请求与本地事务之间绝对 exactly-once。
 
 核对依据：[URL Inspection 请求与索引版本限制](https://developers.google.com/webmaster-tools/v1/urlInspection.index/inspect)、[结构化结果字段](https://developers.google.com/webmaster-tools/v1/urlInspection.index/UrlInspectionResult)、[Google 配额](https://developers.google.com/webmaster-tools/limits)。截至本次核对，URL Inspection 的每资源上限为 2,000 次/日、600 次/分钟；后续共享配额实现应留余量，不把批次上限当成配额保护。
+
+
+### 第十批：独立收录任务、sitemap 与生命周期（PR4b）
+
+- 增加 `indexing` 可恢复任务、CLI 与独立按钮；发现 sitemap 不需要 Google 凭据，也不再等待流量回填。定时完整周期成功后启动独立收录任务，排队和停止继续复用现有任务持久化。
+- 支持命名空间 XML、sitemap index、子 sitemap、gzip、实体转义和跨 sitemap 去重。robots/default sitemap 每日刷新入口，Google 已提交 sitemap 和人工入口也可加入；每个文档遵循 50 MB / 50,000 条协议上限，超限或解析失败明确保留旧清单。每批最多读取 5 个文档，子任务保存到 SQLite/MySQL，可跨批完整遍历。只接受当前资源主机范围的入口与重定向。
+- sitemap 成功读取时替换其成员关系，记录 lastmod 与来源；失败不清空，URL 从 sitemap 消失不当成页面删除。页面详情显示已有抓取的 HTTP 状态、重定向终点、robots 与 canonical，按 URL 路径推断内容分组并支持筛选。
+- 增加共享 property 检查配额，默认 1,800 次/日、120 次/分钟，可通过环境变量降低/调整但不超过官方上限。数据库事务预约、太平洋时区日界线、分钟限额和 429 退避跨项目共享；已落库成功结果续跑时跳过。401/403 中止等待用户修正授权；未知结果的请求保守计费，不声称网络请求 exactly-once。
+- 增加人工发布时间（默认未知，可清空）、独立 page 粒度首次/最近观察到展示时间，以及发布时间已满 7 天页面的观察分子/分母。lastmod 不充当发布时间，未满 7 天不进入成熟队列。保留周期可用 `GOOGLE_INDEX_HISTORY_DAYS` 配置。
+- 英/中/葡页面增加任务启动/排队/停止、sitemap 列表/新增、共享配额等待、生命周期信息和编辑权限；默认最多展示 200 个 sitemap 状态，实际发现队列不受此显示上限限制。
+
+验证：全量 Go 测试、go vet、前端 TypeScript/生产构建、CJK 与许可证检查通过；新增 SQLite 配额跨实例/日分钟重置/退避、嵌套 sitemap 重启续跑与多源去重、解析失败保留、无 Google 独立发现、7 天队列/未知发布日期、生命周期编辑权限测试。Chrome mock 验证 en/zh/pt 的排队刷新、停止、sitemap 添加、发布时间编辑、只读权限及移动端，截图已人工检查。真实 Google 和 MySQL 8 验收仍未执行。
+
+协议依据：[Sitemaps XML protocol](https://www.sitemaps.org/protocol.html)、[Google URL Inspection quota](https://developers.google.com/webmaster-tools/limits)。跨站托管 sitemap 暂需迁到资源主机可访问的入口；RSS/Atom 不是本次 XML sitemap 解析范围。流量 API 的共享退避在 PR1a 后续处理，与本批 URL Inspection 配额分开。

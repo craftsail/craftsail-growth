@@ -13,23 +13,29 @@ import (
 )
 
 func webstatsCmd() *cobra.Command {
+	return googleJobCmd("webstats", "Pull Search Console and GA4 into the local database")
+}
+func indexingCmd() *cobra.Command {
+	return googleJobCmd("indexing", "Discover sitemap URLs and inspect indexing independently")
+}
+func googleJobCmd(action, description string) *cobra.Command {
 	var slug string
 	cmd := &cobra.Command{
-		Use:   "webstats",
-		Short: "Pull Search Console and GA4 into the local database",
+		Use:   action,
+		Short: description,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runJob("webstats", func(ejob.Context) error {
+			return runJob(action, func(ejob.Context) error {
 				js := jobs.New(invoker.DB)
 				jobs.Bind(js, invoker.DB)
-				j, err := js.Start(cmd.Context(), slug, "webstats", nil)
+				j, err := js.Start(cmd.Context(), slug, action, nil)
 				if err != nil {
 					return err
 				}
-				fmt.Printf("[craftsail-growth] Google sync job %d started; history continues in batches.\n", j.ID)
+				fmt.Printf("[craftsail-growth] Google job %d started; work continues in batches.\n", j.ID)
 				if err := js.Wait(cmd.Context(), j.ID); err != nil {
 					return err
 				}
-				fmt.Printf("[craftsail-growth] Google sync job %d completed\n", j.ID)
+				fmt.Printf("[craftsail-growth] Google job %d completed\n", j.ID)
 				return nil
 			})
 		},
