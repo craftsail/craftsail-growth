@@ -4,6 +4,29 @@
 import type { Messages } from "./en";
 
 export const pt: Messages = {
+  prioritization: {
+    "weekly": "Foco desta semana",
+    "ranking": "Até três ações. Em cada prioridade, falhas técnicas vêm primeiro, seguidas de fase, evidências, ICE manual, alcance e esforço. ICE é uma avaliação, não ROI.",
+    "ice": "Sua estimativa (1–10)",
+    "impact": "Impacto",
+    "confidence": "Confiança",
+    "ease": "Facilidade",
+    "effort": "Horas estimadas (opcional)",
+    "evidence": "Abrir evidências de pesquisa",
+    "ctrTitle": "Referência de CTR deste site",
+    "ctrNote": "Somente consultas visíveis sem marca; a consulta alvo é excluída. Cada faixa exige pelo menos 10 outras consultas e 1.000 impressões. São limites heurísticos.",
+    "ctrReady": "Posição {band} · {scope} · {from} a {through} · v{version} · CTR {ctr}",
+    "site": "site inteiro (referência mais ampla)",
+    "segment": "país/dispositivo correspondente",
+    "ctrMissing": "Sem referência utilizável: {reason}. Não calculamos cliques potenciais.",
+    "quality": "cobertura incompleta ou qualidade desconhecida/restrita",
+    "insufficient": "amostra de referência insuficiente",
+    "brand": "consulta de marca",
+    "rank": "fora das faixas de posição",
+    "queries_one": "{n} consulta de referência",
+    "queries_other": "{n} consultas de referência",
+    "scenario": "Com o CTR de referência deste site ({ctr}%), as impressões atuais sugerem {clicks} cliques adicionais em um cenário. Não é uma previsão nem evidência de que mudar o título funcionará."
+},
   common: {
     save: "Salvar",
     saving: "Salvando…",

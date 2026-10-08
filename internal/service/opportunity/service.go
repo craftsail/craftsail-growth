@@ -87,7 +87,9 @@ func (s *Service) List(ctx context.Context, slug string, f ListFilter) ([]Item, 
 		}
 		out = append(out, it)
 	}
-	Sort(out)
+	if err := s.rank(ctx, pid, out); err != nil {
+		return nil, err
+	}
 	return out, nil
 }
 

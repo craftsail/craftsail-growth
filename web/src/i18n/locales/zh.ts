@@ -4,6 +4,29 @@
 import type { Messages } from "./en";
 
 export const zh: Messages = {
+  prioritization: {
+    "weekly": "本周重点",
+    "ranking": "最多推荐三个行动。同一优先级内先处理技术故障，再考虑阶段、证据、人工 ICE、影响范围和投入。ICE 是判断，不是 ROI。",
+    "ice": "你的估计（1–10）",
+    "impact": "影响",
+    "confidence": "信心",
+    "ease": "容易程度",
+    "effort": "预计工时（可选）",
+    "evidence": "查看搜索证据",
+    "ctrTitle": "本站 CTR 参考",
+    "ctrNote": "仅使用可见非品牌查询，排除目标查询本身。每个排名档至少需要 10 个其他查询和 1,000 次展示；这些是经验门槛。",
+    "ctrReady": "排名 {band} · {scope} · {from} 至 {through} · v{version} · CTR {ctr}",
+    "site": "全站（较宽参考）",
+    "segment": "匹配国家/设备",
+    "ctrMissing": "暂无可用参考：{reason}。不计算机会点击。",
+    "quality": "覆盖不全或数据质量未知/受限",
+    "insufficient": "参考样本不足",
+    "brand": "品牌查询",
+    "rank": "超出参考排名档",
+    "queries_one": "{n} 个参考查询",
+    "queries_other": "{n} 个参考查询",
+    "scenario": "按本站参考 CTR（{ctr}%），当前展示对应额外 {clicks} 次点击的情景估计。这不是预测，也不能证明修改标题会有效。"
+},
   common: {
     save: "保存",
     saving: "保存中…",

@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { IconCheck, IconChevronDown } from "@tabler/icons-react";
-import { acceptOpportunity, dismissOpportunity, listOpportunities, patchTask, type OpportunityItem } from "../../api";
+import { scoreOpportunity, acceptOpportunity, dismissOpportunity, listOpportunities, patchTask, type OpportunityItem } from "../../api";
+import { CTRReferenceCard } from "../search/ctr-reference";
+import type { CTRReference } from "../../api";
 import { EmptyState } from "../../components/EmptyState";
 import { EvidenceBadge } from "../../components/metrics/EvidenceBadge";
 import { useI18n, type Key } from "../../i18n";
@@ -151,9 +153,17 @@ export function Opportunities() {
             {why && <p><span className="font-medium text-gray-900">{t("plan.why")}. </span>{why}</p>}
             {fix && <p><span className="font-medium text-gray-900">{t("plan.how")}. </span>{fix}</p>}
             <p><span className="font-medium text-gray-900">{t("plan.doneWhen")}. </span>{doneWhen(it.acceptance)}</p>
+            {it.detail?.reference && typeof it.detail.reference === "object" ? <CTRReferenceCard value={it.detail.reference as CTRReference} /> : null}
+            {canEdit && it.status !== "dismissed" && <form className="flex flex-wrap items-end gap-3" onSubmit={e => {e.preventDefault();const f=new FormData(e.currentTarget);act(it.key,()=>scoreOpportunity(slug,it.key,{impact:Number(f.get("impact")),confidence:Number(f.get("confidence")),ease:Number(f.get("ease")),effort_hours:Number(f.get("effort"))}));}}>
+              <p className="w-full text-xs text-gray-500">{t("prioritization.ice")}</p>
+              {(["impact","confidence","ease"] as const).map(field=><label className="text-xs" key={field}>{t(`prioritization.${field}`)}<input className="input mt-1 w-20" name={field} type="number" min="1" max="10" required defaultValue={it.score?.[field] ?? 5}/></label>)}
+              <label className="text-xs">{t("prioritization.effort")}<input className="input mt-1 w-28" name="effort" type="number" min="0" max="10000" step="0.25" defaultValue={it.score?.effort_hours || ""}/></label>
+              <button className="btn btn-secondary btn-sm" disabled={busy===it.key}>{t("common.save")}</button>
+            </form>}
             {variants.length > 0 && <p><span className="font-medium text-gray-900">{t("plan.alsoCovers")}. </span>{variants.join(", ")}</p>}
             <div className="flex flex-wrap gap-3">
               {it.qid && <Link to={`/p/${slug}/ai/prompts/${it.qid}`}>{t("plan.openQuestion")}</Link>}
+              {it.source === "search" && <Link to={`/p/${slug}/search/${it.detail?.query ? "keywords" : "pages"}?value=${encodeURIComponent(String(it.detail?.query || it.urls?.[0] || ""))}`}>{t("prioritization.evidence")}</Link>}
               {it.source === "audit" && <Link to={`/p/${slug}/audit/issues`}>{t("plan.seeIssues")}</Link>}
             </div>
             {(it.urls?.length ?? 0) > 0 && (
@@ -208,6 +218,7 @@ export function Opportunities() {
         </button>
       </div>
 
+      {items?.some(it=>it.recommended) && <div className="card p-4"><h2 className="font-semibold text-gray-900">{t("prioritization.weekly")}</h2><p className="my-2 text-sm text-gray-500">{t("prioritization.ranking")}</p><ol className="list-decimal space-y-2 pl-5">{items.filter(it=>it.recommended).slice(0,3).map(it=><li key={it.key}><Link className="text-primary-700" onClick={()=>setOpen(it.key)} to={`?tab=${tabOf(it)}&key=${encodeURIComponent(it.key)}`}>{title(it)}</Link></li>)}</ol></div>}
       {noSearchEngine && tab === "suggested" && (
         <div className="alert alert-info my-0 flex flex-wrap items-center justify-between gap-3">
           <span>{t("plan.hintNoSearch")}</span>

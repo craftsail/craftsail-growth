@@ -2,6 +2,29 @@
 
 // UI strings. Edit en.ts, zh.ts and pt.ts together: zh and pt are typed against en, so a missing key fails the build.
 export const en = {
+  prioritization: {
+    "weekly": "This week’s focus",
+    "ranking": "Up to three actions. Technical faults come first within each priority, then stage, evidence, human ICE, reach and effort. ICE is a judgment, not ROI.",
+    "ice": "Your estimate (1–10)",
+    "impact": "Impact",
+    "confidence": "Confidence",
+    "ease": "Ease",
+    "effort": "Estimated hours (optional)",
+    "evidence": "Open search evidence",
+    "ctrTitle": "This site’s CTR reference",
+    "ctrNote": "Visible nonbrand queries only; the target query is excluded. At least 10 other queries and 1,000 impressions per rank band are required. These are heuristic thresholds.",
+    "ctrReady": "Rank {band} · {scope} · {from} to {through} · v{version} · CTR {ctr}",
+    "site": "whole site (broader reference)",
+    "segment": "matching country/device",
+    "ctrMissing": "No usable reference: {reason}. No opportunity clicks are calculated.",
+    "quality": "incomplete coverage or unknown/restricted quality",
+    "insufficient": "insufficient reference sample",
+    "brand": "branded query",
+    "rank": "outside reference rank bands",
+    "queries_one": "{n} reference query",
+    "queries_other": "{n} reference queries",
+    "scenario": "At this site’s reference CTR ({ctr}%), the current impressions imply {clicks} additional clicks as a scenario. This is not a forecast or evidence that a title change will work."
+},
   common: {
     save: "Save",
     saving: "Saving…",

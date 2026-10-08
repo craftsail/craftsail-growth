@@ -354,6 +354,7 @@ export type GscPageRow = {
 };
 
 export type GrainCoverage = {
+ quality?: GoogleQuality;
  report: string; from: string; through: string; covered_days: number; total_days: number; state: string;
 };
 
@@ -367,7 +368,9 @@ export type SearchExplore = {
  coverage: GrainCoverage; previous_coverage: GrainCoverage; comparable: boolean;
  filters: { from: string; through: string; country: string; device: string; q: string; sort: string; direction: string; page: number; page_size: number };
 };
+export type CTRReference = {version: number; from: string; through: string; band: string; scope: string; queries: number; impressions: number; ctr: number | null; reason: string};
 export type SearchDetail = {
+ ctr_reference?: CTRReference;
  kind: "query" | "page"; value: string; summary: SearchMetric;
  coverage: GrainCoverage; previous_coverage: GrainCoverage; comparable: boolean;
  daily: { day: string; clicks: number | null; impressions: number | null }[];
@@ -648,7 +651,10 @@ export function runWebstats(slug: string) {
 
 export type OpportunitySource = "audit" | "citation" | "search" | "metric";
 
+export type OpportunityScore = {impact: number; confidence: number; ease: number; effort_hours: number};
+export function scoreOpportunity(slug: string, key: string, score: OpportunityScore) {return request(`/api/projects/${slug}/opportunities/score`, {method:"PUT", body: JSON.stringify({key,...score})});}
 export type OpportunityItem = {
+ score?: OpportunityScore; recommended?: boolean; stage?: string;
   key: string;
   source: OpportunitySource;
   kind: string;

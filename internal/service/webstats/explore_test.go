@@ -34,7 +34,7 @@ func TestExploreDetailCoverageAndIndependentTotals(t *testing.T) {
 				v.Query = "term"
 				v.Clicks = 2
 			}
-			return repo.SyncBatch{GSC: []model.GscFact{v}}, nil
+			return repo.SyncBatch{GSC: []model.GscFact{v}, Quality: model.GoogleQuality{Known: true, Aggregations: []string{"byPage"}}}, nil
 		})
 		if err != nil {
 			t.Fatal(err)

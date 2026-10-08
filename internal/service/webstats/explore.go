@@ -139,7 +139,7 @@ func (s *Service) exploreCoverage(ctx context.Context, f repo.SearchFilter, in E
 	if err != nil {
 		return nil, err
 	}
-	return &SearchExplore{Coverage: cur, PreviousCoverage: prev, Comparable: cur.State == "covered" && prev.State == "covered", Page: in.Page, PageSize: in.PageSize, Filters: in}, nil
+	return &SearchExplore{Coverage: cur, PreviousCoverage: prev, Comparable: comparableSearch(cur, prev), Page: in.Page, PageSize: in.PageSize, Filters: in}, nil
 }
 
 func (s *Service) ExploreSearch(ctx context.Context, slug, kind string, in ExploreInput) (*SearchExplore, error) {
@@ -177,6 +177,7 @@ type DetailDay struct {
 	Impressions *float64 `json:"impressions"`
 }
 type SearchDetail struct {
+	CTRReference     *CTRReference     `json:"ctr_reference,omitempty"`
 	Kind             string            `json:"kind"`
 	Value            string            `json:"value"`
 	Summary          repo.SearchMetric `json:"summary"`
@@ -271,6 +272,18 @@ func (s *Service) SearchDetail(ctx context.Context, slug, kind string, in Explor
 	out.Related.Items, out.Related.Total, err = s.rows.SearchMetrics(ctx, related)
 	if err != nil {
 		return nil, fmt.Errorf("related search: %w", err)
+	}
+	if kind == "query" {
+		p, e := s.projects.Get(ctx, slug)
+		if e != nil {
+			return nil, e
+		}
+		refs, e := s.ctrReferences(ctx, p, f.Property, f.Through, f.Country, f.Device)
+		if e != nil {
+			return nil, e
+		}
+		ref := refs.reference(in.Value, out.Summary.Position)
+		out.CTRReference = &ref
 	}
 	return out, nil
 }

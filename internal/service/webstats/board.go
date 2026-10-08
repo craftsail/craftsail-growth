@@ -4,6 +4,7 @@ package webstats
 
 import (
 	"context"
+	"encoding/json"
 	"math"
 	"time"
 
@@ -30,12 +31,13 @@ type Period struct {
 }
 
 type GrainCoverage struct {
-	Report      string `json:"report"`
-	From        string `json:"from"`
-	Through     string `json:"through"`
-	CoveredDays int    `json:"covered_days"`
-	TotalDays   int    `json:"total_days"`
-	State       string `json:"state"`
+	Quality     model.GoogleQuality `json:"quality"`
+	Report      string              `json:"report"`
+	From        string              `json:"from"`
+	Through     string              `json:"through"`
+	CoveredDays int                 `json:"covered_days"`
+	TotalDays   int                 `json:"total_days"`
+	State       string              `json:"state"`
 }
 
 type SearchBoard struct {
@@ -113,7 +115,7 @@ func (s *Service) SearchBoard(ctx context.Context, slug string) (*SearchBoard, e
 		period.PositionDelta = nil
 	}
 	var drops []PageClicks
-	if pc.State == "covered" && ppc.State == "covered" {
+	if comparableSearch(pc, ppc) {
 		drops = pageClicks(QueryRowsFromFacts(pageFacts), QueryRowsFromFacts(prevPageFacts))
 	}
 	markSustainedPages(pageFacts, prevPageFacts, drops, end)
@@ -121,7 +123,14 @@ func (s *Service) SearchBoard(ctx context.Context, slug string) (*SearchBoard, e
 	if err != nil {
 		return nil, err
 	}
-	ops, observations := SearchOpportunities(kws, drops, queryPages(cur), SearchPolicy{Mode: observation.Mode, MinImpressions: observation.MinImpressions, QueriesCovered: qc.State == "covered", PagesComparable: pc.State == "covered" && ppc.State == "covered", PairsCovered: pairCoverage.State == "covered"})
+	ops, observations := SearchOpportunities(kws, drops, queryPages(cur), SearchPolicy{Mode: observation.Mode, MinImpressions: observation.MinImpressions, QueriesCovered: trustedSearch(qc), PagesComparable: comparableSearch(pc, ppc), PairsCovered: pairCoverage.State == "covered"})
+	refs, err := s.ctrReferences(ctx, p, property, end, "", "")
+	if err != nil {
+		return nil, err
+	}
+	if observation.Mode == "established" && trustedSearch(qc) {
+		ops = append(ops, ctrOpportunities(kws, refs, observation.MinImpressions)...)
+	}
 	ops = append(alertOps(period, official, end), ops...)
 	return &SearchBoard{Observation: observation, Observations: observations, Keywords: kws, Pages: pages, Period: period, Ops: ops, QueryCoverage: qc, PageCoverage: pc}, nil
 }
@@ -143,6 +152,12 @@ func (s *Service) grainCoverage(ctx context.Context, projectID uint64, property,
 			return out, err
 		}
 		out.CoveredDays = len(days)
+		out.Quality.Known = len(days) > 0
+		for _, d := range days {
+			var q model.GoogleQuality
+			_ = json.Unmarshal([]byte(d.QualityJSON), &q)
+			mergeQuality(&out.Quality, q)
+		}
 		if len(days) > 0 {
 			out.State = "partial"
 		}

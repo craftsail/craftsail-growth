@@ -33,6 +33,7 @@ func (l liveSources) Collect(ctx context.Context, slug string) ([]Item, error) {
 		return nil, err
 	}
 	var items []Item
+	stage := "new_site"
 	if rows, err := l.audits.LatestIssues(ctx, p.ID); err != nil {
 		log.Println("opportunity audit source:", err)
 	} else {
@@ -54,7 +55,13 @@ func (l liveSources) Collect(ctx context.Context, slug string) ([]Item, error) {
 	if board, err := l.web.SearchBoard(ctx, slug); err != nil {
 		log.Println("opportunity search source:", err)
 	} else if board != nil {
+		if board.Observation != nil {
+			stage = board.Observation.Mode
+		}
 		items = append(items, FromSearch(board.Ops, Brand{Name: p.Name, Aliases: p.Brand.Aliases, Site: p.Site})...)
+	}
+	for i := range items {
+		items[i].Stage = stage
 	}
 	return items, nil
 }

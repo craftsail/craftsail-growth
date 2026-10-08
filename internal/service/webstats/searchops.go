@@ -10,13 +10,14 @@ import (
 
 // SearchOp describes a diagnostic lead, never proof of causality.
 type SearchOp struct {
-	Reason string             `json:"reason,omitempty"`
-	Facts  map[string]float64 `json:"facts,omitempty"`
-	Type   string             `json:"type"`
-	Title  string             `json:"title"`
-	Detail string             `json:"detail"`
-	Query  string             `json:"query,omitempty"`
-	URL    string             `json:"url,omitempty"`
+	Reference *CTRReference      `json:"reference,omitempty"`
+	Reason    string             `json:"reason,omitempty"`
+	Facts     map[string]float64 `json:"facts,omitempty"`
+	Type      string             `json:"type"`
+	Title     string             `json:"title"`
+	Detail    string             `json:"detail"`
+	Query     string             `json:"query,omitempty"`
+	URL       string             `json:"url,omitempty"`
 	// URLs lists associated pages, largest first.
 	URLs     []string `json:"urls,omitempty"`
 	Metric   float64  `json:"metric,omitempty"`

@@ -37,6 +37,7 @@ export function opportunityWhy(it: OpportunityItem, t: T, locale: Locale): strin
   if (it.source === "audit") return ruleText(locale, it.kind, "why", it.why);
   if (it.source === "search" && it.detail?.facts && typeof it.detail.facts === "object") {
     const facts = it.detail.facts as Record<string, unknown>;
+    if (it.detail.reason === "local_ctr" && typeof facts.reference_ctr === "number" && typeof facts.scenario_clicks === "number") return t("prioritization.scenario", {ctr: Math.round(facts.reference_ctr * 10000) / 100, clicks: Math.round(facts.scenario_clicks)});
     if (it.detail.reason === "candidate" && typeof facts.position === "number" && typeof facts.impressions === "number") {
       return t("plan.titles.search_candidate_why", { position: Math.round(facts.position * 10) / 10, impressions: facts.impressions });
     }

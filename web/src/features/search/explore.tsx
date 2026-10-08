@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import { CTRReferenceCard } from "./ctr-reference";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { exportSearchCSV, getSavedKeywords, getSearchDetail, getSearchExplore, saveKeyword, type SearchDetail, type SearchExplore, type SearchMetric } from "../../api";
@@ -103,6 +104,7 @@ export function SearchExplorer({ kind }: { kind: Kind }) {
         <h2 className="mb-4 break-all text-xl font-semibold text-gray-900">{detail.value}</h2>
         <ReportCoverage value={detail.coverage} report={kind} />
         {!detail.comparable && <p className="mb-4 text-sm text-amber-700">{t("search.explore.noComparison")}</p>}
+        {detail.ctr_reference && <CTRReferenceCard value={detail.ctr_reference} />}
         <Comparison value={detail.summary} comparable={detail.comparable} measured={detail.coverage.state === "covered" || detail.summary.current_rows > 0} />
         <div className="mb-5 grid min-w-0 gap-4 md:grid-cols-2 [&>*]:min-w-0 [&>*]:overflow-hidden">
           <TimeSeries label={t("search.clicks")} points={detail.daily.map(day => ({ day: day.day, value: day.clicks }))} empty={t("search.noDaily")} />

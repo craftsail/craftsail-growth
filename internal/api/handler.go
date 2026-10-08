@@ -119,6 +119,7 @@ func Mount(engine *gin.Engine, h *Handler) {
 	r("POST", "/projects/:slug/samples/import", permEdit, h.importSamples)
 	r("POST", "/projects/:slug/webstats", permEdit, h.runWebstats)
 	r("POST", "/projects/:slug/saved-keywords", permEdit, h.saveKeyword)
+	r("PUT", "/projects/:slug/opportunities/score", permEdit, h.scoreOpportunity)
 	r("POST", "/projects/:slug/opportunities/accept", permEdit, h.acceptOpportunity)
 	r("POST", "/projects/:slug/opportunities/dismiss", permEdit, h.dismissOpportunity)
 	r("PATCH", "/projects/:slug/tasks/:code", permEdit, h.patchTask)
