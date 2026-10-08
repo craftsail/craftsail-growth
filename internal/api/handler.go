@@ -95,6 +95,8 @@ func Mount(engine *gin.Engine, h *Handler) {
 	r("GET", "/projects/:slug/measure", permView, h.getMeasure)
 	r("GET", "/projects/:slug/sample-sheet", permView, h.sampleSheet)
 	r("GET", "/projects/:slug/webstats", permView, h.getWebstats)
+	r("GET", "/projects/:slug/indexing", permView, h.getIndexInventory)
+	r("GET", "/projects/:slug/indexing/history", permView, h.getIndexHistory)
 	r("GET", "/projects/:slug/keywords", permView, h.getKeywords)
 	r("GET", "/projects/:slug/gsc-pages", permView, h.getGscPages)
 	r("GET", "/projects/:slug/search-detail", permView, h.getSearchDetail)

@@ -33,6 +33,8 @@ func AutoMigrate(db *gorm.DB) error {
 		&VerifyResult{},
 		&GscSitemap{},
 		&GscIndex{},
+		&IndexURL{},
+		&IndexInspection{},
 		&GscFact{},
 		&GaFact{},
 		&GoogleRaw{},

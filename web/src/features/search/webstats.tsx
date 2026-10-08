@@ -152,10 +152,7 @@ export function Webstats() {
   const insight = snap?.insight;
   const top = rowsOf(insight?.top_queries);
   const gaps = rowsOf(insight?.gap_queries);
-  const sitemaps = snap?.sitemaps || [];
-  const indexed = snap?.index || [];
-  const submitted = sitemaps.reduce((n, row) => n + (row.submitted || 0), 0);
-  const indexedN = indexed.filter((row) => row.verdict === "PASS").length;
+
   const gscWindow = windows.find((row) => row.source === "gsc");
   const gaWindow = windows.find((row) => row.source === "ga4");
 
@@ -210,26 +207,7 @@ export function Webstats() {
               </tbody>
             </table>
           </div>
-          <div className="mt-5 card overflow-x-auto p-5">
-            <div className="stat-label">{t("search.index")}</div>
-            <p className="hint">{t("search.indexNote", { submitted: num(submitted), checked: indexed.length, indexed: indexedN })}</p>
-            <table className="table">
-              <thead>
-                <tr><th>{t("search.url")}</th><th>{t("search.verdict")}</th><th>{t("search.coverage")}</th><th>{t("search.lastCrawl")}</th></tr>
-              </thead>
-              <tbody>
-                {indexed.map((row) => (
-                  <tr key={row.url}>
-                    <td>{row.url}</td>
-                    <td>{verdictLabel(t, row.verdict)}</td>
-                    <td>{row.coverage_state || "—"}</td>
-                    <td>{dayOf(row.last_crawl)}</td>
-                  </tr>
-                ))}
-                {indexed.length === 0 && <tr><td colSpan={4} className="hint">{t("search.noIndex")}</td></tr>}
-              </tbody>
-            </table>
-          </div>
+          <div className="mt-5 card p-5"><Link className="text-primary-700 underline" to={`/p/${slug}/search/indexing`}>{t("nav.tabs.indexing")}</Link><p className="hint mt-2">{t("search.indexing.description")}</p></div>
           {insight && (
             <p className="hint">{t("search.aiSessions", { n: num(insight.ai_sessions) })}</p>
           )}
@@ -296,13 +274,6 @@ function Kpi({ title, value, note, up }: { title: string; value: string; note: s
       <p className="hint" style={up ? { color: "#0f766e" } : undefined}>{note}</p>
     </div>
   );
-}
-
-function verdictLabel(t: (k: Key) => string, v: string | undefined) {
-  if (v === "PASS") return t("search.indexed");
-  if (v === "FAIL") return t("search.notIndexed");
-  if (v === "NEUTRAL") return t("search.excluded");
-  return v || "—";
 }
 
 function QueryTable({ title, rows, showPosition, hint }: { title: string; rows: WebQueryRow[]; showPosition?: boolean; hint?: string }) {

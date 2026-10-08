@@ -18,6 +18,8 @@ func RowKey(parts ...string) string {
 
 // GscSitemap is one Search Console sitemap. Indexed is deprecated by Google and often zero.
 type GscSitemap struct {
+	Property  string  `gorm:"type:text" json:"property"`
+	IsIndex   bool    `json:"is_index"`
 	ID        uint64  `gorm:"primaryKey" json:"id"`
 	ProjectID uint64  `gorm:"uniqueIndex:uk_gsc_sitemap;not null" json:"project_id"`
 	KeyHash   string  `gorm:"size:64;uniqueIndex:uk_gsc_sitemap;not null" json:"key_hash"`
@@ -34,16 +36,21 @@ func (GscSitemap) TableName() string { return "gsc_sitemaps" }
 
 // GscIndex is one URL Inspection result. Verdict PASS means Google indexed it.
 type GscIndex struct {
-	ID            uint64 `gorm:"primaryKey" json:"id"`
-	ProjectID     uint64 `gorm:"uniqueIndex:uk_gsc_index;not null" json:"project_id"`
-	KeyHash       string `gorm:"size:64;uniqueIndex:uk_gsc_index;not null" json:"key_hash"`
-	URL           string `gorm:"type:text;not null" json:"url"`
-	Verdict       string `gorm:"size:32" json:"verdict"`
-	CoverageState string `gorm:"size:255" json:"coverage_state"`
-	IndexingState string `gorm:"size:64" json:"indexing_state"`
-	LastCrawl     string `gorm:"size:40" json:"last_crawl"`
-	Raw           string `gorm:"type:longtext" json:"raw"`
-	FetchedAt     int64  `json:"fetched_at"`
+	Property        string `gorm:"type:text" json:"property"`
+	GoogleCanonical string `gorm:"type:text" json:"google_canonical"`
+	UserCanonical   string `gorm:"type:text" json:"user_canonical"`
+	RobotsTxtState  string `gorm:"size:64" json:"robots_txt_state"`
+	PageFetchState  string `gorm:"size:64" json:"page_fetch_state"`
+	ID              uint64 `gorm:"primaryKey" json:"id"`
+	ProjectID       uint64 `gorm:"uniqueIndex:uk_gsc_index;not null" json:"project_id"`
+	KeyHash         string `gorm:"size:64;uniqueIndex:uk_gsc_index;not null" json:"key_hash"`
+	URL             string `gorm:"type:text;not null" json:"url"`
+	Verdict         string `gorm:"size:32" json:"verdict"`
+	CoverageState   string `gorm:"size:255" json:"coverage_state"`
+	IndexingState   string `gorm:"size:64" json:"indexing_state"`
+	LastCrawl       string `gorm:"size:40" json:"last_crawl"`
+	Raw             string `gorm:"type:longtext" json:"raw"`
+	FetchedAt       int64  `json:"fetched_at"`
 }
 
 func (GscIndex) TableName() string { return "gsc_indexes" }

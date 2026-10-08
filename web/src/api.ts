@@ -529,6 +529,7 @@ export type GscSitemapRow = {
 };
 
 export type GscIndexRow = {
+  property?: string; google_canonical?: string; user_canonical?: string; robots_txt_state?: string; page_fetch_state?: string; fetched_at?: number;
   url?: string;
   verdict?: string;
   coverage_state?: string;
@@ -768,3 +769,13 @@ export function getProgress(slug: string) {
 export function confirmProgress(slug: string, body: { kind: "brand" | "questions" | "audit_helpful"; revision?: string; audit_id?: number }) {
   return request<ProjectProgress>(`/api/projects/${slug}/progress`, { method: "POST", body: JSON.stringify(body) });
 }
+
+export type IndexURL = {
+  id: number; url: string; property: string; from_crawl: boolean; from_search: boolean;
+  first_seen_at: number; last_attempt_at: number; last_success_at: number; first_indexed_at: number | null;
+  next_inspect_at: number; verdict: string; last_error: string; latest: GscIndexRow | null;
+};
+export type IndexInventory = { property: string; items: IndexURL[]; total: number; known: number; inspected: number; indexed: number; due: number; page: number; page_size: number };
+export type IndexHistory = { items: { id: number; checked_at: number; error: string; result: GscIndexRow | null }[]; total: number; page: number; page_size: number };
+export function getIndexInventory(slug: string, params: URLSearchParams) { return request<IndexInventory>(`/api/projects/${slug}/indexing?${params}`); }
+export function getIndexHistory(slug: string, url: string, page: number) { return request<IndexHistory>(`/api/projects/${slug}/indexing/history?${new URLSearchParams({ url, page: String(page), page_size: "20" })}`); }

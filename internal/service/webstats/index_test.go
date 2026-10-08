@@ -25,13 +25,13 @@ func (t *indexRT) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func TestFetchSitemapsSubmitted(t *testing.T) {
-	rt := &indexRT{body: `{"sitemap":[{"path":"https://ex.com/sitemap.xml","errors":"1","warnings":2,"contents":[{"submitted":"12"},{"submitted":3}]}]}`}
+	rt := &indexRT{body: `{"sitemap":[{"path":"https://ex.com/sitemap.xml","isSitemapsIndex":true,"errors":"1","warnings":2,"contents":[{"submitted":"12"},{"submitted":3}]}]}`}
 	c := &Client{HTTP: &http.Client{Transport: rt}}
 	rows, err := c.FetchSitemaps("tok", "sc-domain:ex.com")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) != 1 || rows[0].Submitted != 15 || rows[0].Errors != 1 || rows[0].Warnings != 2 {
+	if len(rows) != 1 || rows[0].Submitted != 15 || rows[0].Errors != 1 || rows[0].Warnings != 2 || !rows[0].IsIndex || rows[0].Property != "sc-domain:ex.com" {
 		t.Fatalf("%#v", rows)
 	}
 	if !strings.Contains(rt.url, "sc-domain%3Aex.com") {

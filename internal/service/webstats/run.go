@@ -182,11 +182,11 @@ func (s *Service) Snapshot(ctx context.Context, slug string) (*Snapshot, error) 
 	if err != nil {
 		return nil, err
 	}
-	sitemaps, err := s.rows.ListSitemaps(ctx, p.ID)
+	sitemaps, err := s.rows.ListSitemaps(ctx, p.ID, s.indexProperty(ctx, p))
 	if err != nil {
 		return nil, err
 	}
-	indexed, err := s.rows.ListIndex(ctx, p.ID)
+	indexed, err := s.rows.ListIndex(ctx, p.ID, s.indexProperty(ctx, p))
 	if err != nil {
 		return nil, err
 	}
@@ -414,60 +414,7 @@ func (s *Service) pullIndex(ctx context.Context, token string, projectID uint64,
 	if err := s.rows.UpsertSitemaps(ctx, maps); err != nil {
 		return "", err
 	}
-	targets, err := s.rows.IndexTargets(ctx, projectID, indexInspectCap)
-	if err != nil {
-		return "", err
-	}
-	existing, err := s.rows.ListIndex(ctx, projectID)
-	if err != nil {
-		return "", err
-	}
-	fresh := map[string]int64{}
-	for _, row := range existing {
-		fresh[row.URL] = row.FetchedAt
-	}
-	indexed := make([]model.GscIndex, 0, len(targets))
-	var skipped int
-	var first string
-	for _, page := range targets {
-		if at, ok := fresh[page]; ok && now.Unix()-at < int64((7*24*time.Hour).Seconds()) {
-			continue
-		}
-		if !urlInProperty(site, page) {
-			skipped++
-			continue
-		}
-		row, err := s.client().InspectURLContext(ctx, token, site, page)
-		if err != nil {
-			if errors.Is(syncBudgetError(ctx, err), ErrSyncBudget) || ctx.Err() != nil {
-				return "", syncBudgetError(ctx, err)
-			}
-			skipped++
-			if first == "" {
-				first = err.Error()
-			}
-			continue
-		}
-		row.ProjectID = projectID
-		row.FetchedAt = now.Unix()
-		if err := s.rows.UpsertIndex(ctx, []model.GscIndex{row}); err != nil {
-			return "", syncBudgetError(ctx, err)
-		}
-		if budget := budgetFrom(ctx); budget != nil {
-			budget.mu.Lock()
-			budget.committed++
-			budget.mu.Unlock()
-		}
-		indexed = append(indexed, row)
-	}
-
-	if len(indexed) == 0 && first != "" {
-		return "index inspection failed: " + first, nil
-	}
-	if skipped > 0 && len(indexed) > 0 {
-		return fmt.Sprintf("skipped %d URLs outside this Search Console property", skipped), nil
-	}
-	return "", nil
+	return s.inspectDue(ctx, token, projectID, site, now)
 }
 
 // window ends 3 days ago (GSC lag). start is 27 days before end.

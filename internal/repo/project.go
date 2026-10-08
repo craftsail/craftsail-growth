@@ -67,6 +67,11 @@ func (r *Projects) DeleteBySlug(ctx context.Context, slug string) error {
 		if err := tx.Where("project_id = ?", p.ID).Delete(&model.ProjectProgress{}).Error; err != nil {
 			return err
 		}
+		for _, table := range []any{&model.IndexURL{}, &model.IndexInspection{}, &model.GscIndex{}, &model.GscSitemap{}} {
+			if err := tx.Where("project_id = ?", p.ID).Delete(table).Error; err != nil {
+				return err
+			}
+		}
 		return tx.Delete(&model.Project{}, p.ID).Error
 	})
 }
