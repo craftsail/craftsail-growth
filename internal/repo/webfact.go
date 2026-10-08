@@ -185,10 +185,15 @@ func (r *Webstats) PutSync(ctx context.Context, projectID uint64, source string,
 
 // ListQueryPage returns the web query x page slice for one property.
 func (r *Webstats) ListQueryPage(ctx context.Context, projectID uint64, property string, from, to time.Time) ([]model.GscFact, error) {
+	return r.ListGscSlice(ctx, projectID, property, "query_page", from, to)
+}
+
+// ListGscSlice keeps report grain explicit; no fallback to query/page details.
+func (r *Webstats) ListGscSlice(ctx context.Context, projectID uint64, property, slice string, from, to time.Time) ([]model.GscFact, error) {
 	var out []model.GscFact
 	err := r.DB.WithContext(ctx).
 		Where("project_id = ? AND property = ? AND slice = ? AND search_type = ? AND date(day) >= ? AND date(day) <= ?",
-			projectID, property, "query_page", "web", from.Format("2006-01-02"), to.Format("2006-01-02")).
+			projectID, property, slice, "web", from.Format("2006-01-02"), to.Format("2006-01-02")).
 		Find(&out).Error
 	return out, err
 }

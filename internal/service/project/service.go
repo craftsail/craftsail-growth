@@ -17,11 +17,12 @@ import (
 )
 
 var (
-	ErrNameRequired = errors.New("a project without a site needs a brand name")
-	ErrSlugTaken    = errors.New("project slug is taken")
-	ErrInvalidSlug  = errors.New("invalid project slug")
-	ErrNotFound     = errors.New("project not found")
-	ErrInvalidSite  = errors.New("invalid website URL")
+	ErrNameRequired          = errors.New("a project without a site needs a brand name")
+	ErrSlugTaken             = errors.New("project slug is taken")
+	ErrInvalidSlug           = errors.New("invalid project slug")
+	ErrNotFound              = errors.New("project not found")
+	ErrInvalidSearchSettings = errors.New("search mode must be auto, new_site or established; minimum impressions must be 100–1000000")
+	ErrInvalidSite           = errors.New("invalid website URL")
 )
 
 type CreateInput struct {
@@ -155,19 +156,35 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (*model.Project, e
 }
 
 type UpdateInput struct {
-	URL         *string
-	Name        *string
-	NoSite      *bool
-	Materials   *string
-	MaxPages    *int
-	GscSite     *string
-	GA4Property *string
+	SearchMode           *string
+	SearchMinImpressions *int
+	URL                  *string
+	Name                 *string
+	NoSite               *bool
+	Materials            *string
+	MaxPages             *int
+	GscSite              *string
+	GA4Property          *string
 }
 
 func (s *Service) Update(ctx context.Context, sl string, in UpdateInput) (*model.Project, error) {
 	p, err := s.Get(ctx, sl)
 	if err != nil {
 		return nil, err
+	}
+	if in.SearchMode != nil {
+		switch *in.SearchMode {
+		case "auto", "new_site", "established":
+			p.SearchMode = *in.SearchMode
+		default:
+			return nil, ErrInvalidSearchSettings
+		}
+	}
+	if in.SearchMinImpressions != nil {
+		if *in.SearchMinImpressions < 100 || *in.SearchMinImpressions > 1000000 {
+			return nil, ErrInvalidSearchSettings
+		}
+		p.SearchMinImpressions = *in.SearchMinImpressions
 	}
 	if in.Name != nil {
 		name := strings.TrimSpace(*in.Name)

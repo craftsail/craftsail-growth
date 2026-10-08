@@ -82,6 +82,8 @@ func Mount(engine *gin.Engine, h *Handler) {
 
 	// Project, read.
 	r("GET", "/projects/:slug", permView, h.getProject)
+	r("GET", "/projects/:slug/progress", permView, h.getProgress)
+	r("POST", "/projects/:slug/progress", permEdit, h.confirmProgress)
 	r("GET", "/projects/:slug/audit", permView, h.getAudit)
 	r("GET", "/projects/:slug/audit/issues", permView, h.getAuditIssues)
 	r("GET", "/projects/:slug/audit.md", permView, h.exportAuditMD)
@@ -95,6 +97,9 @@ func Mount(engine *gin.Engine, h *Handler) {
 	r("GET", "/projects/:slug/webstats", permView, h.getWebstats)
 	r("GET", "/projects/:slug/keywords", permView, h.getKeywords)
 	r("GET", "/projects/:slug/gsc-pages", permView, h.getGscPages)
+	r("GET", "/projects/:slug/search-detail", permView, h.getSearchDetail)
+	r("GET", "/projects/:slug/ga-channels", permView, h.getGAChannels)
+	r("GET", "/projects/:slug/ga-landings", permView, h.getGALandings)
 	r("GET", "/projects/:slug/saved-keywords", permView, h.listSavedKeywords)
 	r("GET", "/projects/:slug/opportunities", permView, h.listOpportunities)
 	r("GET", "/projects/:slug/report", permView, h.getReport)
@@ -343,14 +348,16 @@ func (h *Handler) getProject(c *gin.Context) {
 
 func (h *Handler) patchProject(c *gin.Context) {
 	var body struct {
-		URL         *string `json:"url"`
-		Site        *string `json:"site"`
-		Name        *string `json:"name"`
-		NoSite      *bool   `json:"no_site"`
-		Materials   *string `json:"materials"`
-		MaxPages    *int    `json:"max_pages"`
-		GscSite     *string `json:"gsc_site"`
-		GA4Property *string `json:"ga4_property"`
+		SearchMode           *string `json:"search_mode"`
+		SearchMinImpressions *int    `json:"search_min_impressions"`
+		URL                  *string `json:"url"`
+		Site                 *string `json:"site"`
+		Name                 *string `json:"name"`
+		NoSite               *bool   `json:"no_site"`
+		Materials            *string `json:"materials"`
+		MaxPages             *int    `json:"max_pages"`
+		GscSite              *string `json:"gsc_site"`
+		GA4Property          *string `json:"ga4_property"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		env, st := resp.Fail(resp.CodeBadRequest, http.StatusBadRequest, "invalid request body")
@@ -364,7 +371,7 @@ func (h *Handler) patchProject(c *gin.Context) {
 	p, err := h.projects.Update(c.Request.Context(), c.Param("slug"), project.UpdateInput{
 		URL: url, Name: body.Name, NoSite: body.NoSite,
 		Materials: body.Materials, MaxPages: body.MaxPages,
-		GscSite: body.GscSite, GA4Property: body.GA4Property,
+		GscSite: body.GscSite, GA4Property: body.GA4Property, SearchMode: body.SearchMode, SearchMinImpressions: body.SearchMinImpressions,
 	})
 	if err != nil {
 		writeErr(c, err)
@@ -435,13 +442,13 @@ func (h *Handler) exportAuditMD(c *gin.Context) {
 }
 
 func (h *Handler) getBrand(c *gin.Context) {
-	p, err := h.bootstrap.Brand(c.Request.Context(), c.Param("slug"))
+	p, revision, err := h.bootstrap.BrandForReview(c.Request.Context(), c.Param("slug"))
 	if err != nil {
 		writeErr(c, err)
 		return
 	}
 	md, _ := h.bootstrap.Facts(c.Request.Context(), c.Param("slug"))
-	c.JSON(http.StatusOK, resp.OK(gin.H{"name": p.Name, "site": p.Site, "brand": p.Brand, "facts_markdown": md}))
+	c.JSON(http.StatusOK, resp.OK(gin.H{"name": p.Name, "site": p.Site, "brand": p.Brand, "facts_markdown": md, "review_revision": revision}))
 }
 
 func (h *Handler) putBrand(c *gin.Context) {
@@ -487,7 +494,7 @@ func (h *Handler) getQuestions(c *gin.Context) {
 		writeErr(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, resp.OK(gin.H{"items": qs, "brand": p.Name, "aliases": p.Brand.Aliases, "site": p.Site}))
+	c.JSON(http.StatusOK, resp.OK(gin.H{"items": qs, "brand": p.Name, "aliases": p.Brand.Aliases, "site": p.Site, "review_revision": model.QuestionsReviewRevision(qs)}))
 }
 
 func (h *Handler) putQuestions(c *gin.Context) {
@@ -731,27 +738,35 @@ func opportunityHints() []gin.H {
 }
 
 func (h *Handler) acceptOpportunity(c *gin.Context) {
-	h.materializeOpportunity(c, h.opportunity.Accept)
+	h.materializeOpportunity(c, func(ctx context.Context, slug, key string, reviewed bool) (*model.Task, error) {
+		if reviewed && who(c).User != nil {
+			return h.opportunity.AcceptReviewed(ctx, slug, key, who(c).User.ID)
+		}
+		return h.opportunity.Accept(ctx, slug, key)
+	})
 }
 
 func (h *Handler) dismissOpportunity(c *gin.Context) {
-	h.materializeOpportunity(c, h.opportunity.Dismiss)
+	h.materializeOpportunity(c, func(ctx context.Context, slug, key string, _ bool) (*model.Task, error) {
+		return h.opportunity.Dismiss(ctx, slug, key)
+	})
 }
 
-func (h *Handler) materializeOpportunity(c *gin.Context, do func(ctx context.Context, slug, key string) (*model.Task, error)) {
+func (h *Handler) materializeOpportunity(c *gin.Context, do func(ctx context.Context, slug, key string, reviewed bool) (*model.Task, error)) {
 	if h.opportunity == nil {
 		writeErr(c, errors.New("opportunity service not configured"))
 		return
 	}
 	var body struct {
-		Key string `json:"key"`
+		Key      string `json:"key"`
+		Reviewed bool   `json:"reviewed"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil || strings.TrimSpace(body.Key) == "" {
 		env, st := resp.Fail(resp.CodeBadRequest, http.StatusBadRequest, "key is required")
 		c.JSON(st, env)
 		return
 	}
-	t, err := do(c.Request.Context(), c.Param("slug"), body.Key)
+	t, err := do(c.Request.Context(), c.Param("slug"), body.Key, body.Reviewed)
 	switch {
 	case errors.Is(err, opportunity.ErrAccepted):
 		env, st := resp.Fail(resp.CodeConflict, http.StatusConflict, err.Error())
@@ -790,7 +805,7 @@ func (h *Handler) patchTask(c *gin.Context) {
 
 func writeErr(c *gin.Context, err error) {
 	switch {
-	case errors.Is(err, project.ErrNameRequired), errors.Is(err, project.ErrInvalidSlug), errors.Is(err, project.ErrInvalidSite):
+	case errors.Is(err, project.ErrInvalidSearchSettings), errors.Is(err, project.ErrNameRequired), errors.Is(err, project.ErrInvalidSlug), errors.Is(err, project.ErrInvalidSite):
 		env, st := resp.Fail(resp.CodeBadRequest, http.StatusBadRequest, err.Error())
 		c.JSON(st, env)
 	case errors.Is(err, project.ErrSlugTaken):

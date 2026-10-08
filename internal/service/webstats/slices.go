@@ -17,9 +17,15 @@ type gscSlice struct {
 
 func gscSlices() []gscSlice {
 	all := GSCSearchTypes
+	searchable := []string{"web", "image", "video", "news"}
 	return []gscSlice{
-		{Name: "query_page", Dimensions: []string{"date", "query", "page"}, DataState: "all", Types: all},
-		{Name: "query_page_country_device", Dimensions: []string{"date", "query", "page", "country", "device"}, DataState: "all", Types: all},
+		{Name: "page", Dimensions: []string{"date", "page"}, DataState: "final", Types: []string{"web"}},
+		{Name: "query", Dimensions: []string{"date", "query"}, DataState: "final", Types: []string{"web"}},
+		{Name: "country_device", Dimensions: []string{"date", "country", "device"}, DataState: "final", Types: []string{"web"}},
+		{Name: "page_country_device", Dimensions: []string{"date", "page", "country", "device"}, DataState: "final", Types: []string{"web"}},
+		{Name: "query_country_device", Dimensions: []string{"date", "query", "country", "device"}, DataState: "final", Types: []string{"web"}},
+		{Name: "query_page", Dimensions: []string{"date", "query", "page"}, DataState: "all", Types: searchable},
+		{Name: "query_page_country_device", Dimensions: []string{"date", "query", "page", "country", "device"}, DataState: "all", Types: searchable},
 		{Name: "country", Dimensions: []string{"date", "country"}, DataState: "all", Types: all},
 		{Name: "device", Dimensions: []string{"date", "device"}, DataState: "all", Types: all},
 		{Name: "appearance", Dimensions: []string{"date", "searchAppearance"}, DataState: "all", Types: all},

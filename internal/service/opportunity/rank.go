@@ -112,6 +112,9 @@ func FromSearch(ops []webstats.SearchOp, b Brand) []Item {
 	out := make([]Item, 0, len(ops))
 	seen := map[string]int{}
 	for _, o := range ops {
+		if o.Type == "multiple_pages" || o.Reason == "coverage" || o.Reason == "small_sample" || o.Reason == "new_site" || o.Reason == "association_only" {
+			continue
+		}
 		q := strings.TrimSpace(o.Query)
 		if strings.HasPrefix(strings.ToLower(q), "site:") {
 			continue // the owner's own site: searches are not demand
@@ -139,7 +142,7 @@ func FromSearch(ops []webstats.SearchOp, b Brand) []Item {
 		out = append(out, Item{
 			Key: fmt.Sprintf("search:%s:%s", o.Type, id), Source: "search", Kind: o.Type, Priority: "P2",
 			Title: searchTitle(o), Why: o.Detail, URLs: urls, Acceptance: map[string]any{"type": "manual"},
-			Detail: map[string]any{"query": q, "metric": o.Metric, "severity": o.Severity},
+			Detail: map[string]any{"query": q, "metric": o.Metric, "severity": o.Severity, "reason": o.Reason, "facts": o.Facts, "url": o.URL},
 		})
 	}
 	return out
@@ -221,7 +224,7 @@ func nonEmpty(s string) []string {
 func searchTitle(o webstats.SearchOp) string {
 	switch o.Type {
 	case "striking_distance":
-		return "Close to the top three: " + o.Title
+		return "Ranking candidate to review: " + o.Title
 	case "low_ctr":
 		return "Low click-through: " + o.Title
 	case "content_decay":

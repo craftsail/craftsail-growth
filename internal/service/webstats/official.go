@@ -5,17 +5,18 @@ package webstats
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
-	"net/http"
+	"math"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/craftsail/craftsail-growth/internal/model"
+	"github.com/craftsail/craftsail-growth/internal/repo"
 )
 
 const officialWindowDays = 28
-const officialTailDays = 3
 
 type gscDatePage struct {
 	Rows     []gscAPIRow `json:"rows"`
@@ -61,26 +62,41 @@ func (c *Client) FetchGSCDate(ctx context.Context, token, site, start, end strin
 }
 
 func (c *Client) FetchGADate(ctx context.Context, token, property, start, end string) ([]model.GaDaily, int, bool, error) {
+	rows, _, count, hit, err := c.fetchGADateQuality(ctx, token, property, start, end)
+	return rows, count, hit, err
+}
+
+func (c *Client) fetchGADateQuality(ctx context.Context, token, property, start, end string) ([]model.GaDaily, model.GoogleQuality, int, bool, error) {
+	quality := model.GoogleQuality{}
 	id, ok := GAPropertyKey(property)
 	if !ok {
-		return nil, 0, false, fmt.Errorf("ga HTTP 400 invalid property")
+		return nil, quality, 0, false, fmt.Errorf("ga HTTP 400 invalid property")
 	}
 	metrics := []string{"sessions", "engagedSessions", "keyEvents"}
 	limit := c.gaFactLimit()
 	endpoint := "https://analyticsdata.googleapis.com/v1beta/properties/" + id + ":runReport"
 	body := gaReportBody{
-		DateRanges: []gaDateRange{{StartDate: start, EndDate: end}},
-		Dimensions: names([]string{"date"}),
-		Metrics:    names(metrics),
-		Limit:      limit,
+		DateRanges:          []gaDateRange{{StartDate: start, EndDate: end}},
+		Dimensions:          names([]string{"date"}),
+		Metrics:             names(metrics),
+		Limit:               limit,
+		ReturnPropertyQuota: true,
 	}
 	raw, err := c.postJSON(ctx, token, endpoint, "ga", body)
 	if err != nil {
-		return nil, 0, false, err
+		return nil, quality, 0, false, err
+	}
+	if c.OnPage != nil {
+		req, _ := json.Marshal(body)
+		c.OnPage("ga4/daily", string(req), string(raw))
 	}
 	var page gaFactPage
 	if err := json.Unmarshal(raw, &page); err != nil {
-		return nil, 0, false, fmt.Errorf("ga date: %w", err)
+		return nil, quality, 0, false, fmt.Errorf("ga date: %w", err)
+	}
+	quality = qualityFromGA(page.Metadata)
+	if page.Metadata != nil && (len(page.Metadata.Truncation) > 0 || page.Metadata.EmptyReason != "") {
+		return nil, quality, 0, true, ErrIncompleteReport
 	}
 	out := make([]model.GaDaily, 0, len(page.Rows))
 	for _, row := range page.Rows {
@@ -94,7 +110,7 @@ func (c *Client) FetchGADate(ctx context.Context, token, property, start, end st
 			Conversions: metricPtr(row, metrics, "conversions"),
 		})
 	}
-	return out, len(page.Rows), len(page.Rows) >= limit, nil
+	return out, quality, len(page.Rows), len(page.Rows) >= limit || len(page.Rows) < page.RowCount, nil
 }
 
 func metricPtr(row gaAPIRow, metrics []string, name string) *float64 {
@@ -106,7 +122,10 @@ func metricPtr(row gaAPIRow, metrics []string, name string) *float64 {
 		if raw == "" {
 			return nil
 		}
-		n := parseFloat(raw)
+		n, err := strconv.ParseFloat(raw, 64)
+		if err != nil || math.IsNaN(n) || math.IsInf(n, 0) {
+			return nil
+		}
 		return &n
 	}
 	return nil
@@ -118,24 +137,11 @@ func (c *Client) FetchGATimezone(ctx context.Context, token, property string) st
 		return ""
 	}
 	endpoint := "https://analyticsadmin.googleapis.com/v1beta/properties/" + id
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	b, err := c.getJSONContext(ctx, token, endpoint, "ga")
 	if err != nil {
 		return ""
 	}
-	req.Header.Set("Authorization", "Bearer "+token)
-	cli, err := c.httpClient()
-	if err != nil {
-		return ""
-	}
-	res, err := cli.Do(req)
-	if err != nil {
-		return ""
-	}
-	defer res.Body.Close()
-	b, _ := io.ReadAll(res.Body)
-	if res.StatusCode >= 400 {
-		return ""
-	}
+
 	var doc struct {
 		TimeZone string `json:"timeZone"`
 	}
@@ -143,45 +149,6 @@ func (c *Client) FetchGATimezone(ctx context.Context, token, property string) st
 		return ""
 	}
 	return strings.TrimSpace(doc.TimeZone)
-}
-
-// officialPlan fills the visible 56-day report first. Later syncs refresh the tail and walk one older month.
-func officialPlan(lastEnd, earliest, endCap, historyStart time.Time) []dateChunk {
-	endCap = dateOnly(endCap)
-	historyStart = dateOnly(historyStart)
-	if endCap.Before(historyStart) {
-		return nil
-	}
-	reportStart := endCap.AddDate(0, 0, -(officialWindowDays*2 - 1))
-	if reportStart.Before(historyStart) {
-		reportStart = historyStart
-	}
-	if lastEnd.IsZero() {
-		return []dateChunk{{start: reportStart, end: endCap}}
-	}
-	var out []dateChunk
-	tailStart := endCap.AddDate(0, 0, -(officialTailDays - 1))
-	if tailStart.Before(historyStart) {
-		tailStart = historyStart
-	}
-	if !tailStart.After(endCap) {
-		out = append(out, dateChunk{start: tailStart, end: endCap})
-	}
-	floor := dateOnly(earliest)
-	if floor.IsZero() {
-		floor = reportStart
-	}
-	if floor.After(historyStart) {
-		olderEnd := floor.AddDate(0, 0, -1)
-		olderStart := olderEnd.AddDate(0, 0, -27)
-		if olderStart.Before(historyStart) {
-			olderStart = historyStart
-		}
-		if !olderStart.After(olderEnd) {
-			out = append(out, dateChunk{start: olderStart, end: olderEnd})
-		}
-	}
-	return out
 }
 
 func (s *Service) SyncOfficial(ctx context.Context, projectID uint64, token, gscSite, gaProp string, now time.Time) string {
@@ -200,135 +167,116 @@ func (s *Service) SyncOfficial(ctx context.Context, projectID uint64, token, gsc
 }
 
 func (s *Service) syncGSCOfficial(ctx context.Context, projectID uint64, token, site string, now time.Time) string {
+	if errors.Is(context.Cause(ctx), ErrSyncBudget) {
+		return ""
+	}
 	key, ok := GSCPropertyKey(site)
 	if !ok {
-		s.saveImport(ctx, projectID, "gsc", site, "paused", "config_invalid", "config_invalid", "Choose the property again", nil, "")
-		return "Choose the Search Console property again"
+		return s.failImport(ctx, projectID, "gsc", site, fmt.Errorf("gsc HTTP 400 invalid property"))
 	}
 	if err := s.rows.ActivateProperty(ctx, projectID, "gsc", key, ""); err != nil {
-		return err.Error()
+		return s.failImport(ctx, projectID, "gsc", key, err)
 	}
-	probeEnd := now.UTC().Format("2006-01-02")
-	probeStart := now.UTC().AddDate(0, 0, -7).Format("2006-01-02")
-	_, incomplete, _, _, err := s.fetchGSCDate(ctx, token, key, probeStart, probeEnd)
+	_, incomplete, _, _, err := s.fetchGSCDate(ctx, token, key, now.UTC().AddDate(0, 0, -7).Format("2006-01-02"), now.UTC().Format("2006-01-02"))
 	if err != nil {
 		return s.failImport(ctx, projectID, "gsc", key, err)
 	}
-	through, source := FinalizedThrough(now, incomplete)
-	history := through.AddDate(0, -16, 0)
-	last, earliest, err := s.officialCursors(ctx, projectID, "gsc/official/web", "gsc/official/earliest")
-	if err != nil {
-		return err.Error()
-	}
-	parts := officialPlan(last, earliest, through, history)
-	returned := 0
-	capHit := false
-	for _, part := range parts {
-		facts, _, n, hit, err := s.fetchGSCDate(ctx, token, key, part.start.Format("2006-01-02"), part.end.Format("2006-01-02"))
+	through, boundary := FinalizedThrough(now, incomplete)
+	err = s.syncReport(ctx, projectID, "gsc", key, "daily", "web", through.AddDate(0, -16, 0), through, 28, 2, func(partCtx context.Context, part dateChunk) (repo.SyncBatch, error) {
+		facts, _, _, hit, err := s.fetchGSCDate(partCtx, token, key, part.start.Format("2006-01-02"), part.end.Format("2006-01-02"))
 		if err != nil {
-			return s.failImport(ctx, projectID, "gsc", key, err)
+			return repo.SyncBatch{}, err
 		}
-		returned += n
-		capHit = capHit || hit
+		if hit {
+			return repo.SyncBatch{}, ErrIncompleteReport
+		}
 		rows := GSCDailiesFromFacts(key, facts)
+		seen := map[string]bool{}
 		for i := range rows {
 			rows[i].ProjectID = projectID
 			rows[i].FetchedAt = now.Unix()
+			seen[rows[i].Day.Format("2006-01-02")] = true
 		}
-		if err := s.rows.UpsertGscDaily(ctx, rows); err != nil {
-			return err.Error()
+		// A completed date-only response establishes genuine zero days too.
+		for d := part.start; !d.After(part.end); d = d.AddDate(0, 0, 1) {
+			if !seen[d.Format("2006-01-02")] {
+				rows = append(rows, model.GscDaily{ProjectID: projectID, Property: key, SearchType: "web", Day: d, FetchedAt: now.Unix()})
+			}
 		}
-		if err := s.rows.PutSync(ctx, projectID, "gsc/official/web", part.end); err != nil {
-			return err.Error()
-		}
-		cursor := part.end
-		s.saveImport(ctx, projectID, "gsc", key, "running", "", "", "", &cursor, source)
+		return repo.SyncBatch{GSCDaily: rows}, nil
+	})
+	if err != nil {
+		return s.failImport(ctx, projectID, "gsc", key, err)
 	}
-	s.rememberOfficial(ctx, projectID, "gsc/official/web", "gsc/official/earliest", through, parts, earliest)
-	s.writeWindow(ctx, projectID, "gsc", key, through, now)
-	state := "completed"
-	if returned == 0 && last.IsZero() {
-		state = "waiting_for_first_data"
+	if err := s.writeWindow(ctx, projectID, "gsc", key, through, now); err != nil {
+		return s.failImport(ctx, projectID, "gsc", key, err)
 	}
-	s.saveImport(ctx, projectID, "gsc", key, state, "", "", "", &through, source)
-	if capHit {
-		return "Search Console daily totals hit the row limit"
+	if err := s.saveImport(ctx, projectID, "gsc", key, "completed", "", "", "", &through, boundary); err != nil {
+		return err.Error()
+	}
+	if err := s.promoteSearchStage(ctx, projectID, key, through); err != nil {
+		return s.failImport(ctx, projectID, "gsc", key, err)
 	}
 	return ""
 }
 
 func (s *Service) syncGAOfficial(ctx context.Context, projectID uint64, token, property string, now time.Time) string {
+	if errors.Is(context.Cause(ctx), ErrSyncBudget) {
+		return ""
+	}
 	key, ok := GAPropertyKey(property)
 	if !ok {
-		s.saveImport(ctx, projectID, "ga4", property, "paused", "config_invalid", "config_invalid", "Choose the property again", nil, "")
-		return "Choose the GA4 property again"
+		return s.failImport(ctx, projectID, "ga4", property, fmt.Errorf("ga HTTP 400 invalid property"))
 	}
-	tz := ""
-	if s.FetchGADate == nil && s.client() != nil {
+	tz := s.propertyTimezone(ctx, projectID, "ga4", key)
+	if s.FetchGADate == nil && tz == "" {
 		tz = s.client().FetchGATimezone(ctx, token, key)
 	}
 	if err := s.rows.ActivateProperty(ctx, projectID, "ga4", key, tz); err != nil {
-		return err.Error()
+		return s.failImport(ctx, projectID, "ga4", key, err)
 	}
 	through := gaFinalizedThrough(now, tz)
-	history := through.AddDate(0, -16, 0)
-	last, earliest, err := s.officialCursors(ctx, projectID, "ga/official/daily", "ga/official/earliest")
-	if err != nil {
-		return err.Error()
-	}
-	parts := officialPlan(last, earliest, through, history)
-	returned := 0
-	for _, part := range parts {
-		rows, n, _, err := s.fetchGADate(ctx, token, key, part.start.Format("2006-01-02"), part.end.Format("2006-01-02"))
-		if err != nil {
-			return s.failImport(ctx, projectID, "ga4", key, err)
+	err := s.syncReport(ctx, projectID, "ga4", key, "daily", "", through.AddDate(0, -16, 0), through, 28, 2, func(partCtx context.Context, part dateChunk) (repo.SyncBatch, error) {
+		var rows []model.GaDaily
+		var quality model.GoogleQuality
+		var hit bool
+		var err error
+		if s.FetchGADate != nil {
+			rows, _, hit, err = s.fetchGADate(partCtx, token, key, part.start.Format("2006-01-02"), part.end.Format("2006-01-02"))
+		} else {
+			rows, quality, _, hit, err = s.client().fetchGADateQuality(partCtx, token, key, part.start.Format("2006-01-02"), part.end.Format("2006-01-02"))
 		}
-		returned += n
+		if err != nil {
+			return repo.SyncBatch{}, err
+		}
+		if hit {
+			return repo.SyncBatch{}, ErrIncompleteReport
+		}
+		seen := map[string]bool{}
 		for i := range rows {
 			rows[i].ProjectID = projectID
 			rows[i].Property = key
 			rows[i].Timezone = tz
 			rows[i].FetchedAt = now.Unix()
+			seen[rows[i].Day.Format("2006-01-02")] = true
 		}
-		if err := s.rows.UpsertGaDaily(ctx, rows); err != nil {
-			return err.Error()
+		for d := part.start; !d.After(part.end); d = d.AddDate(0, 0, 1) {
+			if !seen[d.Format("2006-01-02")] && quality.Known && !quality.Sampled && !quality.Thresholded && !quality.OtherRow && !quality.Restricted {
+				rows = append(rows, model.GaDaily{ProjectID: projectID, Property: key, Day: d, Timezone: tz, FetchedAt: now.Unix()})
+			}
 		}
-		if err := s.rows.PutSync(ctx, projectID, "ga/official/daily", part.end); err != nil {
-			return err.Error()
-		}
-		cursor := part.end
-		s.saveImport(ctx, projectID, "ga4", key, "running", "", "property", "", &cursor, tz)
-	}
-	s.rememberOfficial(ctx, projectID, "ga/official/daily", "ga/official/earliest", through, parts, earliest)
-	s.writeWindow(ctx, projectID, "ga4", key, through, now)
-	state := "completed"
-	if returned == 0 && last.IsZero() {
-		state = "waiting_for_first_data"
-	}
-	s.saveImport(ctx, projectID, "ga4", key, state, "", "property", "", &through, tz)
-	return ""
-}
-
-func (s *Service) officialCursors(ctx context.Context, projectID uint64, endKey, earlyKey string) (time.Time, time.Time, error) {
-	last, err := s.rows.GetSync(ctx, projectID, endKey)
+		return repo.SyncBatch{GADaily: rows, Quality: quality}, nil
+	})
 	if err != nil {
-		return time.Time{}, time.Time{}, err
+		return s.failImport(ctx, projectID, "ga4", key, err)
 	}
-	earliest, err := s.rows.GetSync(ctx, projectID, earlyKey)
-	return last, earliest, err
-}
-
-func (s *Service) rememberOfficial(ctx context.Context, projectID uint64, endKey, earlyKey string, through time.Time, parts []dateChunk, prevEarliest time.Time) {
-	_ = s.rows.PutSync(ctx, projectID, endKey, through)
-	oldest := dateOnly(prevEarliest)
-	for _, part := range parts {
-		if oldest.IsZero() || part.start.Before(oldest) {
-			oldest = dateOnly(part.start)
-		}
+	if err := s.writeWindow(ctx, projectID, "ga4", key, through, now); err != nil {
+		return s.failImport(ctx, projectID, "ga4", key, err)
 	}
-	if !oldest.IsZero() {
-		_ = s.rows.PutSync(ctx, projectID, earlyKey, oldest)
+	if err := s.saveImport(ctx, projectID, "ga4", key, "completed", "", "", "", &through, "property"); err != nil {
+		return err.Error()
 	}
+	return ""
 }
 
 func gaFinalizedThrough(now time.Time, timezone string) time.Time {
@@ -342,7 +290,7 @@ func gaFinalizedThrough(now time.Time, timezone string) time.Time {
 	return time.Date(y, m, d, 0, 0, 0, 0, time.UTC).AddDate(0, 0, -1)
 }
 
-func (s *Service) writeWindow(ctx context.Context, projectID uint64, source, property string, through, now time.Time) {
+func (s *Service) writeWindow(ctx context.Context, projectID uint64, source, property string, through, now time.Time) error {
 	from := through.AddDate(0, 0, -(officialWindowDays*2 - 1))
 	row := &model.WebWindow{
 		ProjectID: projectID, Source: source, Property: property,
@@ -351,7 +299,7 @@ func (s *Service) writeWindow(ctx context.Context, projectID uint64, source, pro
 	if source == "gsc" {
 		days, err := s.rows.ListGscDaily(ctx, projectID, property, from, through)
 		if err != nil {
-			return
+			return err
 		}
 		win := WindowFromGSC(days, through, officialWindowDays)
 		row.Clicks = win.Clicks
@@ -362,14 +310,14 @@ func (s *Service) writeWindow(ctx context.Context, projectID uint64, source, pro
 	} else {
 		days, err := s.rows.ListGaDaily(ctx, projectID, property, from, through)
 		if err != nil {
-			return
+			return err
 		}
 		win := WindowFromGA(days, through, officialWindowDays)
 		row.Sessions = win.Sessions
 		row.PreviousSessions = win.PreviousSessions
 		row.CoveredDays = win.CoveredDays
 	}
-	_ = s.rows.UpsertWindow(ctx, row)
+	return s.rows.UpsertWindow(ctx, row)
 }
 
 func (s *Service) fetchGSCDate(ctx context.Context, token, site, start, end string) ([]model.GscFact, string, int, bool, error) {
@@ -387,12 +335,17 @@ func (s *Service) fetchGADate(ctx context.Context, token, property, start, end s
 }
 
 func (s *Service) failImport(ctx context.Context, projectID uint64, source, property string, err error) string {
+	if errors.Is(syncBudgetError(ctx, err), ErrSyncBudget) {
+		return ""
+	}
 	class, label := classifyErr(err)
 	reason := "error"
 	if class == "needs_reauth" || class == "rate_limited" || class == "config_invalid" {
 		reason = class
 	}
-	s.saveImport(ctx, projectID, source, property, "paused", reason, class, publicGoogleError(err), nil, "")
+	if saveErr := s.saveImport(ctx, projectID, source, property, "paused", reason, class, publicGoogleError(err), nil, ""); saveErr != nil {
+		return label + ": " + saveErr.Error()
+	}
 	return label
 }
 
@@ -427,18 +380,26 @@ func publicGoogleError(err error) string {
 	return msg
 }
 
-func (s *Service) saveImport(ctx context.Context, projectID uint64, source, property, state, reason, class, last string, through *time.Time, boundary string) {
+func (s *Service) saveImport(ctx context.Context, projectID uint64, source, property, state, reason, class, last string, through *time.Time, boundary string) error {
 	row := &model.WebImport{
 		ProjectID: projectID, Source: source, Property: property,
 		State: state, PausedReason: reason, LastErrorClass: class, LastError: last,
 		BoundarySource: boundary, UpdatedAt: time.Now().Unix(),
 	}
+	if through == nil {
+		if previous, err := s.rows.GetImport(ctx, projectID, source); err == nil && previous != nil && previous.Property == property {
+			row.FinalizedThrough = previous.FinalizedThrough
+			row.CursorDate = previous.CursorDate
+			row.BoundarySource = previous.BoundarySource
+		}
+	}
+
 	if through != nil {
 		day := dateOnly(*through)
 		row.FinalizedThrough = &day
 		row.CursorDate = &day
 	}
-	_ = s.rows.UpsertImport(ctx, row)
+	return s.rows.UpsertImport(ctx, row)
 }
 
 func (s *Service) RecordFailure(ctx context.Context, slug string, err error) {

@@ -31,11 +31,12 @@ var (
 type ActionFunc func(ctx context.Context, slug string, args map[string]any, log func(string)) error
 
 type Spec struct {
-	Label string
-	Desc  string
-	Slow  bool
-	Args  []string
-	Run   ActionFunc
+	Resumable bool
+	Label     string
+	Desc      string
+	Slow      bool
+	Args      []string
+	Run       ActionFunc
 }
 
 type Service struct {
@@ -89,11 +90,13 @@ func (s *Service) Start(ctx context.Context, slug, action string, args map[strin
 		args = map[string]any{}
 	}
 	j := &model.Job{
-		ProjectID: &p.ID, Action: action, Status: "running", Args: args,
+		ProjectID: &p.ID, Action: action, Status: "running", Args: args, Resumable: sp.Resumable,
 		Log: "$ craftsail-growth " + action + " --slug " + slug + "\n", StartedAt: &now,
 	}
-	if err := s.jobs.Create(ctx, j); err != nil {
+	if created, err := s.jobs.CreateExclusive(ctx, j); err != nil {
 		return nil, err
+	} else if !created {
+		return nil, ErrBusy
 	}
 	jctx, cancel := context.WithCancel(context.Background())
 	s.mu.Lock()
@@ -116,9 +119,22 @@ func (s *Service) exec(ctx context.Context, id uint64, slug, action string, args
 		s.append(id, line)
 	}
 	log("=== " + or(sp.Label, action) + " started ===")
-	err := sp.Run(ctx, slug, args, log)
+	// Resume metadata is server-owned, never trusted from a caller.
+	current, getErr := s.jobs.ByID(ctx, id)
+	if getErr != nil || current == nil || current.Status != "running" || ctx.Err() != nil {
+		return
+	}
+	runArgs := make(map[string]any, len(args)+1)
+	for k, v := range args {
+		runArgs[k] = v
+	}
+	if current.StartedAt != nil {
+		runArgs["_started_at"] = *current.StartedAt
+	}
+
+	err := sp.Run(ctx, slug, runArgs, log)
 	j, _ := s.jobs.ByID(context.Background(), id)
-	if j == nil {
+	if j == nil || j.Status != "running" {
 		return
 	}
 	now := time.Now().Unix()
@@ -127,6 +143,14 @@ func (s *Service) exec(ctx context.Context, id uint64, slug, action string, args
 		j.Status = "stopped"
 		j.Error = ctx.Err().Error()
 		log("stopped")
+	} else if deferred := new(Deferred); sp.Resumable && errors.As(err, &deferred) {
+		next := time.Now().Add(deferred.After).Unix()
+		j.Status = "queued"
+		j.ResumeAt = &next
+		j.FinishedAt = nil
+		j.Error = ""
+		j.Args = args
+		log("batch saved; automatic continuation scheduled")
 	} else if err != nil {
 		j.Status = "failed"
 		j.Error = err.Error()
@@ -135,8 +159,9 @@ func (s *Service) exec(ctx context.Context, id uint64, slug, action string, args
 		j.Status = "done"
 		log("done")
 	}
-	_ = s.jobs.Save(context.Background(), j)
-	s.finish(j)
+	if saved, err := s.jobs.FinishRunning(context.Background(), j); err == nil && saved && j.Status != "queued" {
+		s.finish(j)
+	}
 }
 
 func (s *Service) OnFinish(fn func(*model.Job)) {
@@ -172,10 +197,13 @@ func (s *Service) Wait(ctx context.Context, id uint64) error {
 		if err != nil {
 			return err
 		}
+		if j.Status == "queued" {
+			s.resumeDue(ctx, id)
+		}
 		switch j.Status {
 		case "done":
 			return nil
-		case "failed", "stopped":
+		case "failed", "stopped", "interrupted":
 			if j.Error != "" {
 				return errors.New(j.Error)
 			}
@@ -191,15 +219,10 @@ func (s *Service) Wait(ctx context.Context, id uint64) error {
 }
 
 func (s *Service) append(id uint64, line string) {
-	j, err := s.jobs.ByID(context.Background(), id)
-	if err != nil || j == nil {
-		return
-	}
 	if line != "" && line[len(line)-1] != '\n' {
 		line += "\n"
 	}
-	j.Log += line
-	_ = s.jobs.Save(context.Background(), j)
+	_ = s.jobs.AppendLog(context.Background(), id, line)
 }
 
 func (s *Service) Get(ctx context.Context, id uint64) (*model.Job, error) {
@@ -230,25 +253,34 @@ func (s *Service) Tail(ctx context.Context, id uint64, offset int) (string, int,
 }
 
 func (s *Service) Stop(ctx context.Context, id uint64) error {
+	s.mu.Lock()
 	j, err := s.Get(ctx, id)
+	if err != nil {
+		s.mu.Unlock()
+		return err
+	}
+	if j.Status != "running" && j.Status != "queued" {
+		s.mu.Unlock()
+		return ErrNotRunning
+	}
+	changed, err := s.jobs.StopActive(ctx, id)
+	if err == nil && changed {
+		if cancel := s.cancels[id]; cancel != nil {
+			cancel()
+		}
+	}
+	s.mu.Unlock()
 	if err != nil {
 		return err
 	}
-	if j.Status != "running" {
+	if !changed {
 		return ErrNotRunning
 	}
-	s.mu.Lock()
-	c, ok := s.cancels[id]
-	s.mu.Unlock()
-	if !ok {
-		now := time.Now().Unix()
-		j.Status = "stopped"
-		j.FinishedAt = &now
-		j.Error = "stopped"
-		return s.jobs.Save(ctx, j)
+	stopped, err := s.Get(ctx, id)
+	if err == nil {
+		s.finish(stopped)
 	}
-	c()
-	return nil
+	return err
 }
 
 func (s *Service) Recent(ctx context.Context, slug string, limit int) ([]model.Job, *model.Job, error) {

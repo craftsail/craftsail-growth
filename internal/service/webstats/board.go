@@ -13,6 +13,8 @@ import (
 )
 
 type Period struct {
+	Comparable       bool     `json:"comparable"`
+	PreviousClicks   float64  `json:"previous_clicks"`
 	Clicks           float64  `json:"clicks"`
 	Impressions      float64  `json:"impressions"`
 	CTR              float64  `json:"ctr"`
@@ -27,11 +29,24 @@ type Period struct {
 	Measured bool `json:"measured"`
 }
 
+type GrainCoverage struct {
+	Report      string `json:"report"`
+	From        string `json:"from"`
+	Through     string `json:"through"`
+	CoveredDays int    `json:"covered_days"`
+	TotalDays   int    `json:"total_days"`
+	State       string `json:"state"`
+}
+
 type SearchBoard struct {
-	Keywords []KeywordRow `json:"keywords"`
-	Pages    []PageRow    `json:"gsc_pages"`
-	Period   Period       `json:"period"`
-	Ops      []SearchOp   `json:"search_ops"`
+	Observation   *SearchObservation `json:"observation"`
+	Observations  []SearchOp         `json:"observations"`
+	QueryCoverage GrainCoverage      `json:"query_coverage"`
+	PageCoverage  GrainCoverage      `json:"page_coverage"`
+	Keywords      []KeywordRow       `json:"keywords"`
+	Pages         []PageRow          `json:"gsc_pages"`
+	Period        Period             `json:"period"`
+	Ops           []SearchOp         `json:"search_ops"`
 }
 
 func (s *Service) SearchBoard(ctx context.Context, slug string) (*SearchBoard, error) {
@@ -39,38 +54,103 @@ func (s *Service) SearchBoard(ctx context.Context, slug string) (*SearchBoard, e
 	if err != nil {
 		return nil, err
 	}
-	now := time.Now()
-	if s.Now != nil {
-		now = s.Now()
+	observation, official, err := s.searchObservation(ctx, p)
+	if err != nil {
+		return nil, err
 	}
-	start, end := window(now)
+	start, _ := time.Parse("2006-01-02", observation.Coverage.From)
+	end, _ := time.Parse("2006-01-02", observation.Coverage.Through)
 	prevStart, prevEnd := previousWindow(start, end)
-	property := s.officialProperty(ctx, p, "gsc")
+	property := observation.Property
+
 	curFacts, err := s.rows.ListQueryPage(ctx, p.ID, property, start, end)
 	if err != nil {
 		return nil, err
 	}
-	prevFacts, err := s.rows.ListQueryPage(ctx, p.ID, property, prevStart, prevEnd)
+	queryFacts, err := s.rows.ListGscSlice(ctx, p.ID, property, "query", start, end)
 	if err != nil {
 		return nil, err
 	}
-	cur, prev := QueryRowsFromFacts(curFacts), QueryRowsFromFacts(prevFacts)
-	official, err := s.officialTotals(ctx, p, prevStart, end)
+	pageFacts, err := s.rows.ListGscSlice(ctx, p.ID, property, "page", start, end)
 	if err != nil {
 		return nil, err
 	}
-	kws := AggregateKeywords(cur)
-	if len(kws) > 200 {
-		kws = kws[:200]
+	prevPageFacts, err := s.rows.ListGscSlice(ctx, p.ID, property, "page", prevStart, prevEnd)
+	if err != nil {
+		return nil, err
 	}
-	pages := AggregatePages(cur)
-	if len(pages) > 200 {
-		pages = pages[:200]
+	qc, err := s.grainCoverage(ctx, p.ID, property, "query", start, end)
+	if err != nil {
+		return nil, err
 	}
+	pc, err := s.grainCoverage(ctx, p.ID, property, "page", start, end)
+	if err != nil {
+		return nil, err
+	}
+	ppc, err := s.grainCoverage(ctx, p.ID, property, "page", prevStart, prevEnd)
+	if err != nil {
+		return nil, err
+	}
+	cur := QueryRowsFromFacts(curFacts)
+
+	kws := AggregateKeywords(QueryRowsFromFacts(queryFacts))
+	// Associations are evidence only; they must not contribute to query totals.
+	topPages := map[string]string{}
+	for _, row := range AggregateKeywords(cur) {
+		topPages[row.Query] = row.Page
+	}
+	for i := range kws {
+		kws[i].Page = topPages[kws[i].Query]
+	}
+	pages := AggregatePages(QueryRowsFromFacts(pageFacts))
 	period := periodFromOfficial(official, start, end, prevStart, prevEnd)
-	ops := SearchOpportunities(AggregateKeywords(cur), pageClicks(cur, prev), queryPages(cur))
-	ops = append(alertOps(period), ops...)
-	return &SearchBoard{Keywords: kws, Pages: pages, Period: period, Ops: ops}, nil
+	period.Comparable = observation.Coverage.State == "covered" && observation.PreviousCoverage.State == "covered" && sumOfficial(official, start, end).rows == 28 && sumOfficial(official, prevStart, prevEnd).rows == 28
+	if !period.Comparable {
+		period.HasPrevious = false
+		period.ClicksDelta = nil
+		period.ImpressionsDelta = nil
+		period.CTRDelta = nil
+		period.PositionDelta = nil
+	}
+	var drops []PageClicks
+	if pc.State == "covered" && ppc.State == "covered" {
+		drops = pageClicks(QueryRowsFromFacts(pageFacts), QueryRowsFromFacts(prevPageFacts))
+	}
+	markSustainedPages(pageFacts, prevPageFacts, drops, end)
+	pairCoverage, err := s.grainCoverage(ctx, p.ID, property, "query_page", start, end)
+	if err != nil {
+		return nil, err
+	}
+	ops, observations := SearchOpportunities(kws, drops, queryPages(cur), SearchPolicy{Mode: observation.Mode, MinImpressions: observation.MinImpressions, QueriesCovered: qc.State == "covered", PagesComparable: pc.State == "covered" && ppc.State == "covered", PairsCovered: pairCoverage.State == "covered"})
+	ops = append(alertOps(period, official, end), ops...)
+	return &SearchBoard{Observation: observation, Observations: observations, Keywords: kws, Pages: pages, Period: period, Ops: ops, QueryCoverage: qc, PageCoverage: pc}, nil
+}
+
+// grainCoverage never infers missing dates from facts: successful empty days
+// count as requested, while legacy rows have unknown coverage.
+func (s *Service) grainCoverage(ctx context.Context, projectID uint64, property, report string, from, through time.Time) (GrainCoverage, error) {
+	out := GrainCoverage{Report: report, From: from.Format("2006-01-02"), Through: through.Format("2006-01-02"), TotalDays: int(through.Sub(from).Hours()/24) + 1, State: "missing"}
+	reports, err := s.rows.SyncReports(ctx, projectID, "gsc", property)
+	if err != nil {
+		return out, err
+	}
+	for _, r := range reports {
+		if r.Report != report || r.SearchType != "web" || r.Version != currentSyncVersion {
+			continue
+		}
+		days, err := s.rows.SyncDays(ctx, r.ID, from, through)
+		if err != nil {
+			return out, err
+		}
+		out.CoveredDays = len(days)
+		if len(days) > 0 {
+			out.State = "partial"
+		}
+		if out.CoveredDays == out.TotalDays {
+			out.State = "covered"
+		}
+	}
+	return out, nil
 }
 
 func (s *Service) officialTotals(ctx context.Context, p *model.Project, from, to time.Time) ([]model.GscDaily, error) {
@@ -108,7 +188,7 @@ func periodFromOfficial(rows []model.GscDaily, start, end, prevStart, prevEnd ti
 }
 
 func finishPeriod(cur, prev dailySum) Period {
-	out := Period{Clicks: cur.clicks, Impressions: cur.impr, CTR: cur.ctr, Position: round2(cur.pos)}
+	out := Period{PreviousClicks: prev.clicks, Clicks: cur.clicks, Impressions: cur.impr, CTR: cur.ctr, Position: round2(cur.pos)}
 	if prev.impr == 0 && prev.clicks == 0 {
 		return out
 	}
@@ -159,11 +239,7 @@ func sumOfficial(rows []model.GscDaily, start, end time.Time) dailySum {
 
 func pctDelta(cur, prev float64) *float64 {
 	if prev == 0 {
-		v := 0.0
-		if cur > 0 {
-			v = 100
-		}
-		return &v
+		return nil
 	}
 	v := math.Round(((cur-prev)/prev)*100*100) / 100
 	return &v

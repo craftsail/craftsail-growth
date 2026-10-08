@@ -4,6 +4,7 @@ package webstats
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -11,35 +12,6 @@ import (
 	"github.com/craftsail/craftsail-growth/internal/repo"
 	"github.com/craftsail/craftsail-growth/internal/service/project"
 )
-
-func TestOfficialPlanStartsWithRecentWindow(t *testing.T) {
-	through := time.Date(2026, 9, 21, 0, 0, 0, 0, time.UTC)
-	history := through.AddDate(0, -16, 0)
-	parts := officialPlan(time.Time{}, time.Time{}, through, history)
-	if len(parts) != 1 {
-		t.Fatalf("parts %#v", parts)
-	}
-	if parts[0].end.Format("2006-01-02") != "2026-09-21" {
-		t.Fatalf("end %s", parts[0].end.Format("2006-01-02"))
-	}
-	if parts[0].start.Before(through.AddDate(0, 0, -60)) {
-		t.Fatalf("first sync reached %s", parts[0].start.Format("2006-01-02"))
-	}
-}
-
-func TestOfficialPlanContinuesBackward(t *testing.T) {
-	through := time.Date(2026, 9, 21, 0, 0, 0, 0, time.UTC)
-	history := through.AddDate(0, -16, 0)
-	earliest := through.AddDate(0, 0, -55)
-	parts := officialPlan(through, earliest, through, history)
-	if len(parts) < 2 {
-		t.Fatalf("want tail plus older month, %#v", parts)
-	}
-	older := parts[len(parts)-1]
-	if !older.end.Before(earliest) {
-		t.Fatalf("older end %s should be before %s", older.end.Format("2006-01-02"), earliest.Format("2006-01-02"))
-	}
-}
 
 func TestSyncOfficialStoresDateTotalsNotQuerySums(t *testing.T) {
 	db := testDB(t)
@@ -131,3 +103,25 @@ func TestSyncOfficialMarksReauth(t *testing.T) {
 type errString string
 
 func (e errString) Error() string { return string(e) }
+
+func TestRunPropagatesOfficialFailure(t *testing.T) {
+	db := testDB(t)
+	ctx := context.Background()
+	t.Setenv("GOOGLE_SA_JSON", `{"client_email":"a@b.c","private_key":"x"}`)
+	p, err := project.New(db).Create(ctx, project.CreateInput{Name: "Failed sync", Slug: "failed-sync", NoSite: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	p.GscSite = "sc-domain:example.com"
+	if err := project.New(db).Save(ctx, p); err != nil {
+		t.Fatal(err)
+	}
+	svc := New(db)
+	svc.FetchGSCDate = func(context.Context, string, string, string, string) ([]model.GscFact, string, int, bool, error) {
+		return nil, "", 0, false, fmt.Errorf("gsc HTTP 429 quota exceeded")
+	}
+	result, err := svc.Run(ctx, p.Slug)
+	if err == nil || result == nil {
+		t.Fatalf("job must fail with retained result: %#v %v", result, err)
+	}
+}

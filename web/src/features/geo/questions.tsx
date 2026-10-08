@@ -6,6 +6,7 @@ import { getQuestions, runningJob, saveQuestions, startJob, waitJob, type JobRow
 import { TagsInput } from "../../components/tags-input";
 import { DEFAULT_GROUP, PROMPT_GROUPS } from "../../labels";
 import { useI18n } from "../../i18n";
+import { ReviewConfirmation } from "../onboarding/review";
 import { HelpTip } from "../../components/HelpTip";
 import { useAccess } from "../../app/access";
 
@@ -30,12 +31,15 @@ export function Questions() {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
   const [drafting, setDrafting] = useState(false);
+  const [revision, setRevision] = useState("");
+  const [dirty, setDirty] = useState(false);
+  function editItems(next: Question[]) { setDirty(true); setItems(next); }
 
   function load() {
     if (!slug) return;
     getQuestions(slug)
       .then((d) => {
-        setItems(d.items || []);
+        setItems(d.items || []); setRevision(d.review_revision); setDirty(false);
         setNames([d.brand || "", ...(d.aliases || [])]);
         setSite(d.site || "");
       })
@@ -84,11 +88,11 @@ export function Questions() {
 
   function add() {
     const n = items.length + 1;
-    setItems([...items, { qid: `q${String(n).padStart(3, "0")}`, group: DEFAULT_GROUP, text: "", enabled: true, tags: [] }]);
+    editItems([...items, { qid: `q${String(n).padStart(3, "0")}`, group: DEFAULT_GROUP, text: "", enabled: true, tags: [] }]);
   }
 
   function patch(i: number, next: Partial<Question>) {
-    setItems(items.map((item, index) => (index === i ? { ...item, ...next } : item)));
+    editItems(items.map((item, index) => (index === i ? { ...item, ...next } : item)));
   }
 
   async function save() {
@@ -97,6 +101,8 @@ export function Questions() {
     setErr("");
     try {
       await saveQuestions(slug, items);
+      const saved = await getQuestions(slug);
+      setItems(saved.items || []); setRevision(saved.review_revision); setDirty(false);
     } catch (e) {
       setErr((e as Error).message);
     } finally {
@@ -107,7 +113,8 @@ export function Questions() {
   const allPicked = items.length > 0 && picked.length === items.length;
   return (
     <section>
-      <p className="page-description">{t("questions.description")}</p>
+      <ReviewConfirmation key={slug} slug={slug || ""} kind="questions" revision={revision} dirty={dirty || busy || drafting} />
+      <p className="page-description mt-4">{t("questions.description")}</p>
       {canEdit && <div className="mb-4 flex items-center gap-2">
         <button type="button" className="btn btn-primary" onClick={add}>{t("questions.add")}</button>
         <HelpTip id="addQuestion" />
@@ -121,8 +128,8 @@ export function Questions() {
         <div className="alert alert-info mb-3 mt-0 flex items-center justify-between">
           <span>{t("questions.selected", { n: picked.length })}</span>
           <div className="flex gap-2">
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setItems(items.map((item) => picked.includes(item.qid) ? { ...item, enabled: true } : item))}>{t("questions.enable")}</button>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setItems(items.map((item) => picked.includes(item.qid) ? { ...item, enabled: false } : item))}>{t("questions.disable")}</button>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => editItems(items.map((item) => picked.includes(item.qid) ? { ...item, enabled: true } : item))}>{t("questions.enable")}</button>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => editItems(items.map((item) => picked.includes(item.qid) ? { ...item, enabled: false } : item))}>{t("questions.disable")}</button>
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => setPicked([])}>{t("questions.clear")}</button>
           </div>
         </div>

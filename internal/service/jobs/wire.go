@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -25,6 +26,12 @@ import (
 // Bind registers every background action. The dashboard, the scheduler and
 // the CLI all start work through these specs.
 func Bind(s *Service, db *gorm.DB) {
+	s.RegisterSpec("first-check", Spec{Label: "Check website", Desc: "Crawl up to five pages and save a technical audit; no model key required",
+		Run: func(ctx context.Context, slug string, args map[string]any, log func(string)) error {
+			pipe := pipeline.New(db)
+			pipe.Log = log
+			return pipe.FirstCheck(ctx, slug, intArg(args, "max_pages", "max-pages"))
+		}})
 	s.RegisterSpec("crawl", Spec{Label: "Crawl site", Desc: "Fetch the site's pages again", Args: []string{"--max-pages"},
 		Run: func(ctx context.Context, slug string, args map[string]any, log func(string)) error {
 			res, err := crawl.New(db, httputil.New()).Run(ctx, slug, intArg(args, "max_pages", "max-pages"))
@@ -66,11 +73,17 @@ func Bind(s *Service, db *gorm.DB) {
 			}
 			return err
 		}})
-	s.RegisterSpec("webstats", Spec{Label: "Sync Google", Desc: "Pull Search Console and GA4 into the local database", Slow: true,
+	s.RegisterSpec("webstats", Spec{Resumable: true, Label: "Sync Google", Desc: "Pull Search Console and GA4 into the local database", Slow: true,
 		Run: func(ctx context.Context, slug string, args map[string]any, log func(string)) error {
-			res, err := webstats.New(db).Run(ctx, slug)
+			res, err := webstats.New(db).RunBatch(ctx, slug, webstats.BatchOptions{RefreshBefore: time.Unix(int64(intArg(args, "_started_at")), 0)})
 			if res != nil {
-				log(fmt.Sprintf("%d query rows, %d GA4 rows", res.GscRows, res.GaRows))
+				log(fmt.Sprintf("%d query rows, %d GA4 rows; batch used %d requests and %d date partitions", res.GscRows, res.GaRows, res.Requests, res.Batches))
+				if res.IndexNote != "" {
+					log(res.IndexNote)
+				}
+				if err == nil && res.Pending {
+					return &Deferred{After: 15 * time.Second}
+				}
 			}
 			return err
 		}})
@@ -145,6 +158,8 @@ func intArg(args map[string]any, keys ...string) int {
 			switch t := v.(type) {
 			case int:
 				return t
+			case int64:
+				return int(t)
 			case float64:
 				return int(t)
 			case string:

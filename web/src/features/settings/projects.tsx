@@ -9,7 +9,7 @@ import { HelpTip } from "../../components/HelpTip";
 type Ctx = { project?: Project; projects?: Project[]; onProject?: (p: Project) => void; onCreated?: (p: Project) => void } | undefined;
 
 // CreateProjectForm is shared by first-run onboarding and the Projects page.
-// By default it starts the first period so the new project has data to show.
+// The first technical check runs without AI or Google credentials.
 export function CreateProjectForm({
   onCreated,
   submitLabel,
@@ -32,11 +32,15 @@ export function CreateProjectForm({
     setErr("");
     try {
       const p = await createProject({ url: noSite ? "" : url.trim(), name: name.trim(), no_site: noSite });
-      if (runNow) {
-        await startJob(p.slug, "serve").catch(() => undefined);
+      let startError = "";
+      if (runNow && !noSite) {
+        try { await startJob(p.slug, "first-check"); }
+        catch (ex) { startError = (ex as Error).message; }
       }
+      // Creation already succeeded. A failed start must never invite another
+      // create request; recovery happens against this same project.
       onCreated(p);
-      nav(runNow ? `/p/${p.slug}/settings/schedule` : `/p/${p.slug}/overview`);
+      nav(`/p/${p.slug}/overview`, { state: { firstCheckError: startError } });
     } catch (ex) {
       setErr((ex as Error).message);
     } finally {
@@ -60,10 +64,10 @@ export function CreateProjectForm({
         <label>{t("projects.brandName")}</label>
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder={noSite ? t("projects.nameRequired") : t("projects.nameOptional")} required={noSite} />
       </div>
-      <label className="checkbox-row">
+      {!noSite && <label className="checkbox-row">
         <input type="checkbox" checked={runNow} onChange={(e) => setRunNow(e.target.checked)} />
         {t("projects.runNow")}
-      </label>
+      </label>}
       {err && <div className="alert alert-error">{err}</div>}
       <button className="btn btn-primary" disabled={busy} type="submit">{busy ? t("projects.creating") : submitLabel || t("projects.create")}</button>
       <HelpTip id="createProject" />

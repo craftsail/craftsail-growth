@@ -4,6 +4,7 @@ package webstats
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -38,6 +39,9 @@ func New(db *gorm.DB) *Service {
 }
 
 type RunResult struct {
+	Pending   bool   `json:"pending"`
+	Requests  int    `json:"requests"`
+	Batches   int    `json:"batches"`
 	GscRows   int    `json:"gsc_rows"`
 	GaRows    int    `json:"ga_rows"`
 	From      string `json:"from"`
@@ -48,6 +52,10 @@ type RunResult struct {
 // Run pulls official date-only totals and the fact slices for the project's
 // Search Console and GA4 properties. Query rows are drill-down only.
 func (s *Service) Run(ctx context.Context, slug string) (*RunResult, error) {
+	return s.RunBatch(ctx, slug, BatchOptions{})
+}
+
+func (s *Service) run(ctx context.Context, slug string) (*RunResult, error) {
 	if !UserConnected() && strings.TrimSpace(os.Getenv("GOOGLE_SA_JSON")) == "" {
 		return nil, fmt.Errorf("Google is not connected")
 	}
@@ -69,13 +77,13 @@ func (s *Service) Run(ctx context.Context, slug string) (*RunResult, error) {
 	now := s.now()
 	startDay, endDay := window(now)
 	live := (wantGSC && s.FetchGSCDate == nil) || (gaProp != "" && s.FetchGADate == nil)
-	token, err := s.accessToken(live)
+	token, err := s.accessTokenContext(ctx, live)
 	if err != nil {
 		return nil, err
 	}
 	gscSite := explicitGSC
 	if wantGSC && live {
-		granted, listErr := s.client().FetchSites(token)
+		granted, listErr := s.client().FetchSitesContext(ctx, token)
 		if listErr != nil {
 			granted = nil
 		}
@@ -83,17 +91,11 @@ func (s *Service) Run(ctx context.Context, slug string) (*RunResult, error) {
 	}
 
 	var notes []string
+	var failures []error
 	if live && token != "test" {
-		if gscSite != "" {
-			if note, err := s.pullIndex(ctx, token, p.ID, gscSite, now); err != nil {
-				return nil, err
-			} else if note != "" {
-				notes = append(notes, note)
-			}
-		}
 		s.client().OnPage = func(report, request, body string) {
 			source := "gsc"
-			if report == "session" || report == "page" || report == "event" || report == "hour" {
+			if strings.HasPrefix(report, "ga4/") || report == "channel" || report == "landing" || report == "session" || report == "page" || report == "event" || report == "hour" {
 				source = "ga4"
 			}
 			s.archivePage(ctx, p.ID, source, report, request, body, now)
@@ -101,43 +103,60 @@ func (s *Service) Run(ctx context.Context, slug string) (*RunResult, error) {
 	}
 	if official := s.SyncOfficial(ctx, p.ID, token, gscSite, gaProp, now); official != "" {
 		notes = append(notes, official)
+		failures = append(failures, errors.New(official))
 	}
 	if live && token != "test" {
 		note, syncErr := s.SyncFacts(ctx, p.ID, token, gscSite, gaProp, now)
 		if note != "" {
 			notes = append(notes, note)
 		}
+		syncErr = withoutBudgetError(syncErr)
 		if syncErr != nil {
 			notes = append(notes, syncErr.Error())
+			failures = append(failures, syncErr)
 		}
 	}
+	pending, pendingErr := s.pendingSync(context.WithoutCancel(ctx), p.ID, gscSite, gaProp)
+	if pendingErr != nil {
+		failures = append(failures, pendingErr)
+	}
+	if live && token != "test" && gscSite != "" && ctx.Err() == nil && len(failures) == 0 && !pending {
+		if note, err := s.pullIndex(ctx, token, p.ID, gscSite, now); err != nil {
+			failures = append(failures, err)
+		} else if note != "" {
+			notes = append(notes, note)
+		}
+	}
+
 	if days, err := strconv.Atoi(strings.TrimSpace(os.Getenv("GOOGLE_RAW_RETENTION_DAYS"))); err == nil && days > 0 {
 		_, _ = s.rows.PruneRaw(ctx, days)
 	}
 
-	res := &RunResult{From: startDay.Format("2006-01-02"), To: endDay.Format("2006-01-02"), IndexNote: strings.Join(notes, "; ")}
+	res := &RunResult{Pending: pending, From: startDay.Format("2006-01-02"), To: endDay.Format("2006-01-02"), IndexNote: strings.Join(notes, "; ")}
 	if prop := s.officialProperty(ctx, p, "gsc"); prop != "" {
-		if facts, err := s.rows.ListQueryPage(ctx, p.ID, prop, startDay, endDay); err == nil {
+		if facts, err := s.rows.ListQueryPage(context.WithoutCancel(ctx), p.ID, prop, startDay, endDay); err == nil {
 			res.GscRows = len(facts)
 		}
 	}
 	if prop := s.officialProperty(ctx, p, "ga4"); prop != "" {
-		if facts, err := s.rows.ListGaSessionFacts(ctx, p.ID, prop, startDay, endDay); err == nil {
+		if facts, err := s.rows.ListGaSessionFacts(context.WithoutCancel(ctx), p.ID, prop, startDay, endDay); err == nil {
 			res.GaRows = len(facts)
 		}
 	}
-	return res, nil
+	return res, errors.Join(failures...)
 }
 
 // Snapshot is stored rows plus the monitoring report. Windows and Official come from date-only totals.
 type Snapshot struct {
-	Insight  map[string]any     `json:"insight"`
-	Sitemaps []model.GscSitemap `json:"sitemaps"`
-	Index    []model.GscIndex   `json:"index"`
-	Sources  []SourceView       `json:"sources"`
-	Windows  []model.WebWindow  `json:"windows"`
-	Official []OfficialRow      `json:"official"`
-	Deltas   []MetricDelta      `json:"deltas"`
+	Observation *SearchObservation `json:"observation"`
+	Sync        []SyncProgress     `json:"sync"`
+	Insight     map[string]any     `json:"insight"`
+	Sitemaps    []model.GscSitemap `json:"sitemaps"`
+	Index       []model.GscIndex   `json:"index"`
+	Sources     []SourceView       `json:"sources"`
+	Windows     []model.WebWindow  `json:"windows"`
+	Official    []OfficialRow      `json:"official"`
+	Deltas      []MetricDelta      `json:"deltas"`
 }
 
 type MetricDelta struct {
@@ -175,11 +194,46 @@ func (s *Service) Snapshot(ctx context.Context, slug string) (*Snapshot, error) 
 	if err != nil {
 		return nil, err
 	}
+	observation, searchDaily, err := s.searchObservation(ctx, p)
+	if err != nil {
+		return nil, err
+	}
 	sources, windows, official := s.monitorReport(ctx, p)
+	var progress []SyncProgress
+	for _, source := range []string{"gsc", "ga4"} {
+		property := s.officialProperty(ctx, p, source)
+		if property == "" {
+			continue
+		}
+		rows, err := s.syncProgress(ctx, p.ID, source, property)
+		if err != nil {
+			return nil, err
+		}
+		progress = append(progress, rows...)
+	}
 	return &Snapshot{
-		Insight: insight, Sitemaps: sitemaps, Index: indexed,
-		Sources: sources, Windows: windows, Official: official, Deltas: windowDeltas(windows),
+		Observation: observation, Sync: progress, Insight: insight, Sitemaps: sitemaps, Index: indexed,
+		Sources: sources, Windows: windows, Official: official, Deltas: snapshotDeltas(windows, observation, searchDaily),
 	}, nil
+}
+
+// Snapshot KPIs follow the same coverage gate as the search diagnostics.
+func snapshotDeltas(windows []model.WebWindow, observation *SearchObservation, rows []model.GscDaily) []MetricDelta {
+	var eligible []model.WebWindow
+	for _, win := range windows {
+		if win.Source == "gsc" {
+			if observation == nil || observation.Coverage.State != "covered" || observation.PreviousCoverage.State != "covered" || win.Property != observation.Property || win.WindowDays != 28 || win.FinalizedThrough.Format("2006-01-02") != observation.Coverage.Through {
+				continue
+			}
+			from, _ := time.Parse("2006-01-02", observation.PreviousCoverage.From)
+			to, _ := time.Parse("2006-01-02", observation.Coverage.Through)
+			if sumOfficial(rows, from, to).rows != 56 {
+				continue
+			}
+		}
+		eligible = append(eligible, win)
+	}
+	return windowDeltas(eligible)
 }
 
 func windowDeltas(windows []model.WebWindow) []MetricDelta {
@@ -275,19 +329,20 @@ func (s *Service) monitorReport(ctx context.Context, p *model.Project) ([]Source
 }
 
 func (s *Service) officialBackfilling(ctx context.Context, projectID uint64, source string, through *time.Time) bool {
-	if through == nil || through.IsZero() {
+	property, err := s.rows.ActiveProperty(ctx, projectID, source)
+	if err != nil || property == "" {
 		return false
 	}
-	key := "gsc/official/earliest"
-	if source == "ga4" {
-		key = "ga/official/earliest"
-	}
-	earliest, err := s.rows.GetSync(ctx, projectID, key)
-	if err != nil || earliest.IsZero() {
+	rows, err := s.rows.SyncReports(ctx, projectID, source, property)
+	if err != nil {
 		return false
 	}
-	history := dateOnly(*through).AddDate(0, -16, 0)
-	return dateOnly(earliest).After(history)
+	for _, row := range rows {
+		if row.Report == "daily" && row.Version == currentSyncVersion {
+			return row.State == "backfilling"
+		}
+	}
+	return false
 }
 
 func configuredProperty(p *model.Project, source string) string {
@@ -335,19 +390,22 @@ func (s *Service) client() *Client {
 
 // accessToken uses "test" when every configured side is hooked; otherwise it exchanges GOOGLE_SA_JSON.
 func (s *Service) accessToken(needGoogle bool) (string, error) {
+	return s.accessTokenContext(context.Background(), needGoogle)
+}
+func (s *Service) accessTokenContext(ctx context.Context, needGoogle bool) (string, error) {
 	if !needGoogle {
 		return "test", nil
 	}
 	if UserConnected() {
-		return s.client().UserAccessToken()
+		return s.client().UserAccessTokenContext(ctx)
 	}
-	return s.client().AccessToken(os.Getenv("GOOGLE_SA_JSON"))
+	return s.client().AccessTokenContext(ctx, os.Getenv("GOOGLE_SA_JSON"))
 }
 
 func (s *Service) pullIndex(ctx context.Context, token string, projectID uint64, site string, now time.Time) (string, error) {
-	maps, err := s.client().FetchSitemaps(token, site)
+	maps, err := s.client().FetchSitemapsContext(ctx, token, site)
 	if err != nil {
-		return "could not read sitemaps: " + err.Error(), nil
+		return "", syncBudgetError(ctx, err)
 	}
 	for i := range maps {
 		maps[i].ProjectID = projectID
@@ -379,8 +437,11 @@ func (s *Service) pullIndex(ctx context.Context, token string, projectID uint64,
 			skipped++
 			continue
 		}
-		row, err := s.client().InspectURL(token, site, page)
+		row, err := s.client().InspectURLContext(ctx, token, site, page)
 		if err != nil {
+			if errors.Is(syncBudgetError(ctx, err), ErrSyncBudget) || ctx.Err() != nil {
+				return "", syncBudgetError(ctx, err)
+			}
 			skipped++
 			if first == "" {
 				first = err.Error()
@@ -389,11 +450,17 @@ func (s *Service) pullIndex(ctx context.Context, token string, projectID uint64,
 		}
 		row.ProjectID = projectID
 		row.FetchedAt = now.Unix()
+		if err := s.rows.UpsertIndex(ctx, []model.GscIndex{row}); err != nil {
+			return "", syncBudgetError(ctx, err)
+		}
+		if budget := budgetFrom(ctx); budget != nil {
+			budget.mu.Lock()
+			budget.committed++
+			budget.mu.Unlock()
+		}
 		indexed = append(indexed, row)
 	}
-	if err := s.rows.UpsertIndex(ctx, indexed); err != nil {
-		return "", err
-	}
+
 	if len(indexed) == 0 && first != "" {
 		return "index inspection failed: " + first, nil
 	}

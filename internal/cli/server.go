@@ -70,7 +70,10 @@ func httpServeCmd(use, short string, defaultNoOpen bool) *cobra.Command {
 				}
 				sharedJobs = jobs.New(invoker.DB)
 				jobs.Bind(sharedJobs, invoker.DB)
-				_ = sharedJobs.ReapOrphans(cmd.Context())
+				if err := sharedJobs.ReapOrphans(cmd.Context()); err != nil {
+					return err
+				}
+				sharedJobs.StartQueue(cmd.Context())
 				monitor.Start(invoker.DB, sharedJobs)
 				startLoopbackV6(loopbackPort(host, port))
 				var err error

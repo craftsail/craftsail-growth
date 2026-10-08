@@ -15,7 +15,8 @@ import (
 const defaultGSCRowLimit = 25000
 
 type gscQueryPage struct {
-	Rows []gscAPIRow `json:"rows"`
+	Aggregation string      `json:"responseAggregationType"`
+	Rows        []gscAPIRow `json:"rows"`
 }
 
 type gscAPIRow struct {
@@ -41,6 +42,9 @@ func gscQueryURL(site string) string {
 }
 
 func (c *Client) postJSON(ctx context.Context, token, rawURL, api string, body any) ([]byte, error) {
+	if err := takeSyncBudget(ctx, true); err != nil {
+		return nil, err
+	}
 	payload, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
@@ -57,7 +61,7 @@ func (c *Client) postJSON(ctx context.Context, token, rawURL, api string, body a
 	}
 	res, err := cli.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("%s request: %w", api, err)
+		return nil, syncBudgetError(ctx, fmt.Errorf("%s request: %w", api, err))
 	}
 	defer res.Body.Close()
 	b, err := io.ReadAll(res.Body)

@@ -10,7 +10,7 @@ import { useI18n, type Key } from "../../i18n";
 import { HelpTip } from "../../components/HelpTip";
 import { useAccess } from "../../app/access";
 import { ruleText } from "../../i18n/rules";
-import { opportunityTitle } from "./title";
+import { opportunityTitle, opportunityWhy } from "./title";
 
 type Tab = "suggested" | "progress" | "verified" | "dismissed";
 const TABS: Tab[] = ["suggested", "progress", "verified", "dismissed"];
@@ -108,7 +108,7 @@ export function Opportunities() {
     const tips = it.key === firstKey;
     const expanded = open === it.key;
     const variants = Array.isArray(it.detail?.variants) ? (it.detail!.variants as string[]) : [];
-    const why = it.source === "audit" ? ruleText(locale, it.kind, "why", it.why) : it.why;
+    const why = opportunityWhy(it, t, locale);
     const fix = it.source === "audit" ? ruleText(locale, it.kind, "fix", it.fix) : it.fix;
     return (
       <li id={"opp-" + it.key} className="card overflow-hidden">
@@ -127,7 +127,7 @@ export function Opportunities() {
           <div className="flex shrink-0 items-center gap-2">
             {canEdit && !it.status && (
               <>
-                <button type="button" disabled={busy === it.key} className="btn btn-primary btn-sm" onClick={() => act(it.key, () => acceptOpportunity(slug, it.key))}>{t("plan.actions.accept")}</button>
+                <button type="button" disabled={busy === it.key} className="btn btn-primary btn-sm" onClick={() => act(it.key, () => acceptOpportunity(slug, it.key, expanded))}>{t("plan.actions.accept")}</button>
                 <button type="button" disabled={busy === it.key} className="btn btn-ghost btn-sm" onClick={() => act(it.key, () => dismissOpportunity(slug, it.key))}>{t("plan.actions.dismiss")}</button>
                 {tips && <><HelpTip id="accept" /><HelpTip id="dismiss" /></>}
               </>

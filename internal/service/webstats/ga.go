@@ -3,11 +3,12 @@
 package webstats
 
 type gaReportBody struct {
-	DateRanges []gaDateRange `json:"dateRanges"`
-	Dimensions []gaName      `json:"dimensions"`
-	Metrics    []gaName      `json:"metrics"`
-	Limit      int           `json:"limit"`
-	Offset     int           `json:"offset"`
+	ReturnPropertyQuota bool          `json:"returnPropertyQuota,omitempty"`
+	DateRanges          []gaDateRange `json:"dateRanges"`
+	Dimensions          []gaName      `json:"dimensions"`
+	Metrics             []gaName      `json:"metrics"`
+	Limit               int           `json:"limit"`
+	Offset              int           `json:"offset"`
 }
 
 type gaDateRange struct {

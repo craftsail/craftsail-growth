@@ -105,7 +105,10 @@ type gscSiteList struct {
 }
 
 func (c *Client) FetchSites(token string) ([]string, error) {
-	b, err := c.getJSON(token, "https://www.googleapis.com/webmasters/v3/sites", "gsc")
+	return c.FetchSitesContext(context.Background(), token)
+}
+func (c *Client) FetchSitesContext(ctx context.Context, token string) ([]string, error) {
+	b, err := c.getJSONContext(ctx, token, "https://www.googleapis.com/webmasters/v3/sites", "gsc")
 	if err != nil {
 		return nil, err
 	}
@@ -186,11 +189,14 @@ func sameSite(property, host string) bool {
 }
 
 func (c *Client) FetchSitemaps(token, site string) ([]model.GscSitemap, error) {
+	return c.FetchSitemapsContext(context.Background(), token, site)
+}
+func (c *Client) FetchSitemapsContext(ctx context.Context, token, site string) ([]model.GscSitemap, error) {
 	if strings.TrimSpace(site) == "" {
 		return nil, nil
 	}
 	rawURL := "https://www.googleapis.com/webmasters/v3/sites/" + url.QueryEscape(site) + "/sitemaps"
-	b, err := c.getJSON(token, rawURL, "gsc")
+	b, err := c.getJSONContext(ctx, token, rawURL, "gsc")
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +224,10 @@ func (c *Client) FetchSitemaps(token, site string) ([]model.GscSitemap, error) {
 }
 
 func (c *Client) InspectURL(token, site, page string) (model.GscIndex, error) {
-	b, err := c.postJSON(context.Background(), token, "https://searchconsole.googleapis.com/v1/urlInspection/index:inspect", "gsc", inspectBody{
+	return c.InspectURLContext(context.Background(), token, site, page)
+}
+func (c *Client) InspectURLContext(ctx context.Context, token, site, page string) (model.GscIndex, error) {
+	b, err := c.postJSON(ctx, token, "https://searchconsole.googleapis.com/v1/urlInspection/index:inspect", "gsc", inspectBody{
 		InspectionURL: page,
 		SiteURL:       site,
 		LanguageCode:  "zh-CN",
@@ -246,7 +255,13 @@ func (c *Client) UserInfo(token string) ([]byte, error) {
 }
 
 func (c *Client) getJSON(token, rawURL, api string) ([]byte, error) {
-	req, err := http.NewRequest(http.MethodGet, rawURL, nil)
+	return c.getJSONContext(context.Background(), token, rawURL, api)
+}
+func (c *Client) getJSONContext(ctx context.Context, token, rawURL, api string) ([]byte, error) {
+	if err := takeSyncBudget(ctx, true); err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
 		return nil, err
 	}

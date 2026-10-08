@@ -2,25 +2,32 @@
 
 package webstats
 
-import "sort"
+import (
+	"github.com/craftsail/craftsail-growth/internal/model"
+	"sort"
+	"time"
+)
 
-// SearchOp kinds copy crawlseo lib/seo-opportunities.ts.
+// SearchOp describes a diagnostic lead, never proof of causality.
 type SearchOp struct {
-	Type   string `json:"type"`
-	Title  string `json:"title"`
-	Detail string `json:"detail"`
-	Query  string `json:"query,omitempty"`
-	URL    string `json:"url,omitempty"`
-	// URLs lists every competing page for cannibalization, largest first.
+	Reason string             `json:"reason,omitempty"`
+	Facts  map[string]float64 `json:"facts,omitempty"`
+	Type   string             `json:"type"`
+	Title  string             `json:"title"`
+	Detail string             `json:"detail"`
+	Query  string             `json:"query,omitempty"`
+	URL    string             `json:"url,omitempty"`
+	// URLs lists associated pages, largest first.
 	URLs     []string `json:"urls,omitempty"`
 	Metric   float64  `json:"metric,omitempty"`
 	Severity string   `json:"severity"`
 }
 
 type PageClicks struct {
-	URL      string
-	Current  float64
-	Previous float64
+	URL       string
+	Current   float64
+	Previous  float64
+	Sustained bool
 }
 
 type QueryPage struct {
@@ -31,67 +38,46 @@ type QueryPage struct {
 	Position    float64
 }
 
-func expectedCtr(position float64) float64 {
-	switch {
-	case position <= 1:
-		return 0.28
-	case position <= 2:
-		return 0.15
-	case position <= 3:
-		return 0.11
-	case position <= 5:
-		return 0.07
-	case position <= 10:
-		return 0.03
-	case position <= 20:
-		return 0.01
-	default:
-		return 0.005
-	}
+type SearchPolicy struct {
+	Mode                                          string
+	MinImpressions                                int
+	QueriesCovered, PagesComparable, PairsCovered bool
 }
 
-func SearchOpportunities(kws []KeywordRow, pages []PageClicks, pairs []QueryPage) []SearchOp {
-	var striking, low, decay, cannibal []SearchOp
-	for _, k := range kws {
-		if k.Position >= 4 && k.Position <= 20 && k.Impressions >= 20 {
-			sev := "medium"
-			if k.Impressions > 200 {
-				sev = "high"
-			}
-			striking = append(striking, SearchOp{
-				Type: "striking_distance", Title: k.Query, Query: k.Query, Severity: sev, Metric: k.Impressions,
-				Detail: formatStrike(k),
-			})
-		}
-		if k.Impressions >= 50 && k.Position <= 15 {
-			exp := expectedCtr(k.Position)
-			gap := exp - k.CTR
-			if gap > 0.02 {
-				sev := "medium"
-				if gap > 0.05 {
-					sev = "high"
-				}
-				low = append(low, SearchOp{
-					Type: "low_ctr", Title: k.Query, Query: k.Query, Severity: sev, Metric: k.Impressions,
-					Detail: formatLowCtr(k, exp),
-				})
-			}
-		}
+// Fixed CTR expectations cannot establish a problem for this site. Until a
+// local reference is available, low CTR and multi-page queries stay facts.
+func SearchOpportunities(kws []KeywordRow, pages []PageClicks, pairs []QueryPage, policy SearchPolicy) ([]SearchOp, []SearchOp) {
+	minimum := policy.MinImpressions
+	if minimum < 100 {
+		minimum = 500
 	}
-	for _, p := range pages {
-		if p.Previous < 10 {
+	var actions, observations []SearchOp
+	for _, k := range kws {
+		if k.Position < 4 || k.Position > 20 || k.Impressions < 20 {
 			continue
 		}
-		change := (p.Current - p.Previous) / p.Previous * 100
-		if change <= -25 {
-			sev := "medium"
-			if change < -50 {
-				sev = "high"
+		op := SearchOp{Type: "striking_distance", Title: k.Query, Query: k.Query, URL: k.Page, Metric: k.Impressions, Severity: "low", Detail: formatStrike(k), Reason: "candidate", Facts: map[string]float64{"position": k.Position, "impressions": k.Impressions}}
+		switch {
+		case !policy.QueriesCovered:
+			op.Reason = "coverage"
+		case k.Impressions < float64(minimum):
+			op.Reason = "small_sample"
+		case policy.Mode != "established":
+			op.Reason = "new_site"
+		default:
+			op.Severity = "medium"
+			actions = append(actions, op)
+			continue
+		}
+		observations = append(observations, op)
+	}
+	if policy.PagesComparable {
+		for _, p := range pages {
+			if !meaningfulClickDrop(p.Current, p.Previous) || !p.Sustained {
+				continue
 			}
-			decay = append(decay, SearchOp{
-				Type: "content_decay", Title: p.URL, URL: p.URL, Severity: sev, Metric: change,
-				Detail: formatDecay(p, change),
-			})
+			change := (p.Current - p.Previous) / p.Previous * 100
+			actions = append(actions, SearchOp{Type: "content_decay", Title: p.URL, URL: p.URL, Severity: "medium", Metric: change, Detail: formatDecay(p, change), Reason: "sustained_decline", Facts: map[string]float64{"current": p.Current, "previous": p.Previous}})
 		}
 	}
 	byQ := map[string]map[string]*QueryPage{}
@@ -102,14 +88,13 @@ func SearchOpportunities(kws []KeywordRow, pages []PageClicks, pairs []QueryPage
 		if byQ[p.Query] == nil {
 			byQ[p.Query] = map[string]*QueryPage{}
 		}
-		cur := byQ[p.Query][p.Page]
-		if cur == nil {
+		if cur := byQ[p.Query][p.Page]; cur != nil {
+			cur.Impressions += p.Impressions
+			cur.Clicks += p.Clicks
+		} else {
 			cp := p
 			byQ[p.Query][p.Page] = &cp
-			continue
 		}
-		cur.Impressions += p.Impressions
-		cur.Clicks += p.Clicks
 	}
 	for q, pages := range byQ {
 		if len(pages) < 2 {
@@ -121,51 +106,72 @@ func SearchOpportunities(kws []KeywordRow, pages []PageClicks, pairs []QueryPage
 			list = append(list, *p)
 			total += p.Impressions
 		}
-		sort.Slice(list, func(i, j int) bool { return list[i].Impressions > list[j].Impressions })
+		sort.Slice(list, func(i, j int) bool {
+			if list[i].Impressions == list[j].Impressions {
+				return list[i].Page < list[j].Page
+			}
+			return list[i].Impressions > list[j].Impressions
+		})
 		if list[0].Impressions < 20 {
 			continue
 		}
-		urls := make([]string, 0, len(list))
+		var urls []string
 		for _, p := range list {
 			urls = append(urls, p.Page)
 		}
-		cannibal = append(cannibal, SearchOp{
-			Type: "cannibalization", Title: q, Query: q, URL: list[0].Page, URLs: urls, Severity: "medium", Metric: total,
-			Detail: formatCannibal(q, list),
+		reason := "association_only"
+		if !policy.PairsCovered {
+			reason = "coverage"
+		}
+		observations = append(observations, SearchOp{Type: "multiple_pages", Title: q, Query: q, URL: list[0].Page, URLs: urls, Severity: "low", Metric: total, Reason: reason, Detail: "Several pages appeared for this query. Different search intents may explain this; the association alone does not justify merging pages."})
+	}
+	stable := func(rows []SearchOp) {
+		sort.Slice(rows, func(i, j int) bool {
+			if rows[i].Type != rows[j].Type {
+				return rows[i].Type < rows[j].Type
+			}
+			if rows[i].Metric != rows[j].Metric {
+				return rows[i].Metric > rows[j].Metric
+			}
+			if rows[i].Query != rows[j].Query {
+				return rows[i].Query < rows[j].Query
+			}
+			return rows[i].URL < rows[j].URL
 		})
 	}
-	sort.Slice(striking, func(i, j int) bool { return striking[i].Metric > striking[j].Metric })
-	sort.Slice(low, func(i, j int) bool { return low[i].Metric > low[j].Metric })
-	sort.Slice(decay, func(i, j int) bool { return decay[i].Metric < decay[j].Metric })
-	sort.Slice(cannibal, func(i, j int) bool { return cannibal[i].Metric > cannibal[j].Metric })
-	cap := func(s []SearchOp, n int) []SearchOp {
-		if len(s) > n {
-			return s[:n]
+	stable(actions)
+	stable(observations)
+	return actions, observations
+}
+
+// Aggregate once per period, rather than scanning every fact for each page.
+func markSustainedPages(current, previous []model.GscFact, drops []PageClicks, through time.Time) {
+	sums := func(rows []model.GscFact, end time.Time) map[string][2]float64 {
+		out := map[string][2]float64{}
+		for _, row := range rows {
+			days := int(end.Sub(dateOnly(row.Day)).Hours() / 24)
+			if days < 0 || days >= 14 {
+				continue
+			}
+			v := out[row.Page]
+			v[days/7] += row.Clicks
+			out[row.Page] = v
 		}
-		return s
+		return out
 	}
-	var out []SearchOp
-	out = append(out, cap(striking, 8)...)
-	out = append(out, cap(low, 8)...)
-	out = append(out, cap(decay, 6)...)
-	out = append(out, cap(cannibal, 6)...)
-	return out
+	cur, prev := sums(current, through), sums(previous, through.AddDate(0, 0, -28))
+	for i := range drops {
+		a, b := cur[drops[i].URL], prev[drops[i].URL]
+		drops[i].Sustained = weeklyDrop(a[0], b[0]) && weeklyDrop(a[1], b[1])
+	}
 }
 
 func formatStrike(k KeywordRow) string {
-	return "Position " + format1(k.Position) + " with " + format0(k.Impressions) + " impressions; close to the top three."
-}
-
-func formatLowCtr(k KeywordRow, exp float64) string {
-	return "CTR " + formatPct(k.CTR) + " where about " + formatPct(exp) + " is typical for this position; improve the title and description."
+	return "Position " + format1(k.Position) + " with " + format0(k.Impressions) + " impressions. Review search intent and the associated page before choosing an action."
 }
 
 func formatDecay(p PageClicks, change float64) string {
 	return "Clicks went from " + format0(p.Previous) + " to " + format0(p.Current) + " (" + format0(change) + "%) versus the previous 28 days."
-}
-
-func formatCannibal(q string, pages []QueryPage) string {
-	return itoa(len(pages)) + " pages compete for \"" + q + "\". The one shown most is " + pages[0].Page + "."
 }
 
 func format1(v float64) string {

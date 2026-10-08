@@ -64,7 +64,7 @@ func TestFromSearch(t *testing.T) {
 	if len(items) != 1 || items[0].Key != "search:striking_distance:best cli" || items[0].Priority != "P2" || items[0].Acceptance["type"] != "manual" {
 		t.Fatalf("%+v", items)
 	}
-	if items[0].Title != "Close to the top three: best cli" {
+	if items[0].Title != "Ranking candidate to review: best cli" {
 		t.Fatalf("title = %q", items[0].Title)
 	}
 	if got := FromSearch([]webstats.SearchOp{{Type: "low_ctr", Title: "site:acme.com", Query: "site:acme.com"}}, Brand{}); len(got) != 0 {
@@ -128,5 +128,13 @@ func TestFromCitationCarriesPrompt(t *testing.T) {
 	}
 	if _, ok := items[1].Detail["prompt"]; ok {
 		t.Fatal("an item without a prompt must not carry one")
+	}
+}
+
+func TestSearchObservationsCannotBecomeActions(t *testing.T) {
+	ops := []webstats.SearchOp{{Type: "multiple_pages"}, {Type: "striking_distance", Reason: "small_sample"}, {Type: "striking_distance", Reason: "coverage"}, {Type: "striking_distance", Reason: "new_site"}, {Type: "striking_distance", Query: "search tool", Reason: "candidate", Facts: map[string]float64{"position": 8, "impressions": 900}}}
+	got := FromSearch(ops, Brand{})
+	if len(got) != 1 || got[0].Detail["reason"] != "candidate" || got[0].Detail["facts"].(map[string]float64)["impressions"] != 900 {
+		t.Fatalf("%#v", got)
 	}
 }

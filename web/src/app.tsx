@@ -29,6 +29,7 @@ import { GoogleData } from "./features/settings/google";
 import { Readiness } from "./features/audit/readiness";
 import { AuditIssues } from "./features/audit/issues";
 import { AuditPages } from "./features/audit/pages";
+import { GAExplorer } from "./features/search/ga-explore";
 import { GscPages } from "./features/search/gsc-pages";
 import { Keywords } from "./features/search/keywords";
 import { Webstats } from "./features/search/webstats";
@@ -127,6 +128,8 @@ export function App() {
         <Route path="search" element={<Webstats />} />
         <Route path="search/keywords" element={<Keywords />} />
         <Route path="search/pages" element={<GscPages />} />
+        <Route path="search/channels" element={<GAExplorer report="channel" />} />
+        <Route path="search/landings" element={<GAExplorer report="landing" />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings/projects" element={<AdminOnly><Projects /></AdminOnly>} />
         <Route path="settings/users" element={<AdminOnly><Users /></AdminOnly>} />

@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
-import { getAudit, listOpportunities, listRuns, type AuditReport, type OpportunityItem, type Project, type SampleRunRow } from "../../api";
+import { listOpportunities, listRuns, type AuditReport, type OpportunityItem, type Project, type SampleRunRow } from "../../api";
 import { useI18n, type Key } from "../../i18n";
 import { opportunityTitle } from "../actions/title";
 import { AreaSeries } from "../../components/charts/series";
 import { LayerStatus } from "../../components/metrics/LayerStatus";
 import { RateStat } from "../../components/metrics/RateStat";
 import { keepSearch, useMeasure } from "../measure/data";
+import { FirstCheck } from "./first-check";
 import { FilterBar } from "../measure/filters";
 
 const BRAND = "#2563eb";
@@ -27,12 +28,14 @@ export function Overview() {
   const [opps, setOpps] = useState<OpportunityItem[] | null>(null);
   const [runs, setRuns] = useState<SampleRunRow[]>([]);
 
+  useEffect(() => { setAudit(null); setOpps(null); setRuns([]); }, [slug]);
   useEffect(() => {
     if (!slug) return;
-    getAudit(slug).then(setAudit).catch(() => setAudit(null));
-    listOpportunities(slug, { status: "new" }).then((d) => setOpps(d.items || [])).catch(() => setOpps([]));
-    listRuns(slug).then((d) => setRuns(d.items || [])).catch(() => setRuns([]));
-  }, [slug]);
+    let disposed = false;
+    listOpportunities(slug, { status: "new" }).then((d) => { if (!disposed) setOpps(d.items || []); }).catch(() => { if (!disposed) setOpps([]); });
+    listRuns(slug).then((d) => { if (!disposed) setRuns(d.items || []); }).catch(() => { if (!disposed) setRuns([]); });
+    return () => { disposed = true; };
+  }, [slug, audit?.id]);
 
   const layers = audit?.layers || [];
   const passed = layers.filter((l) => l.status === "ok" && !l.blocked_by).length;
@@ -42,6 +45,7 @@ export function Overview() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5">
+      {ctx?.project && <FirstCheck key={slug} project={ctx.project} onAudit={setAudit} />}
       <FilterBar {...m} onChange={m.setFilter} />
       {m.err && <p className="text-sm text-red-700">{m.err}</p>}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">

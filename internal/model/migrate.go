@@ -12,6 +12,7 @@ import (
 func AutoMigrate(db *gorm.DB) error {
 	models := []any{
 		&Project{},
+		&ProjectProgress{},
 		&Question{},
 		&Competitor{},
 		&Fact{},
@@ -36,6 +37,8 @@ func AutoMigrate(db *gorm.DB) error {
 		&GaFact{},
 		&GoogleRaw{},
 		&WebSyncState{},
+		&WebSyncReport{},
+		&WebSyncDay{},
 		&GscDaily{},
 		&GaDaily{},
 		&WebImport{},

@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/craftsail/craftsail-growth/internal/invoker"
-	"github.com/craftsail/craftsail-growth/internal/service/webstats"
+	"github.com/craftsail/craftsail-growth/internal/service/jobs"
 )
 
 func webstatsCmd() *cobra.Command {
@@ -19,11 +19,17 @@ func webstatsCmd() *cobra.Command {
 		Short: "Pull Search Console and GA4 into the local database",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runJob("webstats", func(ejob.Context) error {
-				res, err := webstats.New(invoker.DB).Run(cmd.Context(), slug)
+				js := jobs.New(invoker.DB)
+				jobs.Bind(js, invoker.DB)
+				j, err := js.Start(cmd.Context(), slug, "webstats", nil)
 				if err != nil {
 					return err
 				}
-				fmt.Printf("[craftsail-growth] Google sync: %d query rows, %d GA4 rows, %s to %s\n", res.GscRows, res.GaRows, res.From, res.To)
+				fmt.Printf("[craftsail-growth] Google sync job %d started; history continues in batches.\n", j.ID)
+				if err := js.Wait(cmd.Context(), j.ID); err != nil {
+					return err
+				}
+				fmt.Printf("[craftsail-growth] Google sync job %d completed\n", j.ID)
 				return nil
 			})
 		},

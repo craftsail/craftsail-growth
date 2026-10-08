@@ -14,7 +14,7 @@ function when(sec: number | null | undefined, intl: string) {
 
 const ACTIONS = ["serve", "sample", "webstats", "crawl", "audit", "verify"];
 const ACTION_TIPS = { serve: "serve", sample: "sample", webstats: "syncGoogle", crawl: "crawl", audit: "audit", verify: "verify" } as const;
-const KNOWN_ACTIONS = [...ACTIONS, "bootstrap", "report"];
+const KNOWN_ACTIONS = [...ACTIONS, "bootstrap", "report", "first-check"];
 const JOB_STATUS = ["running", "queued", "done", "failed", "error", "stopped", "interrupted", "ok"];
 
 // Schedule & Runs: how often a period runs, how many samples per prompt, and

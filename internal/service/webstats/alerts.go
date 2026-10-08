@@ -2,51 +2,53 @@
 
 package webstats
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/craftsail/craftsail-growth/internal/model"
+	"time"
+)
 
-// AlertInput uses CrawlSEO's signs: PositionDelta is previous-current, so
-// negative means the average position got worse.
 type AlertInput struct {
-	ClicksDeltaPct float64
-	CurrentClicks  float64
-	PositionDelta  float64
+	CurrentClicks, PreviousClicks float64
+	Covered, Sustained            bool
 }
-
 type AlertHit struct {
 	Type    string `json:"type"`
 	Message string `json:"message"`
 }
 
-// EvaluateAlerts uses the thresholds from crawlseo lib/alerts/evaluate.ts
-// (rules of thumb): clicks down 20% or more with at least 5 clicks, or the
-// average position worse by 2 or more. Site health is not an alert here;
-// audit findings already cover it.
+// These are conservative product heuristics, not significance tests or Google
+// rules. Aggregate position changes are never evidence of a traffic incident.
 func EvaluateAlerts(in AlertInput) []AlertHit {
-	var fires []AlertHit
-	if in.ClicksDeltaPct <= -20 && in.CurrentClicks >= 5 {
-		fires = append(fires, AlertHit{
-			Type:    "traffic_drop",
-			Message: fmt.Sprintf("Search clicks changed %+.1f%% versus the previous window (%.0f this window)", in.ClicksDeltaPct, in.CurrentClicks),
-		})
-	}
-	if in.PositionDelta <= -2 {
-		fires = append(fires, AlertHit{
-			Type:    "position_change",
-			Message: fmt.Sprintf("Average search position got worse by %.1f", -in.PositionDelta),
-		})
-	}
-	return fires
-}
-
-// alertOps turns period-over-period changes in the official totals into
-// search opportunities. Unmeasured or first-window periods raise nothing.
-func alertOps(p Period) []SearchOp {
-	if !p.Measured || !p.HasPrevious || p.ClicksDelta == nil || p.PositionDelta == nil {
+	if !in.Covered || !in.Sustained || !meaningfulClickDrop(in.CurrentClicks, in.PreviousClicks) {
 		return nil
 	}
+	return []AlertHit{{Type: "traffic_drop", Message: fmt.Sprintf("Search clicks fell from %.0f to %.0f across fully covered 28-day windows, with declines in both recent weeks. Inspect affected pages before deciding on a change.", in.PreviousClicks, in.CurrentClicks)}}
+}
+func meaningfulClickDrop(current, previous float64) bool {
+	return previous >= 100 && current >= 0 && previous-current >= 50 && current <= previous*0.75
+}
+func sustainedDrop(current, previous func(time.Time, time.Time) float64, through time.Time) bool {
+	for i := 0; i < 2; i++ {
+		end := through.AddDate(0, 0, -7*i)
+		start := end.AddDate(0, 0, -6)
+		cur := current(start, end)
+		prev := previous(start.AddDate(0, 0, -28), end.AddDate(0, 0, -28))
+		if !weeklyDrop(cur, prev) {
+			return false
+		}
+	}
+	return true
+}
+func alertOps(p Period, rows []model.GscDaily, through time.Time) []SearchOp {
+	sum := func(from, to time.Time) float64 { return sumOfficial(rows, from, to).clicks }
 	var out []SearchOp
-	for _, hit := range EvaluateAlerts(AlertInput{ClicksDeltaPct: *p.ClicksDelta, CurrentClicks: p.Clicks, PositionDelta: *p.PositionDelta}) {
-		out = append(out, SearchOp{Type: hit.Type, Title: hit.Message, Detail: "Based on Search Console daily totals for the last 28 days versus the 28 days before.", Severity: "high", Metric: p.Clicks})
+	for _, hit := range EvaluateAlerts(AlertInput{CurrentClicks: p.Clicks, PreviousClicks: p.PreviousClicks, Covered: p.Comparable, Sustained: sustainedDrop(sum, sum, through)}) {
+		out = append(out, SearchOp{Type: hit.Type, Title: hit.Message, Detail: hit.Message, Severity: "medium", Metric: p.Clicks, Reason: "sustained_decline", Facts: map[string]float64{"current": p.Clicks, "previous": p.PreviousClicks}})
 	}
 	return out
+}
+
+func weeklyDrop(current, previous float64) bool {
+	return previous >= 20 && previous-current >= 10 && current <= previous*0.75
 }

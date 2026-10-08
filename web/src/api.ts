@@ -14,6 +14,8 @@ export type Project = {
   targets?: { mention_rate?: number };
   gsc_site?: string;
   ga4_property?: string;
+  search_mode?: SearchMode;
+  search_min_impressions?: number;
   brand?: { aliases?: string[] };
   monitor_every_days?: number | null;
   monitor_next_run?: string | null;
@@ -125,6 +127,8 @@ export function patchProject(slug: string, body: {
   max_pages?: number;
   gsc_site?: string;
   ga4_property?: string;
+  search_mode?: SearchMode;
+  search_min_impressions?: number;
 }) {
   return request<Project>(`/api/projects/${slug}`, {
     method: "PATCH",
@@ -157,6 +161,8 @@ export type AuditPage = {
 };
 
 export type AuditReport = {
+  id?: number;
+  run_at?: number;
   avg_score: number;
   page_count: number;
   no_site: boolean;
@@ -232,7 +238,7 @@ export type BrandFacts = {
 };
 
 export function getBrand(slug: string) {
-  return request<{ name: string; site: string; brand: BrandFacts; facts_markdown: string }>(`/api/projects/${slug}/brand`);
+  return request<{ name: string; site: string; brand: BrandFacts; facts_markdown: string; review_revision: string }>(`/api/projects/${slug}/brand`);
 }
 
 export function saveBrand(slug: string, name: string, brand: BrandFacts) {
@@ -240,7 +246,7 @@ export function saveBrand(slug: string, name: string, brand: BrandFacts) {
 }
 
 export function getQuestions(slug: string) {
-  return request<{ items: Question[]; brand?: string; aliases?: string[]; site?: string }>(`/api/projects/${slug}/questions`);
+  return request<{ items: Question[]; brand?: string; aliases?: string[]; site?: string; review_revision: string }>(`/api/projects/${slug}/questions`);
 }
 
 export function saveQuestions(slug: string, items: Question[]) {
@@ -347,24 +353,38 @@ export type GscPageRow = {
   band: string;
 };
 
-type SearchPeriod = {
-  clicks: number;
-  impressions: number;
-  ctr: number;
-  position: number;
-  clicks_delta?: number | null;
-  impressions_delta?: number | null;
-  ctr_delta?: number | null;
-  position_delta?: number | null;
-  has_previous: boolean;
+export type GrainCoverage = {
+ report: string; from: string; through: string; covered_days: number; total_days: number; state: string;
 };
 
-export function getKeywords(slug: string) {
-  return request<{ items: KeywordRow[]; period: SearchPeriod }>(`/api/projects/${slug}/keywords`);
+export type SearchMetric = {
+ current_rows: number; previous_rows: number;
+ name: string; clicks: number; impressions: number; ctr: number; position: number;
+ previous_clicks: number; previous_impressions: number; previous_ctr: number; previous_position: number; clicks_change: number;
+};
+export type SearchExplore = {
+ items: SearchMetric[] | null; total: number; page: number; page_size: number;
+ coverage: GrainCoverage; previous_coverage: GrainCoverage; comparable: boolean;
+ filters: { from: string; through: string; country: string; device: string; q: string; sort: string; direction: string; page: number; page_size: number };
+};
+export type SearchDetail = {
+ kind: "query" | "page"; value: string; summary: SearchMetric;
+ coverage: GrainCoverage; previous_coverage: GrainCoverage; comparable: boolean;
+ daily: { day: string; clicks: number | null; impressions: number | null }[];
+ related: SearchExplore;
+};
+export function getSearchExplore(slug: string, kind: "query" | "page", params: URLSearchParams) {
+ return request<SearchExplore>(`/api/projects/${slug}/${kind === "query" ? "keywords" : "gsc-pages"}?${params}`);
 }
-
-export function getGscPages(slug: string) {
-  return request<{ items: GscPageRow[] }>(`/api/projects/${slug}/gsc-pages`);
+export function getSearchDetail(slug: string, kind: "query" | "page", params: URLSearchParams) {
+ const query = new URLSearchParams(params); query.set("kind", kind);
+ return request<SearchDetail>(`/api/projects/${slug}/search-detail?${query}`);
+}
+export async function exportSearchCSV(slug: string, kind: "query" | "page", params: URLSearchParams) {
+ const query = new URLSearchParams(params); query.set("format", "csv"); query.delete("page");
+ const response = await fetch(`/api/projects/${slug}/${kind === "query" ? "keywords" : "gsc-pages"}?${query}`, { credentials: "include" });
+ if (!response.ok) { const body = await response.json(); throw new Error(body.msg || response.statusText); }
+ return response.blob();
 }
 
 export function getSavedKeywords(slug: string) {
@@ -424,6 +444,7 @@ export type JobRow = {
   error?: string;
   started_at?: number | null;
   finished_at?: number | null;
+  resume_at?: number | null;
 };
 
 export function startJob(slug: string, action: string, params?: Record<string, unknown>) {
@@ -551,7 +572,30 @@ export type OfficialRow = {
   engaged?: number | null;
 };
 
+export type GoogleQuality = {
+ known: boolean; sampled: boolean; thresholded: boolean; other_row: boolean;
+ restricted: boolean; empty_reason: boolean; currencies?: string[]; time_zones?: string[]; aggregations?: string[];
+};
+export type GoogleSyncProgress = {
+ quality?: GoogleQuality;
+  source: string; property: string; report: string; search_type: string;
+  state: string; error_class: string; from: string; through: string;
+  covered_days: number; total_days: number; recent_covered_days: number;
+  recent_total_days: number; updated_at: number;
+};
+
+export type SearchMode = "auto" | "new_site" | "established";
+export type SearchObservation = {
+  configured: SearchMode; mode: "new_site" | "established";
+  reason: "manual" | "insufficient_history" | "qualified_history";
+  property: string; established_through?: string; min_impressions: number;
+  coverage: GrainCoverage; previous_coverage: GrainCoverage; page_coverage: GrainCoverage;
+  pages_with_impressions: number | null;
+  weeks: { from: string; through: string; covered_days: number; clicks: number | null; impressions: number | null }[];
+};
 export type WebstatsSnapshot = {
+  observation?: SearchObservation;
+  sync?: GoogleSyncProgress[];
   insight?: WebInsight | null;
   sitemaps?: GscSitemapRow[];
   index?: GscIndexRow[];
@@ -629,8 +673,8 @@ export function listOpportunities(slug: string, filter: { source?: string; statu
   return request<{ items: OpportunityItem[]; hints?: { code: string; text: string }[] }>(`/api/projects/${slug}/opportunities${qs ? "?" + qs : ""}`);
 }
 
-export function acceptOpportunity(slug: string, key: string) {
-  return request<{ code: string; status: string }>(`/api/projects/${slug}/opportunities/accept`, { method: "POST", body: JSON.stringify({ key }) });
+export function acceptOpportunity(slug: string, key: string, reviewed = false) {
+  return request<{ code: string; status: string }>(`/api/projects/${slug}/opportunities/accept`, { method: "POST", body: JSON.stringify({ key, reviewed }) });
 }
 
 export function dismissOpportunity(slug: string, key: string) {
@@ -689,4 +733,38 @@ export function retryRun(slug: string, id: number) {
 
 export function overrideSample(slug: string, id: number, body: { mentioned?: boolean; negative?: boolean }) {
   return request<SampleRow>(`/api/projects/${slug}/samples/${id}`, { method: "PATCH", body: JSON.stringify(body) });
+}
+
+export type GAMetric = {
+ channel: string; source: string; medium: string; landing: string;
+ current_rows: number; previous_rows: number; sessions: number; engaged: number; key_events: number;
+ duration: number | null; engagement_rate: number | null; duration_per_session: number | null;
+ previous_sessions: number; sessions_change: number;
+};
+export type GAExplore = {
+ items: GAMetric[] | null; total: number; page: number; page_size: number;
+ filters: SearchExplore["filters"]; property: string; timezone: string; report_state: string; error_class: string;
+ coverage: GrainCoverage; previous_coverage: GrainCoverage; quality: GoogleQuality; previous_quality: GoogleQuality; comparable: boolean;
+};
+export function getGAExplore(slug: string, report: "channel" | "landing", params: URLSearchParams) {
+ return request<GAExplore>(`/api/projects/${slug}/ga-${report === "channel" ? "channels" : "landings"}?${params}`);
+}
+export async function exportGACSV(slug: string, report: "channel" | "landing", params: URLSearchParams) {
+ const query = new URLSearchParams(params); query.set("format", "csv"); query.delete("page");
+ const response = await fetch(`/api/projects/${slug}/ga-${report === "channel" ? "channels" : "landings"}?${query}`, { credentials: "include" });
+ if (!response.ok) { const body = await response.json(); throw new Error(body.msg || response.statusText); }
+ return response.blob();
+}
+
+export type ProjectProgress = {
+  brand_current_revision: string; questions_current_revision: string;
+  brand_confirmed: boolean; questions_confirmed: boolean; brand_ready: boolean; questions_ready: boolean;
+  brand_confirmed_at: number | null; questions_confirmed_at: number | null;
+  first_value_at: number | null; first_value_kind: string; first_value_ref: number;
+};
+export function getProgress(slug: string) {
+  return request<ProjectProgress>(`/api/projects/${slug}/progress`);
+}
+export function confirmProgress(slug: string, body: { kind: "brand" | "questions" | "audit_helpful"; revision?: string; audit_id?: number }) {
+  return request<ProjectProgress>(`/api/projects/${slug}/progress`, { method: "POST", body: JSON.stringify(body) });
 }

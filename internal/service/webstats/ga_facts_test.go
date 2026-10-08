@@ -29,3 +29,11 @@ func TestFetchGAFactsSession(t *testing.T) {
 		t.Fatalf("day %s", rows[0].Day)
 	}
 }
+
+func TestFetchGAFactsRejectsMissingPagination(t *testing.T) {
+	c := &Client{HTTP: &http.Client{Transport: roundTrip(func(*http.Request) (int, string) { return 200, `{"rowCount":2,"rows":[]}` })}}
+	_, err := c.FetchGAFacts(context.Background(), "tok", "properties/1", "session", "2026-09-01", "2026-09-07")
+	if err != ErrIncompleteReport {
+		t.Fatalf("expected incomplete report, got %v", err)
+	}
+}

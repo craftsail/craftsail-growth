@@ -41,6 +41,8 @@ export const NAV: NavSection[] = [
           { label: "nav.tabs.performance", to: "search" },
           { label: "nav.tabs.keywords", to: "search/keywords" },
           { label: "nav.tabs.pages", to: "search/pages" },
+          { label: "nav.tabs.channels", to: "search/channels" },
+          { label: "nav.tabs.landings", to: "search/landings" },
         ],
       },
       { id: "reports", label: "nav.reports", icon: "report", to: "reports" },
