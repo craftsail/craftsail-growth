@@ -42,6 +42,8 @@ export const NAV: NavSection[] = [
           { label: "nav.tabs.indexing", to: "search/indexing" },
           { label: "nav.tabs.keywords", to: "search/keywords" },
           { label: "nav.tabs.pages", to: "search/pages" },
+          {label:"searchSegments.countries",to:"search/countries"},
+          {label:"searchSegments.devices",to:"search/devices"},
           { label: "nav.tabs.channels", to: "search/channels" },
           { label: "nav.tabs.landings", to: "search/landings" },
         ],

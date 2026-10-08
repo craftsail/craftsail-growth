@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -156,6 +157,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (*model.Project, e
 }
 
 type UpdateInput struct {
+	GoogleHistoryStart                                           *string
 	SamplingLanguage, SiteLanguage, TargetRegion, ReportLanguage *string
 	SearchMode                                                   *string
 	SearchMinImpressions                                         *int
@@ -184,6 +186,16 @@ func (s *Service) Update(ctx context.Context, sl string, in UpdateInput) (*model
 			}
 			*pair.dest = v
 		}
+	}
+	if in.GoogleHistoryStart != nil {
+		v := strings.TrimSpace(*in.GoogleHistoryStart)
+		if v != "" {
+			d, err := time.Parse("2006-01-02", v)
+			if err != nil || d.After(time.Now().UTC()) {
+				return nil, ErrInvalidHistoryStart
+			}
+		}
+		p.GoogleHistoryStart = v
 	}
 	if in.TargetRegion != nil {
 		v := strings.TrimSpace(*in.TargetRegion)
@@ -277,3 +289,5 @@ func hostOf(raw string) string {
 }
 
 var ErrInvalidLanguage = errors.New("language must be en, zh, pt or unspecified; target region must be at most 64 characters")
+
+var ErrInvalidHistoryStart = errors.New("history start must be a valid date, no later than today")

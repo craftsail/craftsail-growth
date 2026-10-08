@@ -166,6 +166,8 @@ func TestSnapshotHidesPartialSearchComparison(t *testing.T) {
 	if len(snapshotDeltas(windows, o, rows[:55])) != 0 {
 		t.Fatal("missing daily row compared")
 	}
+	o.Coverage.Quality = model.GoogleQuality{Known: true, Aggregations: []string{"byProperty"}}
+	o.PreviousCoverage.Quality = o.Coverage.Quality
 	if len(snapshotDeltas(windows, o, rows)) != 2 {
 		t.Fatal("covered comparison omitted")
 	}

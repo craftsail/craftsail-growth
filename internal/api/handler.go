@@ -103,6 +103,7 @@ func Mount(engine *gin.Engine, h *Handler) {
 	r("GET", "/projects/:slug/indexing/history", permView, h.getIndexHistory)
 	r("GET", "/projects/:slug/keywords", permView, h.getKeywords)
 	r("GET", "/projects/:slug/gsc-pages", permView, h.getGscPages)
+	r("GET", "/projects/:slug/search-dimensions/:kind", permView, func(c *gin.Context) { h.searchList(c, c.Param("kind")) })
 	r("GET", "/projects/:slug/search-detail", permView, h.getSearchDetail)
 	r("GET", "/projects/:slug/ga-channels", permView, h.getGAChannels)
 	r("GET", "/projects/:slug/ga-landings", permView, h.getGALandings)
@@ -359,6 +360,7 @@ func (h *Handler) getProject(c *gin.Context) {
 
 func (h *Handler) patchProject(c *gin.Context) {
 	var body struct {
+		GoogleHistoryStart   *string `json:"google_history_start"`
 		SamplingLanguage     *string `json:"sampling_language"`
 		SiteLanguage         *string `json:"site_language"`
 		TargetRegion         *string `json:"target_region"`
@@ -385,7 +387,7 @@ func (h *Handler) patchProject(c *gin.Context) {
 	}
 	p, err := h.projects.Update(c.Request.Context(), c.Param("slug"), project.UpdateInput{
 		URL: url, Name: body.Name, NoSite: body.NoSite,
-		SamplingLanguage: body.SamplingLanguage, SiteLanguage: body.SiteLanguage, TargetRegion: body.TargetRegion, ReportLanguage: body.ReportLanguage,
+		GoogleHistoryStart: body.GoogleHistoryStart, SamplingLanguage: body.SamplingLanguage, SiteLanguage: body.SiteLanguage, TargetRegion: body.TargetRegion, ReportLanguage: body.ReportLanguage,
 		Materials: body.Materials, MaxPages: body.MaxPages,
 		GscSite: body.GscSite, GA4Property: body.GA4Property, SearchMode: body.SearchMode, SearchMinImpressions: body.SearchMinImpressions,
 	})
@@ -822,7 +824,7 @@ func (h *Handler) patchTask(c *gin.Context) {
 
 func writeErr(c *gin.Context, err error) {
 	switch {
-	case errors.Is(err, project.ErrInvalidLanguage), errors.Is(err, project.ErrInvalidSearchSettings), errors.Is(err, project.ErrNameRequired), errors.Is(err, project.ErrInvalidSlug), errors.Is(err, project.ErrInvalidSite):
+	case errors.Is(err, project.ErrInvalidHistoryStart), errors.Is(err, project.ErrInvalidLanguage), errors.Is(err, project.ErrInvalidSearchSettings), errors.Is(err, project.ErrNameRequired), errors.Is(err, project.ErrInvalidSlug), errors.Is(err, project.ErrInvalidSite):
 		env, st := resp.Fail(resp.CodeBadRequest, http.StatusBadRequest, err.Error())
 		c.JSON(st, env)
 	case errors.Is(err, project.ErrSlugTaken):

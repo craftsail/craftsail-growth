@@ -46,6 +46,7 @@ type Targets struct {
 }
 
 type Project struct {
+	GoogleHistoryStart   string         `gorm:"size:10;not null;default:''" json:"google_history_start"`
 	SamplingLanguage     string         `gorm:"size:8;not null;default:''" json:"sampling_language"`
 	SiteLanguage         string         `gorm:"size:8;not null;default:''" json:"site_language"`
 	TargetRegion         string         `gorm:"size:64;not null;default:''" json:"target_region"`

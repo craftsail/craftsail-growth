@@ -149,6 +149,7 @@ function ProjectForm({
   const [name, setName] = useState(seed?.name || "");
   const [noSite, setNoSite] = useState(!!seed?.no_site);
   const [sampling,setSampling]=useState({sampling_language:seed?.sampling_language||"",site_language:seed?.site_language||"",report_language:seed?.report_language||"en",target_region:seed?.target_region||""});
+  const [historyStart,setHistoryStart]=useState(seed?.google_history_start||"");
   const [gscSite, setGscSite] = useState(seed?.gsc_site || "");
   const [ga4Property, setGa4Property] = useState(seed?.ga4_property || "");
   const [busy, setBusy] = useState(false);
@@ -159,6 +160,7 @@ function ProjectForm({
       setUrl(got.site || "");
       setName(got.name || "");
       setNoSite(!!got.no_site);
+      setHistoryStart(got.google_history_start||"");
       setGscSite(got.gsc_site || "");
       setGa4Property(got.ga4_property || "");
     }).catch((e: Error) => onError(e.message));
@@ -169,7 +171,7 @@ function ProjectForm({
     try {
       const got = await patchProject(slug, {
         ...sampling, name, no_site: noSite, url: noSite ? "" : url,
-        gsc_site: gscSite.trim(),
+        google_history_start:historyStart, gsc_site: gscSite.trim(),
         ga4_property: ga4Property.trim(),
       });
       setP(got);
@@ -184,6 +186,7 @@ function ProjectForm({
     <div>
       <h2 className="section-title">{p?.name || slug}</h2>
       <p className="hint">{t("projects.recrawl")}</p>
+ <div className="field"><label htmlFor="google-history-start">{t("google.historyStart")}</label><input id="google-history-start" className="input" type="date" value={historyStart} onChange={e=>setHistoryStart(e.target.value)}/><p className="hint">{t("google.historyHint")}</p></div>
       <div className="field">
         <label>{t("projects.brandName")}</label>
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} />

@@ -19,8 +19,9 @@ import (
 const officialWindowDays = 28
 
 type gscDatePage struct {
-	Rows     []gscAPIRow `json:"rows"`
-	Metadata struct {
+	Aggregation string      `json:"responseAggregationType"`
+	Rows        []gscAPIRow `json:"rows"`
+	Metadata    struct {
 		FirstIncompleteDate string `json:"firstIncompleteDate"`
 		FirstIncompleteAlt  string `json:"first_incomplete_date"`
 	} `json:"metadata"`
@@ -35,12 +36,18 @@ func (p gscDatePage) incomplete() string {
 
 // FetchGSCDate requests the web date slice. Totals must come from this response, not from query rows.
 func (c *Client) FetchGSCDate(ctx context.Context, token, site, start, end string) ([]model.GscFact, string, int, bool, error) {
+	rows, _, incomplete, n, hit, err := c.fetchGSCDateQuality(ctx, token, site, start, end)
+	return rows, incomplete, n, hit, err
+}
+
+func (c *Client) fetchGSCDateQuality(ctx context.Context, token, site, start, end string) ([]model.GscFact, model.GoogleQuality, string, int, bool, error) {
+	quality := model.GoogleQuality{}
 	if strings.TrimSpace(site) == "" {
-		return nil, "", 0, false, nil
+		return nil, quality, "", 0, false, nil
 	}
 	limit := c.gscRowLimit()
 	body := gscFactBody{
-		StartDate: start, EndDate: end,
+		AggregationType: "byProperty", StartDate: start, EndDate: end,
 		Dimensions: []string{"date"},
 		Type:       "web",
 		RowLimit:   limit,
@@ -48,17 +55,24 @@ func (c *Client) FetchGSCDate(ctx context.Context, token, site, start, end strin
 	}
 	raw, err := c.postJSON(ctx, token, gscQueryURL(site), "gsc", body)
 	if err != nil {
-		return nil, "", 0, false, err
+		return nil, quality, "", 0, false, err
 	}
 	var page gscDatePage
 	if err := json.Unmarshal(raw, &page); err != nil {
-		return nil, "", 0, false, fmt.Errorf("gsc date: %w", err)
+		return nil, quality, "", 0, false, fmt.Errorf("gsc date: %w", err)
 	}
 	facts := make([]model.GscFact, 0, len(page.Rows))
 	for _, row := range page.Rows {
 		facts = append(facts, factFromGSC("date", "web", []string{"date"}, row))
 	}
-	return facts, page.incomplete(), len(page.Rows), len(page.Rows) >= limit, nil
+	quality.Known = page.Aggregation != ""
+	if page.Aggregation != "" {
+		quality.Aggregations = []string{page.Aggregation}
+	}
+	if page.Aggregation != "" && page.Aggregation != "byProperty" {
+		return nil, quality, "", 0, false, fmt.Errorf("gsc aggregation mismatch: %s", page.Aggregation)
+	}
+	return facts, quality, page.incomplete(), len(page.Rows), len(page.Rows) >= limit, nil
 }
 
 func (c *Client) FetchGADate(ctx context.Context, token, property, start, end string) ([]model.GaDaily, int, bool, error) {
@@ -152,6 +166,7 @@ func (c *Client) FetchGATimezone(ctx context.Context, token, property string) st
 }
 
 func (s *Service) SyncOfficial(ctx context.Context, projectID uint64, token, gscSite, gaProp string, now time.Time) string {
+	ctx = s.trafficQuotaContext(ctx, gscSite, gaProp)
 	var notes []string
 	if strings.TrimSpace(gscSite) != "" {
 		if note := s.syncGSCOfficial(ctx, projectID, token, gscSite, now); note != "" {
@@ -183,7 +198,7 @@ func (s *Service) syncGSCOfficial(ctx context.Context, projectID uint64, token, 
 	}
 	through, boundary := FinalizedThrough(now, incomplete)
 	err = s.syncReport(ctx, projectID, "gsc", key, "daily", "web", through.AddDate(0, -16, 0), through, 28, 2, func(partCtx context.Context, part dateChunk) (repo.SyncBatch, error) {
-		facts, _, _, hit, err := s.fetchGSCDate(partCtx, token, key, part.start.Format("2006-01-02"), part.end.Format("2006-01-02"))
+		facts, quality, _, _, hit, err := s.fetchGSCDateQuality(partCtx, token, key, part.start.Format("2006-01-02"), part.end.Format("2006-01-02"))
 		if err != nil {
 			return repo.SyncBatch{}, err
 		}
@@ -203,7 +218,7 @@ func (s *Service) syncGSCOfficial(ctx context.Context, projectID uint64, token, 
 				rows = append(rows, model.GscDaily{ProjectID: projectID, Property: key, SearchType: "web", Day: d, FetchedAt: now.Unix()})
 			}
 		}
-		return repo.SyncBatch{GSCDaily: rows}, nil
+		return repo.SyncBatch{GSCDaily: rows, Quality: quality}, nil
 	})
 	if err != nil {
 		return s.failImport(ctx, projectID, "gsc", key, err)
@@ -421,4 +436,12 @@ func (s *Service) RecordFailure(ctx context.Context, slug string, err error) {
 		}
 		s.failImport(ctx, p.ID, source, property, err)
 	}
+}
+
+func (s *Service) fetchGSCDateQuality(ctx context.Context, token, site, start, end string) ([]model.GscFact, model.GoogleQuality, string, int, bool, error) {
+	if s.FetchGSCDate != nil {
+		rows, incomplete, n, hit, err := s.FetchGSCDate(ctx, token, site, start, end)
+		return rows, model.GoogleQuality{}, incomplete, n, hit, err
+	}
+	return s.client().fetchGSCDateQuality(ctx, token, site, start, end)
 }

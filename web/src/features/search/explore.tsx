@@ -9,13 +9,13 @@ import { useAccess } from "../../app/access";
 import { TimeSeries } from "../../components/charts/series";
 import { ReportCoverage } from "./report-coverage";
 
-type Kind = "query" | "page";
+type Kind = "query" | "page" | "country" | "device";
 
 export function SearchExplorer({ kind }: { kind: Kind }) {
   const { slug } = useParams();
   const [params, setParams] = useSearchParams();
   const query = params.toString();
-  const value = params.get("value") || "";
+  const value = kind==="query"||kind==="page" ? params.get("value") || "" : "";
   const { t, tn, num } = useI18n();
   const { canEdit } = useAccess();
   const [data, setData] = useState<SearchExplore | null>(null);
@@ -31,7 +31,7 @@ export function SearchExplorer({ kind }: { kind: Kind }) {
     setData(null); setDetail(null); setError(""); setLoading(true);
     if (!slug) return;
     const input = new URLSearchParams(query);
-    const request = value ? getSearchDetail(slug, kind, input).then(result => {
+    const request = value ? getSearchDetail(slug, kind as "query"|"page", input).then(result => {
       if (!stale) { setDetail(result); setData(result.related); }
     }) : getSearchExplore(slug, kind, input).then(result => { if (!stale) setData(result); });
     request.catch((err: Error) => { if (!stale) setError(err.message); }).finally(() => { if (!stale) setLoading(false); });
@@ -48,6 +48,7 @@ export function SearchExplorer({ kind }: { kind: Kind }) {
     event.preventDefault();
     const next = new URLSearchParams();
     new FormData(event.currentTarget).forEach((v, k) => { if (String(v)) next.set(k, String(v)); });
+    if (params.has("lang")) next.set("lang",params.get("lang")!);
     if (value) next.set("value", value);
     setParams(next);
   }
@@ -55,7 +56,10 @@ export function SearchExplorer({ kind }: { kind: Kind }) {
     const next = new URLSearchParams(params); if (data) { next.set("from", data.filters.from); next.set("through", data.filters.through); } next.set("page", String(number)); setParams(next);
   }
   function target(name: string, targetKind: Kind) {
-    const next = new URLSearchParams(params); if (data) { next.set("from", data.filters.from); next.set("through", data.filters.through); } next.set("value", name); next.delete("page"); next.delete("q");
+    const next = new URLSearchParams(params); if (data) { next.set("from", data.filters.from); next.set("through", data.filters.through); } next.delete("page"); next.delete("q");
+    if(targetKind==="country"||targetKind==="device") {next.set(targetKind,name);next.delete("value");return `/p/${slug}/search/pages?${next}`;}
+    if(targetKind!=="query") next.delete("brand");
+    next.set("value", name);
     return `/p/${slug}/search/${targetKind === "query" ? "keywords" : "pages"}?${next}`;
   }
   async function exportRows() {
@@ -79,11 +83,13 @@ export function SearchExplorer({ kind }: { kind: Kind }) {
   const pages = data ? Math.max(1, Math.ceil(data.total / data.page_size)) : 1;
   const filters = data?.filters;
   return <section>
-    <p className="page-description mb-5">{t(kind === "query" ? "search.kwDescription" : "search.pagesDescription")}</p>
+    <p className="page-description mb-5">{t(kind === "query" ? "search.kwDescription" : kind==="page" ? "search.pagesDescription" : "searchSegments.description")}</p>
     {value && <Link className="mb-4 inline-block text-primary-700 underline" to={`/p/${slug}/search/${kind === "query" ? "keywords" : "pages"}?${(() => { const next = new URLSearchParams(params); next.delete("value"); next.delete("page"); return next; })()}`}>{t("search.explore.back")}</Link>}
     <form key={`${query}/${filters?.from || ""}`} onSubmit={apply} className="mb-5 flex flex-wrap items-end gap-3">
       <label className="flex flex-col text-sm text-gray-700">{t("search.explore.from")}<input aria-label={t("search.explore.from")} className="input mt-1" type="date" name="from" defaultValue={params.get("from") || filters?.from || ""} /></label>
       <label className="flex flex-col text-sm text-gray-700">{t("search.explore.through")}<input aria-label={t("search.explore.through")} className="input mt-1" type="date" name="through" defaultValue={params.get("through") || filters?.through || ""} /></label>
+      <label className="flex flex-col text-sm text-gray-700">{t("searchSegments.type")}<select className="input mt-1" name="search_type" defaultValue={params.get("search_type")||"web"}>{(["web","image","video","news","discover","googleNews"] as const).filter(k=>kind!=="query"||!["discover","googleNews"].includes(k)).map(k=><option value={k} key={k}>{t(`search.imports.types.${k}`)}</option>)}</select></label>
+      {kind==="query" && <label className="flex flex-col text-sm text-gray-700">{t("searchSegments.brand")}<select className="input mt-1" name="brand" defaultValue={params.get("brand")||""}><option value="">{t("searchSegments.all")}</option><option value="brand">{t("searchSegments.branded")}</option><option value="nonbrand">{t("searchSegments.nonbrand")}</option></select></label>}
       <label className="flex flex-col text-sm text-gray-700">{t("search.explore.contains")}<input className="input mt-1" name="q" maxLength={1000} defaultValue={params.get("q") || ""} /></label>
       <label className="flex flex-col text-sm text-gray-700">{t("search.explore.country")}<input className="input mt-1 max-w-32" name="country" maxLength={3} pattern="[a-zA-Z]{3}" defaultValue={params.get("country") || ""} placeholder={t("search.explore.countryHint")} /></label>
       <label className="flex flex-col text-sm text-gray-700">{t("search.explore.device")}<select className="input mt-1" name="device" defaultValue={params.get("device") || ""}>
@@ -97,11 +103,13 @@ export function SearchExplorer({ kind }: { kind: Kind }) {
       <button className="btn btn-primary" disabled={loading}>{t("search.explore.apply")}</button>
       <button type="button" className="btn btn-secondary" onClick={() => setParams(value ? { value } : {})}>{t("search.explore.reset")}</button>
     </form>
+    {kind==="query" && <p className="hint mb-4">{t("searchSegments.brandNote")}</p>}
     {error && <p className="alert alert-error" role="alert">{error}</p>}
     {loading && <p role="status" className="hint">{t("common.loading")}</p>}
     {data && <>
       {detail ? <>
         <h2 className="mb-4 break-all text-xl font-semibold text-gray-900">{detail.value}</h2>
+        {kind==="page" && <div className="mb-4 flex flex-wrap gap-4 text-sm"><Link className="text-primary-700 underline" to={`/p/${slug}/search/indexing?${new URLSearchParams({q:detail.value})}`}>{t("searchSegments.indexing")}</Link><Link className="text-primary-700 underline" to={`/p/${slug}/opportunities?${new URLSearchParams({url:detail.value})}`}>{t("searchSegments.actions")}</Link></div>}
         <ReportCoverage value={detail.coverage} report={kind} />
         {!detail.comparable && <p className="mb-4 text-sm text-amber-700">{t("search.explore.noComparison")}</p>}
         {detail.ctr_reference && <CTRReferenceCard value={detail.ctr_reference} />}
@@ -122,7 +130,7 @@ export function SearchExplorer({ kind }: { kind: Kind }) {
         <button className="btn btn-secondary" onClick={() => setRefresh(n => n + 1)}>{t("common.refresh")}</button>
       </div>
       <div className="table-container"><table className="table min-w-[800px]">
-        <thead><tr><th>{t(tableKind === "query" ? "search.query" : "search.url")}</th><th>{t("search.clicks")}</th><th>{t("search.explore.previousClicks")}</th><th>{t("search.explore.change")}</th><th>{t("search.impressions")}</th><th>{t("search.ctr")}</th><th>{t("search.positionCol")}</th>{tableKind === "query" && canEdit && <th>{t("search.save")}</th>}</tr></thead>
+        <thead><tr><th>{t(tableKind === "query" ? "search.query" : tableKind==="page" ? "search.url" : tableKind==="country" ? "search.explore.country" : "search.explore.device")}</th><th>{t("search.clicks")}</th><th>{t("search.explore.previousClicks")}</th><th>{t("search.explore.change")}</th><th>{t("search.impressions")}</th><th>{t("search.ctr")}</th><th>{t("search.positionCol")}</th>{tableKind === "query" && canEdit && <th>{t("search.save")}</th>}</tr></thead>
         <tbody>{(data.items || []).map(row => <tr key={row.name}>
           <td><Link className="break-all text-primary-700 underline" to={target(row.name, tableKind)}>{row.name}</Link></td>
           <td>{(data.coverage.state !== "covered" && !row.current_rows) ? "—" : num(row.clicks)}</td>

@@ -106,7 +106,7 @@ func (s *Service) SearchBoard(ctx context.Context, slug string) (*SearchBoard, e
 	}
 	pages := AggregatePages(QueryRowsFromFacts(pageFacts))
 	period := periodFromOfficial(official, start, end, prevStart, prevEnd)
-	period.Comparable = observation.Coverage.State == "covered" && observation.PreviousCoverage.State == "covered" && sumOfficial(official, start, end).rows == 28 && sumOfficial(official, prevStart, prevEnd).rows == 28
+	period.Comparable = comparableSearch(observation.Coverage, observation.PreviousCoverage) && sumOfficial(official, start, end).rows == 28 && sumOfficial(official, prevStart, prevEnd).rows == 28
 	if !period.Comparable {
 		period.HasPrevious = false
 		period.ClicksDelta = nil
@@ -123,7 +123,7 @@ func (s *Service) SearchBoard(ctx context.Context, slug string) (*SearchBoard, e
 	if err != nil {
 		return nil, err
 	}
-	ops, observations := SearchOpportunities(kws, drops, queryPages(cur), SearchPolicy{Mode: observation.Mode, MinImpressions: observation.MinImpressions, QueriesCovered: trustedSearch(qc), PagesComparable: comparableSearch(pc, ppc), PairsCovered: pairCoverage.State == "covered"})
+	ops, observations := SearchOpportunities(kws, drops, queryPages(cur), SearchPolicy{Mode: observation.Mode, MinImpressions: observation.MinImpressions, QueriesCovered: trustedSearch(qc), PagesComparable: comparableSearch(pc, ppc), PairsCovered: trustedSearch(pairCoverage)})
 	refs, err := s.ctrReferences(ctx, p, property, end, "", "")
 	if err != nil {
 		return nil, err
@@ -138,13 +138,16 @@ func (s *Service) SearchBoard(ctx context.Context, slug string) (*SearchBoard, e
 // grainCoverage never infers missing dates from facts: successful empty days
 // count as requested, while legacy rows have unknown coverage.
 func (s *Service) grainCoverage(ctx context.Context, projectID uint64, property, report string, from, through time.Time) (GrainCoverage, error) {
+	return s.reportCoverage(ctx, projectID, "gsc", property, report, "web", from, through)
+}
+func (s *Service) reportCoverage(ctx context.Context, projectID uint64, source, property, report, searchType string, from, through time.Time) (GrainCoverage, error) {
 	out := GrainCoverage{Report: report, From: from.Format("2006-01-02"), Through: through.Format("2006-01-02"), TotalDays: int(through.Sub(from).Hours()/24) + 1, State: "missing"}
-	reports, err := s.rows.SyncReports(ctx, projectID, "gsc", property)
+	reports, err := s.rows.SyncReports(ctx, projectID, source, property)
 	if err != nil {
 		return out, err
 	}
 	for _, r := range reports {
-		if r.Report != report || r.SearchType != "web" || r.Version != currentSyncVersion {
+		if r.Report != report || r.SearchType != searchType || r.Version != currentSyncVersion {
 			continue
 		}
 		days, err := s.rows.SyncDays(ctx, r.ID, from, through)

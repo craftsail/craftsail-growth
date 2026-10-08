@@ -87,11 +87,11 @@ func (h *Handler) searchCSV(c *gin.Context, kind string, in webstats.ExploreInpu
 	var report *webstats.SearchExplore
 	err = h.web.ExportSearch(c.Request.Context(), c.Param("slug"), kind, in, func(out *webstats.SearchExplore) error {
 		report = out
-		return writer.Write([]string{kind, "clicks", "impressions", "ctr", "position", "previous_clicks", "previous_impressions", "previous_ctr", "previous_position", "clicks_change", "from", "through", "previous_from", "previous_through", "covered_days", "previous_covered_days", "comparable", "country", "device"})
+		return writer.Write([]string{kind, "clicks", "impressions", "ctr", "position", "previous_clicks", "previous_impressions", "previous_ctr", "previous_position", "clicks_change", "from", "through", "previous_from", "previous_through", "covered_days", "previous_covered_days", "comparable", "country", "device", "search_type", "brand"})
 	}, func(row webstats.SearchMetric) error {
 		n := func(v float64) string { return strconv.FormatFloat(v, 'f', -1, 64) }
 		name := csvText(row.Name)
-		cells := []string{name, n(row.Clicks), n(row.Impressions), n(row.CTR), n(row.Position), n(row.PreviousClicks), n(row.PreviousImpressions), n(row.PreviousCTR), n(row.PreviousPosition), "", report.Coverage.From, report.Coverage.Through, report.PreviousCoverage.From, report.PreviousCoverage.Through, strconv.Itoa(report.Coverage.CoveredDays), strconv.Itoa(report.PreviousCoverage.CoveredDays), strconv.FormatBool(report.Comparable), report.Filters.Country, report.Filters.Device}
+		cells := []string{name, n(row.Clicks), n(row.Impressions), n(row.CTR), n(row.Position), n(row.PreviousClicks), n(row.PreviousImpressions), n(row.PreviousCTR), n(row.PreviousPosition), "", report.Coverage.From, report.Coverage.Through, report.PreviousCoverage.From, report.PreviousCoverage.Through, strconv.Itoa(report.Coverage.CoveredDays), strconv.Itoa(report.PreviousCoverage.CoveredDays), strconv.FormatBool(report.Comparable), report.Filters.Country, report.Filters.Device, report.Filters.SearchType, report.Filters.Brand}
 		if report.Comparable {
 			cells[9] = n(row.ClicksChange)
 		}

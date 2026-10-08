@@ -237,7 +237,11 @@ function SyncProgressTable({ rows, busy }: { rows: GoogleSyncProgress[]; busy: b
             <td><div>{sourceName(row.source)} · {t(`search.imports.reports.${reports.includes(row.report) ? row.report : "other"}` as Key)}{searchTypes.includes(row.search_type) && ` · ${t(`search.imports.types.${row.search_type}` as Key)}`}</div><div className="text-xs text-gray-500">{row.property}</div></td>
             <td><span className={state === "completed" ? "text-emerald-700" : ["failed", "partial", "paused"].includes(state) ? "text-amber-700" : "text-gray-700"}>{t(`search.imports.states.${state}` as Key)}</span>{row.error_class && <div className="text-xs text-gray-500">{t(`search.imports.errors.${errors.includes(row.error_class) ? row.error_class : "provider"}` as Key)}</div>}</td>
             <td>{tn("search.imports.days", row.recent_covered_days, { total: row.recent_total_days })}</td>
-            <td>{tn("search.imports.days", row.covered_days, { total: row.total_days })}<div className="text-xs text-gray-500">{row.from} – {row.through}</div></td>
+            <td>{tn("search.imports.days", row.covered_days, { total: row.total_days })}<div className="text-xs text-gray-500">{row.from} – {row.through}</div>
+ <div className="text-xs text-gray-500">{t("google.lastSuccess")}: {row.last_success_at ? new Date(row.last_success_at*1000).toLocaleString() : t("common.none")}</div>
+ {!!row.retry_at && <div className="text-xs text-amber-700">{t("google.retryAt")}: {new Date(row.retry_at*1000).toLocaleString()}</div>}
+ {!!row.gaps?.length && <details><summary className="cursor-pointer text-xs text-gray-500">{t("google.missingDates")}</summary>{row.gaps.map(g=><div key={g.from} className="text-xs text-gray-500">{g.from} – {g.through}</div>)}</details>}
+ </td>
             <td>{row.source === "ga4" ? <>
               {!row.quality?.known && <div>{t("search.quality.unknown")}</div>}
               {(["sampled", "thresholded", "other_row", "restricted", "empty_reason"] as const).filter(flag => row.quality?.[flag]).map(flag => <div key={flag} className="text-amber-700">{t(`search.quality.${flag}`)}</div>)}

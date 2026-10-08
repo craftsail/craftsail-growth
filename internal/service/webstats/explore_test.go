@@ -95,3 +95,50 @@ func TestExploreValidationAndLatestBoundary(t *testing.T) {
 		}
 	}
 }
+
+func TestSearchDimensionsTypesAndBrandFilters(t *testing.T) {
+	db := testDB(t)
+	s := New(db)
+	ctx := context.Background()
+	p, err := s.projects.Create(ctx, project.CreateInput{Name: "Acme", URL: "https://example.com"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	day := time.Date(2026, 9, 20, 0, 0, 0, 0, time.UTC)
+	s.Now = func() time.Time { return day.AddDate(0, 0, 3) }
+	prop, _ := GSCPropertyKey(p.Site)
+	facts := []model.GscFact{
+		{ProjectID: p.ID, Property: prop, Slice: "country", SearchType: "image", Day: day, Country: "bra", Clicks: 12},
+		{ProjectID: p.ID, Property: prop, Slice: "country", SearchType: "web", Day: day, Country: "bra", Clicks: 999},
+		{ProjectID: p.ID, Property: prop, Slice: "country_device", SearchType: "image", Day: day, Country: "bra", Device: "mobile", Clicks: 7},
+		{ProjectID: p.ID, Property: prop, Slice: "query", SearchType: "image", Day: day, Query: "ACME logo", Clicks: 10},
+		{ProjectID: p.ID, Property: prop, Slice: "query", SearchType: "image", Day: day, Query: "generic logo", Clicks: 20},
+	}
+	if err = s.rows.UpsertGscFacts(ctx, facts); err != nil {
+		t.Fatal(err)
+	}
+	in := ExploreInput{From: "2026-09-20", Through: "2026-09-20", SearchType: "image"}
+	got, err := s.ExploreSearch(ctx, p.Slug, "country", in)
+	if err != nil || len(got.Items) != 1 || got.Items[0].Clicks != 12 || got.Comparable {
+		t.Fatalf("country %#v %v", got, err)
+	}
+	in.Country = "bra"
+	got, err = s.ExploreSearch(ctx, p.Slug, "device", in)
+	if err != nil || len(got.Items) != 1 || got.Items[0].Clicks != 7 || got.Coverage.Report != "country_device" {
+		t.Fatalf("device %#v %v", got, err)
+	}
+	in.Country = ""
+	in.Brand = "nonbrand"
+	got, err = s.ExploreSearch(ctx, p.Slug, "query", in)
+	if err != nil || got.Total != 1 || got.Items[0].Name != "generic logo" {
+		t.Fatalf("brand %#v %v", got, err)
+	}
+	var exported []SearchMetric
+	if err = s.ExportSearch(ctx, p.Slug, "query", in, func(*SearchExplore) error { return nil }, func(r SearchMetric) error { exported = append(exported, r); return nil }); err != nil || len(exported) != 1 || exported[0].Name != "generic logo" {
+		t.Fatalf("export %#v %v", exported, err)
+	}
+	in.SearchType = "discover"
+	if _, err = s.ExploreSearch(ctx, p.Slug, "query", in); err == nil {
+		t.Fatal("unsupported queries accepted")
+	}
+}

@@ -5,6 +5,8 @@ package webstats
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -12,16 +14,18 @@ import (
 )
 
 type ExploreInput struct {
-	From      string `form:"from" json:"from"`
-	Through   string `form:"through" json:"through"`
-	Text      string `form:"q" json:"q"`
-	Country   string `form:"country" json:"country"`
-	Device    string `form:"device" json:"device"`
-	Sort      string `form:"sort" json:"sort"`
-	Direction string `form:"direction" json:"direction"`
-	Page      int    `form:"page" json:"page"`
-	PageSize  int    `form:"page_size" json:"page_size"`
-	Value     string `form:"value" json:"value"`
+	SearchType string `form:"search_type" json:"search_type"`
+	Brand      string `form:"brand" json:"brand"`
+	From       string `form:"from" json:"from"`
+	Through    string `form:"through" json:"through"`
+	Text       string `form:"q" json:"q"`
+	Country    string `form:"country" json:"country"`
+	Device     string `form:"device" json:"device"`
+	Sort       string `form:"sort" json:"sort"`
+	Direction  string `form:"direction" json:"direction"`
+	Page       int    `form:"page" json:"page"`
+	PageSize   int    `form:"page_size" json:"page_size"`
+	Value      string `form:"value" json:"value"`
 }
 
 type SearchMetric = repo.SearchMetric
@@ -44,12 +48,28 @@ func invalidSearch(reason string) error     { return &InvalidSearchInput{Reason:
 
 func (s *Service) searchFilter(ctx context.Context, slug, kind string, in ExploreInput) (repo.SearchFilter, ExploreInput, error) {
 	var f repo.SearchFilter
-	if kind != "page" && kind != "query" {
-		return f, in, invalidSearch("kind must be page or query")
+	if kind != "page" && kind != "query" && kind != "country" && kind != "device" {
+		return f, in, invalidSearch("invalid search dimension")
 	}
 	p, err := s.projects.Get(ctx, slug)
 	if err != nil {
 		return f, in, err
+	}
+	if in.SearchType == "" {
+		in.SearchType = "web"
+	}
+	if !slices.Contains(GSCSearchTypes, in.SearchType) {
+		return f, in, invalidSearch("invalid search type")
+	}
+	if kind == "query" && (in.SearchType == "discover" || in.SearchType == "googleNews") {
+		return f, in, invalidSearch("this search type has no query dimension")
+	}
+	if in.Brand != "" && (kind != "query" || in.Brand != "brand" && in.Brand != "nonbrand") {
+		return f, in, invalidSearch("brand filter requires queries and brand or nonbrand")
+	}
+	brandTerms := append([]string{p.Name}, p.Brand.Aliases...)
+	if u, e := url.Parse(p.Site); e == nil && u.Hostname() != "" {
+		brandTerms = append(brandTerms, strings.TrimPrefix(u.Hostname(), "www."))
 	}
 	now := s.now()
 	_, end := window(now)
@@ -124,18 +144,22 @@ func (s *Service) searchFilter(ctx context.Context, slug, kind string, in Explor
 	previous, _ := previousWindow(start, end)
 	grain := kind
 	if in.Country != "" || in.Device != "" {
-		grain += "_country_device"
+		if kind == "country" || kind == "device" {
+			grain = "country_device"
+		} else {
+			grain += "_country_device"
+		}
 	}
-	f = repo.SearchFilter{ProjectID: p.ID, Property: property, Slice: grain, Group: kind, From: start, Through: end, PreviousFrom: previous, Country: in.Country, Device: in.Device, Text: in.Text, Sort: in.Sort, Direction: in.Direction, Limit: in.PageSize, Offset: (in.Page - 1) * in.PageSize}
+	f = repo.SearchFilter{SearchType: in.SearchType, Brand: in.Brand, BrandTerms: brandTerms, ProjectID: p.ID, Property: property, Slice: grain, Group: kind, From: start, Through: end, PreviousFrom: previous, Country: in.Country, Device: in.Device, Text: in.Text, Sort: in.Sort, Direction: in.Direction, Limit: in.PageSize, Offset: (in.Page - 1) * in.PageSize}
 	return f, in, nil
 }
 
 func (s *Service) exploreCoverage(ctx context.Context, f repo.SearchFilter, in ExploreInput) (*SearchExplore, error) {
-	cur, err := s.grainCoverage(ctx, f.ProjectID, f.Property, f.Slice, f.From, f.Through)
+	cur, err := s.reportCoverage(ctx, f.ProjectID, "gsc", f.Property, f.Slice, f.SearchType, f.From, f.Through)
 	if err != nil {
 		return nil, err
 	}
-	prev, err := s.grainCoverage(ctx, f.ProjectID, f.Property, f.Slice, f.PreviousFrom, f.From.AddDate(0, 0, -1))
+	prev, err := s.reportCoverage(ctx, f.ProjectID, "gsc", f.Property, f.Slice, f.SearchType, f.PreviousFrom, f.From.AddDate(0, 0, -1))
 	if err != nil {
 		return nil, err
 	}
@@ -189,6 +213,9 @@ type SearchDetail struct {
 }
 
 func (s *Service) SearchDetail(ctx context.Context, slug, kind string, in ExploreInput) (*SearchDetail, error) {
+	if kind != "page" && kind != "query" {
+		return nil, invalidSearch("details require a page or query")
+	}
 	if in.Value == "" {
 		return nil, invalidSearch("value is required")
 	}
@@ -234,7 +261,7 @@ func (s *Service) SearchDetail(ctx context.Context, slug, kind string, in Explor
 	}
 	covered := map[string]bool{}
 	for _, r := range reports {
-		if r.Report != f.Slice || r.SearchType != "web" || r.Version != currentSyncVersion {
+		if r.Report != f.Slice || r.SearchType != f.SearchType || r.Version != currentSyncVersion {
 			continue
 		}
 		days, err := s.rows.SyncDays(ctx, r.ID, f.From, f.Through)
@@ -273,7 +300,7 @@ func (s *Service) SearchDetail(ctx context.Context, slug, kind string, in Explor
 	if err != nil {
 		return nil, fmt.Errorf("related search: %w", err)
 	}
-	if kind == "query" {
+	if kind == "query" && f.SearchType == "web" {
 		p, e := s.projects.Get(ctx, slug)
 		if e != nil {
 			return nil, e

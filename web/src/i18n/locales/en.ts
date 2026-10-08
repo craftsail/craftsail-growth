@@ -2,6 +2,21 @@
 
 // UI strings. Edit en.ts, zh.ts and pt.ts together: zh and pt are typed against en, so a missing key fails the build.
 export const en = {
+  searchSegments: {
+  "countries": "Countries",
+  "devices": "Devices",
+  "description": "Independent country and device totals. Open a row to inspect its pages within the same search type.",
+  "grain": "This report uses independent country/device facts, without summing query or page detail.",
+  "type": "Search type",
+  "brand": "Query brand filter",
+  "all": "All queries",
+  "branded": "Brand matches",
+  "nonbrand": "No brand match",
+  "brandNote": "Case-insensitive substring matching against the project name, brand aliases and site hostname. This classifies visible queries only; spelling variants and anonymized queries are not inferred.",
+  "indexing": "View URL inspections",
+  "actions": "View actions for this page",
+  "actionScope": "Actions for {url}"
+},
   prioritization: {
     "weekly": "This week’s focus",
     "ranking": "Up to three actions. Technical faults come first within each priority, then stage, evidence, human ICE, reach and effort. ICE is a judgment, not ROI.",
@@ -1220,6 +1235,11 @@ export const en = {
     disconnect: "Disconnect",
   },
   google: {
+  "historyStart": "Google history start",
+  "historyHint": "Leave empty to backfill up to 16 months. A later date limits future requests; stored history is retained. Recent reports are fetched first.",
+  "lastSuccess": "Last successful fetch",
+  "retryAt": "Retry after",
+  "missingDates": "Dates not yet fetched",
     description: "Search Console shows how people find the site in Google Search. GA4 shows what they do after they arrive. Access is read-only and the data stays in your own database.",
     needClient: "Save the OAuth client below before connecting Google.",
     synced: "Synced.",

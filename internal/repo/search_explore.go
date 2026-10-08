@@ -15,6 +15,8 @@ import (
 // SearchFilter selects one explicit grain. Exact filters are for drill-down;
 // text search is a literal, case-insensitive substring applied before paging.
 type SearchFilter struct {
+	SearchType, Brand                                                    string
+	BrandTerms                                                           []string
 	ProjectID                                                            uint64
 	Property, Slice, Group, Text, Country, Device, ExactQuery, ExactPage string
 	From, Through, PreviousFrom                                          time.Time
@@ -38,7 +40,7 @@ type SearchMetric struct {
 }
 
 func (r *Webstats) searchQuery(ctx context.Context, f SearchFilter) (*gorm.DB, error) {
-	if f.Group != "query" && f.Group != "page" && f.Group != "day" {
+	if f.Group != "query" && f.Group != "page" && f.Group != "day" && f.Group != "country" && f.Group != "device" {
 		return nil, fmt.Errorf("invalid search grouping")
 	}
 	// Binary grouping keeps case-sensitive URLs distinct on MySQL as on SQLite.
@@ -49,7 +51,29 @@ func (r *Webstats) searchQuery(ctx context.Context, f SearchFilter) (*gorm.DB, e
 	if f.Group == "day" {
 		key = "date(day)"
 	}
-	q := r.DB.WithContext(ctx).Model(&model.GscFact{}).Where("project_id = ? AND property = ? AND slice = ? AND search_type = ? AND date(day) >= ? AND date(day) <= ?", f.ProjectID, f.Property, f.Slice, "web", f.PreviousFrom.Format("2006-01-02"), f.Through.Format("2006-01-02"))
+	if f.SearchType == "" {
+		f.SearchType = "web"
+	}
+	q := r.DB.WithContext(ctx).Model(&model.GscFact{}).Where("project_id = ? AND property = ? AND slice = ? AND search_type = ? AND date(day) >= ? AND date(day) <= ?", f.ProjectID, f.Property, f.Slice, f.SearchType, f.PreviousFrom.Format("2006-01-02"), f.Through.Format("2006-01-02"))
+	if f.Brand != "" {
+		var terms []string
+		var args []any
+		for _, term := range f.BrandTerms {
+			if term = strings.TrimSpace(term); term != "" {
+				terms = append(terms, "LOWER(`query`) LIKE ? ESCAPE '!' ")
+				escaped := strings.NewReplacer("!", "!!", "%", "!%", "_", "!_").Replace(strings.ToLower(term))
+				args = append(args, "%"+escaped+"%")
+			}
+		}
+		condition := "1 = 0"
+		if len(terms) > 0 {
+			condition = "(" + strings.Join(terms, " OR ") + ")"
+		}
+		if f.Brand == "nonbrand" {
+			condition = "NOT (" + condition + ")"
+		}
+		q = q.Where(condition, args...)
+	}
 	if f.Country != "" {
 		q = q.Where("country = ?", f.Country)
 	}

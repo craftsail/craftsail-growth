@@ -60,6 +60,7 @@ func (t factTask) from() time.Time {
 func (t factTask) key() string { return t.source + "/" + t.report + "/" + t.searchType }
 
 func (s *Service) SyncFacts(ctx context.Context, projectID uint64, token, gscSite, gaProp string, now time.Time) (string, error) {
+	ctx = s.trafficQuotaContext(ctx, gscSite, gaProp)
 	gscKey, _ := GSCPropertyKey(gscSite)
 	gaKey, _ := GAPropertyKey(gaProp)
 	endGSC, _ := FinalizedThrough(now, "")
@@ -154,7 +155,11 @@ func (s *Service) SyncFacts(ctx context.Context, projectID uint64, token, gscSit
 			maxChunks = 2
 		}
 		checked := false
-		err := s.syncReport(ctx, projectID, task.source, task.property, task.report, task.searchType, task.from(), task.through, 7, maxChunks, func(partCtx context.Context, part dateChunk) (repo.SyncBatch, error) {
+		chunkDays := 7
+		if task.source == "gsc" {
+			chunkDays = 1
+		}
+		err := s.syncReport(ctx, projectID, task.source, task.property, task.report, task.searchType, task.from(), task.through, chunkDays, maxChunks, func(partCtx context.Context, part dateChunk) (repo.SyncBatch, error) {
 			start, end := part.start.Format("2006-01-02"), part.end.Format("2006-01-02")
 			if task.source == "gsc" {
 				rows, quality, err := s.client().FetchGSCReport(partCtx, token, task.property, task.report, task.searchType, start, end)

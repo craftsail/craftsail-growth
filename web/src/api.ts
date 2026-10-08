@@ -3,6 +3,7 @@
 type Envelope<T> = { code: number; msg: string; data: T };
 
 export type Project = {
+ google_history_start?: string;
  sampling_language?: string; site_language?: string; report_language?: string; target_region?: string;
   id: number;
   access?: Access;
@@ -121,6 +122,7 @@ export function createProject(body: {
 }
 
 export function patchProject(slug: string, body: {
+ google_history_start?:string;
  sampling_language?: string; site_language?: string; report_language?: string; target_region?: string;
   url?: string;
   name?: string;
@@ -379,16 +381,17 @@ export type SearchDetail = {
  daily: { day: string; clicks: number | null; impressions: number | null }[];
  related: SearchExplore;
 };
-export function getSearchExplore(slug: string, kind: "query" | "page", params: URLSearchParams) {
- return request<SearchExplore>(`/api/projects/${slug}/${kind === "query" ? "keywords" : "gsc-pages"}?${params}`);
+export type SearchKind = "query" | "page" | "country" | "device";
+export function getSearchExplore(slug: string, kind: SearchKind, params: URLSearchParams) {
+ return request<SearchExplore>(`/api/projects/${slug}/${kind === "query" ? "keywords" : kind === "page" ? "gsc-pages" : `search-dimensions/${kind}`}?${params}`);
 }
 export function getSearchDetail(slug: string, kind: "query" | "page", params: URLSearchParams) {
  const query = new URLSearchParams(params); query.set("kind", kind);
  return request<SearchDetail>(`/api/projects/${slug}/search-detail?${query}`);
 }
-export async function exportSearchCSV(slug: string, kind: "query" | "page", params: URLSearchParams) {
+export async function exportSearchCSV(slug: string, kind: SearchKind, params: URLSearchParams) {
  const query = new URLSearchParams(params); query.set("format", "csv"); query.delete("page");
- const response = await fetch(`/api/projects/${slug}/${kind === "query" ? "keywords" : "gsc-pages"}?${query}`, { credentials: "include" });
+ const response = await fetch(`/api/projects/${slug}/${kind === "query" ? "keywords" : kind === "page" ? "gsc-pages" : `search-dimensions/${kind}`}?${query}`, { credentials: "include" });
  if (!response.ok) { const body = await response.json(); throw new Error(body.msg || response.statusText); }
  return response.blob();
 }
@@ -584,6 +587,7 @@ export type GoogleQuality = {
  restricted: boolean; empty_reason: boolean; currencies?: string[]; time_zones?: string[]; aggregations?: string[];
 };
 export type GoogleSyncProgress = {
+ gaps?: {from:string;through:string}[]; last_success_at?:number; retry_at?:number;
  quality?: GoogleQuality;
   source: string; property: string; report: string; search_type: string;
   state: string; error_class: string; from: string; through: string;

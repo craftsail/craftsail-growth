@@ -45,6 +45,9 @@ func (c *Client) postJSON(ctx context.Context, token, rawURL, api string, body a
 	if err := takeSyncBudget(ctx, true); err != nil {
 		return nil, err
 	}
+	if err := reserveTraffic(ctx, api); err != nil {
+		return nil, err
+	}
 	payload, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
@@ -69,7 +72,11 @@ func (c *Client) postJSON(ctx context.Context, token, rawURL, api string, body a
 		return nil, err
 	}
 	if res.StatusCode >= 400 {
-		return nil, apiError(api, res.StatusCode, b)
+		err := apiError(api, res.StatusCode, b)
+		if class, _ := classifyErr(err); class == "rate_limited" {
+			backoffTraffic(ctx, api, res.Header.Get("Retry-After"))
+		}
+		return nil, err
 	}
 	return b, nil
 }

@@ -14,7 +14,8 @@ import (
 	"github.com/craftsail/craftsail-growth/internal/repo"
 )
 
-const currentSyncVersion = 2
+// v3 refetches legacy coverage after the daily/appearance request contract changed.
+const currentSyncVersion = 3
 
 var ErrMetricRestricted = errors.New("Google restricted a requested metric; previous data retained")
 
@@ -57,6 +58,20 @@ func coveragePlanSince(days []model.WebSyncDay, from, through time.Time, chunkDa
 type syncFetch func(context.Context, dateChunk) (repo.SyncBatch, error)
 
 func (s *Service) syncReport(ctx context.Context, projectID uint64, source, property, report, searchType string, from, through time.Time, chunkDays, maxChunks int, fetch syncFetch) error {
+	if s.projects != nil {
+		p, err := (&repo.Projects{DB: s.rows.DB}).ByID(ctx, projectID)
+		if err != nil {
+			return err
+		}
+		if p != nil {
+			if d, ok := parseDay(p.GoogleHistoryStart); ok && d.After(from) {
+				from = d
+				if from.After(through) {
+					from = through
+				}
+			}
+		}
+	}
 	if through.Before(from) {
 		return nil
 	}
@@ -148,7 +163,14 @@ func (s *Service) syncReport(ctx context.Context, projectID uint64, source, prop
 	return finish(status, "")
 }
 
+type SyncGap struct {
+	From    string `json:"from"`
+	Through string `json:"through"`
+}
 type SyncProgress struct {
+	Gaps              []SyncGap           `json:"gaps"`
+	LastSuccessAt     int64               `json:"last_success_at"`
+	RetryAt           int64               `json:"retry_at"`
 	Quality           model.GoogleQuality `json:"quality"`
 	Source            string              `json:"source"`
 	Property          string              `json:"property"`
@@ -185,7 +207,13 @@ func (s *Service) syncProgress(ctx context.Context, projectID uint64, source, pr
 		}
 		quality := model.GoogleQuality{Known: len(days) > 0}
 		n := 0
+		lastSuccess := int64(0)
+		covered := map[string]bool{}
 		for _, day := range days {
+			covered[day.Day.Format("2006-01-02")] = true
+			if day.FetchedAt > lastSuccess {
+				lastSuccess = day.FetchedAt
+			}
 			var q model.GoogleQuality
 			if err := json.Unmarshal([]byte(day.QualityJSON), &q); err != nil {
 				q.Known = false
@@ -195,7 +223,31 @@ func (s *Service) syncProgress(ctx context.Context, projectID uint64, source, pr
 				n++
 			}
 		}
-		out = append(out, SyncProgress{Quality: quality, Source: source, Property: property, Report: row.Report, SearchType: row.SearchType, State: row.State, ErrorClass: row.ErrorClass, From: row.From.Format("2006-01-02"), Through: row.Through.Format("2006-01-02"), CoveredDays: len(days), TotalDays: int(row.Through.Sub(row.From).Hours()/24) + 1, RecentCoveredDays: n, RecentTotalDays: int(row.Through.Sub(recent).Hours()/24) + 1, UpdatedAt: row.UpdatedAt})
+		gaps := []SyncGap{}
+		for d := row.From; !d.After(row.Through); d = d.AddDate(0, 0, 1) {
+			key := d.Format("2006-01-02")
+			if covered[key] {
+				continue
+			}
+			if len(gaps) > 0 && gaps[len(gaps)-1].Through == d.AddDate(0, 0, -1).Format("2006-01-02") {
+				gaps[len(gaps)-1].Through = key
+			} else {
+				gaps = append(gaps, SyncGap{key, key})
+			}
+		}
+		family := "traffic/gsc"
+		if source == "ga4" {
+			family = "traffic/ga"
+		}
+		quota, err := s.rows.GoogleQuota(ctx, property, family)
+		if err != nil {
+			return nil, err
+		}
+		var retry int64
+		if quota != nil && quota.BlockedUntil > s.now().Unix() {
+			retry = quota.BlockedUntil
+		}
+		out = append(out, SyncProgress{Gaps: gaps, LastSuccessAt: lastSuccess, RetryAt: retry, Quality: quality, Source: source, Property: property, Report: row.Report, SearchType: row.SearchType, State: row.State, ErrorClass: row.ErrorClass, From: row.From.Format("2006-01-02"), Through: row.Through.Format("2006-01-02"), CoveredDays: len(days), TotalDays: int(row.Through.Sub(row.From).Hours()/24) + 1, RecentCoveredDays: n, RecentTotalDays: int(row.Through.Sub(recent).Hours()/24) + 1, UpdatedAt: row.UpdatedAt})
 	}
 	return out, nil
 }

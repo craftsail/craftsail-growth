@@ -31,6 +31,7 @@ import { AuditIssues } from "./features/audit/issues";
 import { AuditPages } from "./features/audit/pages";
 import { GAExplorer } from "./features/search/ga-explore";
 import { Indexing } from "./features/search/indexing";
+import { SearchExplorer } from "./features/search/explore";
 import { GscPages } from "./features/search/gsc-pages";
 import { Keywords } from "./features/search/keywords";
 import { Webstats } from "./features/search/webstats";
@@ -128,6 +129,8 @@ export function App() {
         <Route path="audit/pages" element={<AuditPages />} />
         <Route path="search" element={<Webstats />} />
         <Route path="search/keywords" element={<Keywords />} />
+        <Route path="search/countries" element={<SearchExplorer kind="country" />} />
+        <Route path="search/devices" element={<SearchExplorer kind="device" />} />
         <Route path="search/pages" element={<GscPages />} />
         <Route path="search/indexing" element={<Indexing />} />
         <Route path="search/channels" element={<GAExplorer report="channel" />} />

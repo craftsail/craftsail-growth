@@ -4,6 +4,21 @@
 import type { Messages } from "./en";
 
 export const zh: Messages = {
+  searchSegments: {
+  "countries": "国家",
+  "devices": "设备",
+  "description": "查看独立的国家和设备合计，点击行可查看同一搜索类型下的页面。",
+  "grain": "使用独立的国家/设备事实，不把查询或页面明细相加当作合计。",
+  "type": "搜索类型",
+  "brand": "查询品牌筛选",
+  "all": "全部查询",
+  "branded": "匹配品牌",
+  "nonbrand": "未匹配品牌",
+  "brandNote": "按项目名称、品牌别名和站点主机名进行不区分大小写的子串匹配。仅分类可见查询，不推测拼写变体或匿名查询。",
+  "indexing": "查看 URL 收录检查",
+  "actions": "查看此页面的行动",
+  "actionScope": "页面 {url} 的行动"
+},
   prioritization: {
     "weekly": "本周重点",
     "ranking": "最多推荐三个行动。同一优先级内先处理技术故障，再考虑阶段、证据、人工 ICE、影响范围和投入。ICE 是判断，不是 ROI。",
@@ -1222,6 +1237,11 @@ export const zh: Messages = {
     disconnect: "断开连接",
   },
   google: {
+  "historyStart": "Google 历史数据起始日",
+  "historyHint": "留空最多回填 16 个月。设置较晚日期可缩短后续抓取范围，已保存的历史数据会保留。优先同步近期报表。",
+  "lastSuccess": "最近成功抓取",
+  "retryAt": "可重试时间",
+  "missingDates": "尚未抓取的日期",
     description: "Search Console 展示用户如何在 Google 搜索中找到网站，GA4 展示他们到达后做了什么。访问是只读的，数据只保存在你自己的数据库里。",
     needClient: "连接 Google 前，请先在下方保存 OAuth 客户端。",
     synced: "已同步。",

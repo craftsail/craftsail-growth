@@ -4,6 +4,21 @@
 import type { Messages } from "./en";
 
 export const pt: Messages = {
+  searchSegments: {
+  "countries": "Países",
+  "devices": "Dispositivos",
+  "description": "Totais independentes por país e dispositivo. Abra uma linha para ver páginas do mesmo tipo de pesquisa.",
+  "grain": "Este relatório usa dados independentes por país/dispositivo, sem somar detalhes de consultas ou páginas.",
+  "type": "Tipo de pesquisa",
+  "brand": "Filtro de marca da consulta",
+  "all": "Todas as consultas",
+  "branded": "Corresponde à marca",
+  "nonbrand": "Sem correspondência de marca",
+  "brandNote": "Correspondência parcial sem distinção de maiúsculas com nome do projeto, aliases da marca e domínio. Apenas consultas visíveis; variantes e consultas anônimas não são inferidas.",
+  "indexing": "Ver inspeções da URL",
+  "actions": "Ver ações desta página",
+  "actionScope": "Ações para {url}"
+},
   prioritization: {
     "weekly": "Foco desta semana",
     "ranking": "Até três ações. Em cada prioridade, falhas técnicas vêm primeiro, seguidas de fase, evidências, ICE manual, alcance e esforço. ICE é uma avaliação, não ROI.",
@@ -1222,6 +1237,11 @@ export const pt: Messages = {
     disconnect: "Desconectar",
   },
   google: {
+  "historyStart": "Início do histórico do Google",
+  "historyHint": "Deixe vazio para buscar até 16 meses. Uma data posterior limita novas consultas; o histórico salvo é mantido. Relatórios recentes têm prioridade.",
+  "lastSuccess": "Última busca concluída",
+  "retryAt": "Tentar após",
+  "missingDates": "Datas ainda não buscadas",
     description: "O Search Console mostra como as pessoas encontram o site na Busca do Google. O GA4 mostra o que fazem depois de chegar. O acesso é só leitura e os dados ficam no seu banco.",
     needClient: "Salve o cliente OAuth abaixo antes de conectar o Google.",
     synced: "Sincronizado.",

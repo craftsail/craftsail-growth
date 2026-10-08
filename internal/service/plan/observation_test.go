@@ -47,7 +47,7 @@ func TestReleaseFreezesWindowsAndKeepsTaskState(t *testing.T) {
 	from := time.Date(2026, 6, 3, 0, 0, 0, 0, time.UTC)
 	through := time.Date(2026, 7, 29, 0, 0, 0, 0, time.UTC)
 	store := &repo.Webstats{DB: db}
-	report := model.WebSyncReport{ProjectID: p.ID, Source: "gsc", Property: prop, Report: "page", SearchType: "web", Version: 2, Token: "release", From: from, Through: through}
+	report := model.WebSyncReport{ProjectID: p.ID, Source: "gsc", Property: prop, Report: "page", SearchType: "web", Version: 3, Token: "release", From: from, Through: through}
 	if err := store.BeginSyncReport(ctx, &report); err != nil {
 		t.Fatal(err)
 	}

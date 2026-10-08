@@ -58,6 +58,10 @@ func (s *Service) Run(ctx context.Context, slug string) (*RunResult, error) {
 }
 
 func (s *Service) run(ctx context.Context, slug string) (*RunResult, error) {
+	local := *s
+	client := *s.client()
+	local.Client = &client
+	s = &local
 	if !UserConnected() && strings.TrimSpace(os.Getenv("GOOGLE_SA_JSON")) == "" {
 		return nil, fmt.Errorf("Google is not connected")
 	}
@@ -206,9 +210,28 @@ func (s *Service) Snapshot(ctx context.Context, slug string) (*Snapshot, error) 
 		}
 		progress = append(progress, rows...)
 	}
+	var deltaWindows []model.WebWindow
+	for _, w := range windows {
+		if w.Source == "ga4" {
+			from := w.FinalizedThrough.AddDate(0, 0, -27)
+			prev, prevEnd := previousWindow(from, w.FinalizedThrough)
+			a, e := s.reportCoverage(ctx, p.ID, "ga4", w.Property, "daily", "", from, w.FinalizedThrough)
+			if e != nil {
+				return nil, e
+			}
+			b, e := s.reportCoverage(ctx, p.ID, "ga4", w.Property, "daily", "", prev, prevEnd)
+			if e != nil {
+				return nil, e
+			}
+			if !comparableGA(a, b) {
+				continue
+			}
+		}
+		deltaWindows = append(deltaWindows, w)
+	}
 	return &Snapshot{
 		Observation: observation, Sync: progress, Insight: insight, Sitemaps: sitemaps, Index: indexed,
-		Sources: sources, Windows: windows, Official: official, Deltas: snapshotDeltas(windows, observation, searchDaily),
+		Sources: sources, Windows: windows, Official: official, Deltas: snapshotDeltas(deltaWindows, observation, searchDaily),
 	}, nil
 }
 
@@ -217,7 +240,7 @@ func snapshotDeltas(windows []model.WebWindow, observation *SearchObservation, r
 	var eligible []model.WebWindow
 	for _, win := range windows {
 		if win.Source == "gsc" {
-			if observation == nil || observation.Coverage.State != "covered" || observation.PreviousCoverage.State != "covered" || win.Property != observation.Property || win.WindowDays != 28 || win.FinalizedThrough.Format("2006-01-02") != observation.Coverage.Through {
+			if observation == nil || !comparableSearch(observation.Coverage, observation.PreviousCoverage) || win.Property != observation.Property || win.WindowDays != 28 || win.FinalizedThrough.Format("2006-01-02") != observation.Coverage.Through {
 				continue
 			}
 			from, _ := time.Parse("2006-01-02", observation.PreviousCoverage.From)

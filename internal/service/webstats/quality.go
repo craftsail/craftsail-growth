@@ -56,3 +56,11 @@ func mergeQuality(dst *model.GoogleQuality, src model.GoogleQuality) {
 	dst.TimeZones = merge(dst.TimeZones, src.TimeZones)
 	dst.Aggregations = merge(dst.Aggregations, src.Aggregations)
 }
+
+func comparableGA(a, b GrainCoverage) bool {
+	good := func(c GrainCoverage) bool {
+		q := c.Quality
+		return c.State == "covered" && q.Known && !q.Sampled && !q.Thresholded && !q.OtherRow && !q.Restricted && !q.EmptyReason && len(q.TimeZones) == 1
+	}
+	return good(a) && good(b) && a.Quality.TimeZones[0] == b.Quality.TimeZones[0]
+}

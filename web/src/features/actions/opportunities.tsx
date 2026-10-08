@@ -48,6 +48,7 @@ export function Opportunities() {
   const [params, setParams] = useSearchParams();
   const tab = (TABS.includes(params.get("tab") as Tab) ? params.get("tab") : "suggested") as Tab;
   const source = params.get("source") || "";
+  const pageURL=params.get("url")||"";
   const focus = params.get("key") || "";
   const [items, setItems] = useState<OpportunityItem[] | null>(null);
   const [dismissed, setDismissed] = useState<OpportunityItem[]>([]);
@@ -67,7 +68,7 @@ export function Opportunities() {
     if (focus && items) document.getElementById("opp-" + focus)?.scrollIntoView({ block: "center" });
   }, [focus, items]);
 
-  const all = useMemo(() => [...(items || []), ...dismissed], [items, dismissed]);
+  const all = useMemo(() => [...(items || []), ...dismissed].filter(it=>!pageURL||it.urls?.includes(pageURL)), [items, dismissed, pageURL]);
   const byTab = useMemo(() => {
     const m: Record<Tab, OpportunityItem[]> = { suggested: [], progress: [], verified: [], dismissed: [] };
     for (const it of all) m[tabOf(it)].push(it);
@@ -203,6 +204,7 @@ export function Opportunities() {
 
   return (
     <section className="space-y-5">
+      {pageURL && <p className="mb-4 break-all text-sm text-gray-700">{t("searchSegments.actionScope",{url:pageURL})} <button className="text-primary-700 underline" onClick={()=>set("url","")}>{t("search.explore.reset")}</button></p>}
       <p className="page-description">{t("plan.description")}</p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
