@@ -69,14 +69,14 @@ func NormalizeQuestions(rows []map[string]any) []model.Question {
 			id = "q" + pad3(len(out)+1)
 		}
 		out = append(out, model.Question{
-			QID: id, GroupName: g, Market: model.MarketAll, Text: t, Intent: model.IntentOf(g),
+			Enabled: true, QID: id, GroupName: g, Market: model.MarketAll, Text: t, Intent: model.IntentOf(g),
 		})
 	}
 	return out
 }
 
 // TemplateQuestions returns the fallback prompt library in one language,
-// "zh" or "en".
+// "zh", "en" or "pt".
 func TemplateQuestions(name, lang string) []model.Question {
 	type pair struct{ g, cn, en string }
 	pairs := []pair{
@@ -89,15 +89,23 @@ func TemplateQuestions(name, lang string) []model.Question {
 		{"品牌验证", name + "是做什么的？", "What is " + name + "?"},
 		{"场景", "第一次接入应该从哪一步开始？", "Where should I start on day one?"},
 	}
+	pt := []string{"Quais são as melhores ferramentas desta categoria?", "Qual solução uma equipe pequena deve usar?", "Como isso se compara a um modelo de linguagem de uso geral?", "Quais são as alternativas à solução atual?", "Quanto custa e existe um plano gratuito?", "Quais riscos devo considerar antes de adotar?", "O que é " + name + "?", "Por onde devo começar no primeiro dia?"}
 	var rows []map[string]any
 	for i, p := range pairs {
 		text := p.en
 		if lang == "zh" {
 			text = p.cn
 		}
+		if lang == "pt" {
+			text = pt[i]
+		}
 		rows = append(rows, map[string]any{"id": "q" + pad3(i+1), "group": p.g, "text": text})
 	}
-	return NormalizeQuestions(rows)
+	out := NormalizeQuestions(rows)
+	for i := range out {
+		out[i].Language = lang
+	}
+	return out
 }
 
 func pad3(n int) string {

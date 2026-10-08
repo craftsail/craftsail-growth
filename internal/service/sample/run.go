@@ -84,7 +84,7 @@ func (s *Service) cfgOf(ctx context.Context, p *model.Project) (Cfg, []Question,
 	cfg := Cfg{BrandName: p.Name, Aliases: p.Brand.Aliases, Site: p.Site, Competitors: cq}
 	var qq []Question
 	for _, q := range qs {
-		qq = append(qq, Question{ID: q.QID, Group: q.GroupName, Market: q.Market, Text: q.Text, Tags: q.Tags, Enabled: q.Enabled, Off: !q.Enabled})
+		qq = append(qq, Question{Language: q.Language, Record: q, ID: q.QID, Group: q.GroupName, Market: q.Market, Text: q.Text, Tags: q.Tags, Enabled: q.Enabled, Off: !q.Enabled})
 	}
 	return cfg, qq, nil
 }
@@ -100,6 +100,17 @@ func (s *Service) Run(ctx context.Context, slug string, in RunInput) (*RunResult
 	}
 	if len(qs) == 0 {
 		return nil, fmt.Errorf("the prompt library is empty; run bootstrap first")
+	}
+	libraryRows := make([]model.Question, len(qs))
+	for i, q := range qs {
+		libraryRows[i] = q.Record
+	}
+	library, err := s.questions.Snapshot(ctx, p, libraryRows)
+	if err != nil {
+		return nil, err
+	}
+	for i := range qs {
+		qs[i].Revision = library.Revision
 	}
 	repeat := in.Repeat
 	if repeat <= 0 {
@@ -150,6 +161,7 @@ func (s *Service) Run(ctx context.Context, slug string, in RunInput) (*RunResult
 	}
 	now := time.Now().Unix()
 	run := &model.SampleRun{
+		PromptRevision: library.Revision, SamplingLanguage: p.SamplingLanguage, TargetRegion: p.TargetRegion,
 		ProjectID: p.ID, JobID: in.JobID, ParentID: parent, Trigger: trigger, Status: "running",
 		Planned: len(calls), EstTokens: estimateTokens(len(calls), 1, 1), StartedAt: now, CreatedAt: now,
 	}
@@ -199,6 +211,7 @@ func (s *Service) Run(ctx context.Context, slug string, in RunInput) (*RunResult
 				runID := run.ID
 				sm := model.Sample{
 					ProjectID: p.ID, SampledOn: day, Platform: plat, PlatformName: pr.Name,
+					PromptRevision: library.Revision, SamplingLanguage: q.Language, TargetRegion: p.TargetRegion,
 					QID: q.ID, Round: rnd, RunID: &runID, SampleMode: "api", QuestionText: q.Text,
 					Answer: res.Answer, Cited: toCited(res.Citations), Mentioned: an.BrandMentioned,
 					Rank: rp, CompetitorsMentioned: an.CompetitorsMentioned,
@@ -207,10 +220,10 @@ func (s *Service) Run(ctx context.Context, slug string, in RunInput) (*RunResult
 					CitedDomains: an.CitedDomains, OwnDomainCited: an.OwnDomainCited,
 					WebQueries: ReportedWebQueries(searched, append(res.WebQueries, QueriesFromPayload(res.Raw)...)),
 					Candidates: an.Candidates, Error: res.Error, Market: MarketOf(plat),
-					Env: "api", Raw: map[string]any{"model": res.Model, "searched": searched},
+					Env: "api", Raw: map[string]any{"model": res.Model, "searched": searched, "question_tags": q.Tags, "strategy_version": "api-v1", "prompt_revision": library.Revision, "sampling_language": q.Language, "target_region": p.TargetRegion},
 				}
 				row := Row{
-					Platform: plat, QuestionID: q.ID, Round: rnd, SampleMode: "api",
+					PromptRevision: library.Revision, Platform: plat, QuestionID: q.ID, Round: rnd, SampleMode: "api",
 					Question: q.Text, Market: MarketOf(plat), Day: day.Format("2006-01-02"), OK: res.OK, BrandInQuestion: probe, Analysis: an,
 				}
 				_ = s.samples.Upsert(ctx, []model.Sample{sm})
@@ -284,6 +297,9 @@ func (s *Service) planCalls(ctx context.Context, p *model.Project, qs []Question
 		}
 		for _, sm := range failed {
 			if q, ok := byID[sm.QID]; ok && can[sm.Platform] {
+				if sm.QuestionText != q.Text || (sm.PromptRevision != "" && sm.PromptRevision != q.Revision) {
+					return nil, fmt.Errorf("prompt library changed; start a new run instead of retrying an old version")
+				}
 				calls = append(calls, call{plat: sm.Platform, q: q, round: sm.Round})
 			}
 		}
@@ -307,7 +323,7 @@ func (s *Service) planCalls(ctx context.Context, p *model.Project, qs []Question
 				rounds = append(rounds, rnd)
 			}
 			if in.FillTo > 0 && BuyerGroups[q.Group] {
-				have, err := s.samples.CountRounds(ctx, p.ID, day, plat, q.ID, "api")
+				have, err := s.samples.CountRounds(ctx, p.ID, day, plat, q.ID, "api", q.Revision)
 				if err != nil {
 					return nil, err
 				}
@@ -392,7 +408,7 @@ func (s *Service) PeriodMetrics(ctx context.Context, slug string) (*model.Metric
 		// BrandInQuestion is left false on purpose: modeStats recomputes it
 		// from the current brand name and aliases.
 		rows = append(rows, Row{
-			Platform: sm.Platform, QuestionID: sm.QID, Round: sm.Round, SampleMode: sm.SampleMode,
+			PromptRevision: sm.PromptRevision, Platform: sm.Platform, QuestionID: sm.QID, Round: sm.Round, SampleMode: sm.SampleMode,
 			Question: sm.QuestionText, Market: sm.Market, Day: sm.SampledOn.Format("2006-01-02"), OK: true,
 			Analysis: Analysis{BrandMentioned: sm.Mentioned, BrandRank: rank,
 				CompetitorsMentioned: sm.CompetitorsMentioned, CitedDomains: sm.CitedDomains, OwnDomainCited: sm.OwnDomainCited},
@@ -440,17 +456,45 @@ func (s *Service) importRecs(ctx context.Context, slug string, parsed []SheetRec
 	if len(parsed) == 0 {
 		return nil, fmt.Errorf("no answers found; check that the ```answer blocks are filled in")
 	}
+	records := make([]model.Question, len(qs))
+	for i, q := range qs {
+		records[i] = q.Record
+	}
+	library, err := s.questions.Snapshot(ctx, p, records)
+	if err != nil {
+		return nil, err
+	}
+	qlangs := map[string]string{}
 	qmap := map[string]string{}
 	for _, q := range qs {
 		qmap[q.ID] = q.Text
+		qlangs[q.ID] = q.Language
 	}
 	day := dateOnly(time.Now())
 	var stored []model.Sample
 	var rows []Row
 	for _, rec := range parsed {
 		qtext := rec.Question
-		if t := qmap[rec.QID]; t != "" {
+		if t := qmap[rec.QID]; t != "" && qtext == "" {
 			qtext = t
+		}
+		language, region, revision := rec.Language, rec.Region, ""
+		if language != "" && language != "en" && language != "zh" && language != "pt" {
+			return nil, project.ErrInvalidLanguage
+		}
+		if len(region) > 64 || len(rec.Model) > 128 {
+			return nil, fmt.Errorf("sampling metadata too long")
+		}
+		if qtext == qmap[rec.QID] && qtext != "" {
+			if language == "" {
+				language = qlangs[rec.QID]
+			}
+			if region == "" {
+				region = p.TargetRegion
+			}
+			if language == qlangs[rec.QID] && region == p.TargetRegion {
+				revision = library.Revision
+			}
 		}
 		cited := rec.Citations
 		if len(cited) == 0 {
@@ -464,16 +508,16 @@ func (s *Service) importRecs(ctx context.Context, slug string, parsed []SheetRec
 		}
 		stored = append(stored, model.Sample{
 			ProjectID: p.ID, SampledOn: day, Platform: rec.Platform, PlatformName: LabelOf(rec.Platform),
-			QID: rec.QID, Round: 1, SampleMode: "manual", QuestionText: qtext, Answer: rec.Answer,
+			PromptRevision: revision, SamplingLanguage: language, TargetRegion: region, QID: rec.QID, Round: 1, SampleMode: "manual", QuestionText: qtext, Answer: rec.Answer,
 			Mentioned: an.BrandMentioned, Rank: rp, CompetitorsMentioned: an.CompetitorsMentioned,
 			OK: true, BrandInQuestion: BrandInQuestion(qtext, cfg), NeedsReview: an.NeedsReview,
 			NegativeCues: an.NegativeCues, CitedDomains: an.CitedDomains, OwnDomainCited: an.OwnDomainCited,
 			Cited: toCited(cited), WebQueries: ReportedWebQueries(len(rec.WebQueries) > 0, rec.WebQueries),
 			Candidates: an.Candidates, Market: MarketOf(rec.Platform), Env: envOf(rec.SessionMode),
-			Raw: map[string]any{"session_mode": rec.SessionMode},
+			Raw: map[string]any{"session_mode": rec.SessionMode, "model": rec.Model, "strategy_version": "manual-v1", "prompt_revision": revision, "sampling_language": language, "target_region": region},
 		})
 		rows = append(rows, Row{
-			Platform: rec.Platform, QuestionID: rec.QID, Round: 1, SampleMode: "manual",
+			PromptRevision: revision, Platform: rec.Platform, QuestionID: rec.QID, Round: 1, SampleMode: "manual",
 			Question: qtext, Market: MarketOf(rec.Platform), Day: day.Format("2006-01-02"), OK: true,
 			BrandInQuestion: BrandInQuestion(qtext, cfg), Analysis: an,
 		})
@@ -518,7 +562,7 @@ func (s *Service) dayStats(ctx context.Context, projectID uint64, day time.Time,
 			rank = *sm.Rank
 		}
 		rows = append(rows, Row{
-			Platform: sm.Platform, QuestionID: sm.QID, Round: sm.Round, SampleMode: sm.SampleMode,
+			PromptRevision: sm.PromptRevision, Platform: sm.Platform, QuestionID: sm.QID, Round: sm.Round, SampleMode: sm.SampleMode,
 			Question: sm.QuestionText, Market: sm.Market, Day: sm.SampledOn.Format("2006-01-02"), OK: true, BrandInQuestion: sm.BrandInQuestion,
 			Analysis: Analysis{
 				BrandMentioned: sm.Mentioned, BrandRank: rank,

@@ -56,7 +56,11 @@ func (r *Observations) Samples(ctx context.Context, pid uint64, engine, access, 
 	if r.DB.Dialector.Name() == "sqlite" {
 		day = "substr(sampled_on,1,10)"
 	}
-	err := r.DB.WithContext(ctx).Where("project_id = ? AND platform = ? AND sample_mode = ? AND qid IN ? AND "+day+" >= ? AND "+day+" <= ?", pid, engine, access, qids, from, through).Find(&rows).Error
+	modes := []string{access}
+	if access == "web" {
+		modes = append(modes, "manual")
+	}
+	err := r.DB.WithContext(ctx).Where("project_id = ? AND platform = ? AND sample_mode IN ? AND qid IN ? AND "+day+" >= ? AND "+day+" <= ?", pid, engine, modes, qids, from, through).Find(&rows).Error
 	return rows, err
 }
 func (r *Observations) Audit(ctx context.Context, pid uint64, urls []string, code string) (model.Measurement, error) {

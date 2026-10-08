@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getQuestions, runningJob, saveQuestions, startJob, waitJob, type JobRow, type Question } from "../../api";
+import { questionLibraries, type QuestionLibrary, getQuestions, runningJob, saveQuestions, startJob, waitJob, type JobRow, type Question } from "../../api";
 import { TagsInput } from "../../components/tags-input";
 import { DEFAULT_GROUP, PROMPT_GROUPS } from "../../labels";
 import { useI18n } from "../../i18n";
@@ -21,7 +21,8 @@ function mentionsBrand(text: string, names: string[], site: string) {
 }
 
 export function Questions() {
-  const { t } = useI18n();
+  const { t,tn,intl } = useI18n();
+ const [libraries,setLibraries]=useState<QuestionLibrary[]>([]);
   const { canEdit } = useAccess();
   const { slug } = useParams();
   const [items, setItems] = useState<Question[]>([]);
@@ -37,6 +38,7 @@ export function Questions() {
 
   function load() {
     if (!slug) return;
+ questionLibraries(slug).then(r=>setLibraries(r.items||[])).catch(e=>setErr(e.message));
     getQuestions(slug)
       .then((d) => {
         setItems(d.items || []); setRevision(d.review_revision); setDirty(false);
@@ -151,7 +153,8 @@ export function Questions() {
           return (
             <div key={q.qid + i} className={`grid items-center gap-2 py-2 md:grid-cols-[2rem_minmax(0,1fr)_9rem_9.5rem_16rem_3rem] ${on ? "" : "opacity-60"}`}>
               <input type="checkbox" aria-label={t("questions.select")} checked={picked.includes(q.qid)} onChange={() => setPicked(picked.includes(q.qid) ? picked.filter((id) => id !== q.qid) : [...picked, q.qid])} />
-              <input className="input" value={q.text} placeholder={t("questions.placeholder")} onChange={(e) => patch(i, { text: e.target.value })} />
+              <div className="space-y-1"><input className="input w-full" value={q.text} placeholder={t("questions.placeholder")} onChange={(e) => patch(i, { text: e.target.value })} />
+              <select className="input text-xs" aria-label={t("sampling.languageFilter")} value={q.language||""} onChange={e=>patch(i,{language:e.target.value})}><option value="">{t("sampling.unknown")}</option>{([['en','english'],['zh','chinese'],['pt','portuguese']] as const).map(([v,k])=><option key={v} value={v}>{t(`weeklyReport.${k}`)}</option>)}</select></div>
               <select aria-label={t("questions.group")} className="input w-auto" value={q.group} onChange={(e) => patch(i, { group: e.target.value })}>
                 {PROMPT_GROUPS.map((g) => <option key={g.key} value={g.key}>{t(g.label)}</option>)}
               </select>
@@ -166,6 +169,7 @@ export function Questions() {
       </div>
       </div>
       </fieldset>
+      <details className="card mt-4 p-4"><summary className="cursor-pointer font-medium">{t("sampling.history")}</summary><p className="my-3 text-sm text-gray-500">{t("sampling.note")}</p><ol className="space-y-3">{libraries.map(lib=><li key={lib.id}><details><summary className="cursor-pointer break-all text-sm">{lib.revision.slice(0,12)} · {lib.language||t("sampling.unknown")} · {lib.region||t("sampling.unknown")} · {tn("sampling.questions",lib.questions.length)} · {new Date(lib.created_at*1000).toLocaleString(intl)}</summary><ul className="list-disc space-y-1 pl-5 text-sm text-gray-700">{lib.questions.map(q=><li key={q.qid}>{q.qid} · {q.text}</li>)}</ul></details></li>)}</ol></details>
     </section>
   );
 }

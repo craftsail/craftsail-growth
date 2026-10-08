@@ -187,15 +187,18 @@ func aiMeasurement(rows []model.Sample, qids []string) model.Measurement {
 		}
 		modelName, _ := r.Raw["model"].(string)
 		strategy, known := r.Raw["searched"]
-		if r.SampleMode == "web" {
+		if r.SampleMode == "web" || r.SampleMode == "manual" {
 			strategy, known = r.Raw["session_mode"]
+			if value, ok := strategy.(string); !ok || value == "" {
+				known = false
+			}
 		}
 		if modelName == "" || !known || r.QuestionText == "" {
 			out.Valid = false
 			out.Reason = "sample_metadata"
 			continue
 		}
-		sig, _ := json.Marshal([]any{r.Platform, r.SampleMode, modelName, strategy, r.QuestionText, r.Raw["prompt_revision"], r.Raw["sampling_language"], r.Raw["target_region"]})
+		sig, _ := json.Marshal([]any{r.Platform, r.SampleMode, modelName, strategy, r.QuestionText, r.Raw["prompt_revision"], r.Raw["sampling_language"], r.Raw["target_region"], r.Raw["strategy_version"], r.PromptRevision, r.SamplingLanguage, r.TargetRegion})
 		if old := signatures[r.QID]; old != "" && old != string(sig) {
 			out.Valid = false
 			out.Reason = "sample_changed"

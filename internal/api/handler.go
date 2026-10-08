@@ -88,10 +88,12 @@ func Mount(engine *gin.Engine, h *Handler) {
 	r("GET", "/projects/:slug/audit/issues", permView, h.getAuditIssues)
 	r("GET", "/projects/:slug/audit.md", permView, h.exportAuditMD)
 	r("GET", "/projects/:slug/brand", permView, h.getBrand)
+	r("GET", "/projects/:slug/question-libraries", permView, h.questionLibraries)
 	r("GET", "/projects/:slug/questions", permView, h.getQuestions)
 	r("GET", "/projects/:slug/competitors", permView, h.getCompetitors)
 	r("GET", "/projects/:slug/samples", permView, h.listSamples)
 	r("GET", "/projects/:slug/runs", permView, h.listRuns)
+	r("GET", "/projects/:slug/sample-preview", permView, h.samplePreview)
 	r("GET", "/projects/:slug/measure", permView, h.getMeasure)
 	r("GET", "/projects/:slug/sample-sheet", permView, h.sampleSheet)
 	r("GET", "/projects/:slug/webstats", permView, h.getWebstats)
@@ -357,6 +359,10 @@ func (h *Handler) getProject(c *gin.Context) {
 
 func (h *Handler) patchProject(c *gin.Context) {
 	var body struct {
+		SamplingLanguage     *string `json:"sampling_language"`
+		SiteLanguage         *string `json:"site_language"`
+		TargetRegion         *string `json:"target_region"`
+		ReportLanguage       *string `json:"report_language"`
 		SearchMode           *string `json:"search_mode"`
 		SearchMinImpressions *int    `json:"search_min_impressions"`
 		URL                  *string `json:"url"`
@@ -379,6 +385,7 @@ func (h *Handler) patchProject(c *gin.Context) {
 	}
 	p, err := h.projects.Update(c.Request.Context(), c.Param("slug"), project.UpdateInput{
 		URL: url, Name: body.Name, NoSite: body.NoSite,
+		SamplingLanguage: body.SamplingLanguage, SiteLanguage: body.SiteLanguage, TargetRegion: body.TargetRegion, ReportLanguage: body.ReportLanguage,
 		Materials: body.Materials, MaxPages: body.MaxPages,
 		GscSite: body.GscSite, GA4Property: body.GA4Property, SearchMode: body.SearchMode, SearchMinImpressions: body.SearchMinImpressions,
 	})
@@ -670,6 +677,7 @@ func (h *Handler) getMeasure(c *gin.Context) {
 		return
 	}
 	view, err := h.sample.Measure(c.Request.Context(), c.Param("slug"), sample.MeasureQuery{
+		Language: c.Query("language"), Region: c.Query("region"), Revision: c.Query("revision"),
 		Access:   c.Query("access"),
 		Range:    c.Query("range"),
 		Platform: c.Query("platform"),
@@ -814,7 +822,7 @@ func (h *Handler) patchTask(c *gin.Context) {
 
 func writeErr(c *gin.Context, err error) {
 	switch {
-	case errors.Is(err, project.ErrInvalidSearchSettings), errors.Is(err, project.ErrNameRequired), errors.Is(err, project.ErrInvalidSlug), errors.Is(err, project.ErrInvalidSite):
+	case errors.Is(err, project.ErrInvalidLanguage), errors.Is(err, project.ErrInvalidSearchSettings), errors.Is(err, project.ErrNameRequired), errors.Is(err, project.ErrInvalidSlug), errors.Is(err, project.ErrInvalidSite):
 		env, st := resp.Fail(resp.CodeBadRequest, http.StatusBadRequest, err.Error())
 		c.JSON(st, env)
 	case errors.Is(err, project.ErrSlugTaken):

@@ -156,21 +156,41 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (*model.Project, e
 }
 
 type UpdateInput struct {
-	SearchMode           *string
-	SearchMinImpressions *int
-	URL                  *string
-	Name                 *string
-	NoSite               *bool
-	Materials            *string
-	MaxPages             *int
-	GscSite              *string
-	GA4Property          *string
+	SamplingLanguage, SiteLanguage, TargetRegion, ReportLanguage *string
+	SearchMode                                                   *string
+	SearchMinImpressions                                         *int
+	URL                                                          *string
+	Name                                                         *string
+	NoSite                                                       *bool
+	Materials                                                    *string
+	MaxPages                                                     *int
+	GscSite                                                      *string
+	GA4Property                                                  *string
 }
 
 func (s *Service) Update(ctx context.Context, sl string, in UpdateInput) (*model.Project, error) {
 	p, err := s.Get(ctx, sl)
 	if err != nil {
 		return nil, err
+	}
+	for _, pair := range []struct {
+		value *string
+		dest  *string
+	}{{in.SamplingLanguage, &p.SamplingLanguage}, {in.SiteLanguage, &p.SiteLanguage}, {in.ReportLanguage, &p.ReportLanguage}} {
+		if pair.value != nil {
+			v := *pair.value
+			if v != "" && v != "en" && v != "zh" && v != "pt" {
+				return nil, ErrInvalidLanguage
+			}
+			*pair.dest = v
+		}
+	}
+	if in.TargetRegion != nil {
+		v := strings.TrimSpace(*in.TargetRegion)
+		if len(v) > 64 || strings.ContainsAny(v, "\n\r") {
+			return nil, ErrInvalidLanguage
+		}
+		p.TargetRegion = v
 	}
 	if in.SearchMode != nil {
 		switch *in.SearchMode {
@@ -255,3 +275,5 @@ func hostOf(raw string) string {
 	}
 	return u.Hostname()
 }
+
+var ErrInvalidLanguage = errors.New("language must be en, zh, pt or unspecified; target region must be at most 64 characters")

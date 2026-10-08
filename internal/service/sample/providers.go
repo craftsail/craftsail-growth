@@ -3,6 +3,7 @@
 package sample
 
 import (
+	"github.com/craftsail/craftsail-growth/internal/model"
 	"net/url"
 	"os"
 	"strings"
@@ -153,6 +154,8 @@ func QuestionsFor(qs []Question) []Question {
 }
 
 type Question struct {
+	Language, Revision      string
+	Record                  model.Question
 	ID, Group, Market, Text string
 	Tags                    []string
 	Enabled                 bool

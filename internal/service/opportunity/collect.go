@@ -48,7 +48,7 @@ func (l liveSources) Collect(ctx context.Context, slug string) ([]Item, error) {
 			perPrompt[pc.ID] = [2]int{pc.X, pc.N}
 		}
 		items = append(items, FromCitation(cur.Opportunities, cur.Access, perPrompt)...)
-		if prev, err := l.sample.MeasureWindow(ctx, slug, cur.Access, 60, 30); err == nil && prev != nil {
+		if prev, err := l.sample.MeasureWindow(ctx, slug, cur.Access, 60, 30); err == nil && prev != nil && sample.ComparableScopes(cur, prev) {
 			items = append(items, FromMetric(cur.Access, prev.VisibilityX, prev.VisibilityN, cur.VisibilityX, cur.VisibilityN)...)
 		}
 	}

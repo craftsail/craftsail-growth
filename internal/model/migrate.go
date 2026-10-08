@@ -13,7 +13,7 @@ func AutoMigrate(db *gorm.DB) error {
 	models := []any{
 		&Project{},
 		&ProjectProgress{},
-		&Question{},
+		&Question{}, &QuestionLibrary{},
 		&Competitor{},
 		&Fact{},
 		&Page{},
@@ -68,6 +68,12 @@ func AutoMigrate(db *gorm.DB) error {
 				}
 				continue
 			}
+			return err
+		}
+	}
+	// The extended unique index is installed before dropping its legacy predecessor.
+	if db.Migrator().HasIndex(&Sample{}, "uk_sample") {
+		if err := db.Migrator().DropIndex(&Sample{}, "uk_sample"); err != nil {
 			return err
 		}
 	}

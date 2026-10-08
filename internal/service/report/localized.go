@@ -179,6 +179,9 @@ func (s *Service) weeklyMarkdown(ctx context.Context, p *model.Project, lang str
 			continue
 		}
 		haveAI = true
+		if cur.MixedVersions {
+			line(reportText(lang, "sampling.mixed"))
+		}
 		fmt.Fprintf(&b, "\n### %s\n\n", strings.ToUpper(access))
 		if cur.Visibility != nil && cur.VisibilityCI != nil {
 			text := t("visibility", "value", fmt.Sprintf("%.0f", *cur.Visibility), "x", fmt.Sprint(cur.VisibilityX), "n", fmt.Sprint(cur.VisibilityN), "lo", fmt.Sprintf("%.0f", cur.VisibilityCI.Lo), "hi", fmt.Sprintf("%.0f", cur.VisibilityCI.Hi))

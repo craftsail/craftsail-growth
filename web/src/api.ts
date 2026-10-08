@@ -3,6 +3,7 @@
 type Envelope<T> = { code: number; msg: string; data: T };
 
 export type Project = {
+ sampling_language?: string; site_language?: string; report_language?: string; target_region?: string;
   id: number;
   access?: Access;
   slug: string;
@@ -120,6 +121,7 @@ export function createProject(body: {
 }
 
 export function patchProject(slug: string, body: {
+ sampling_language?: string; site_language?: string; report_language?: string; target_region?: string;
   url?: string;
   name?: string;
   no_site?: boolean;
@@ -204,6 +206,7 @@ export function runAudit(slug: string) {
 }
 
 export type Question = {
+ language?: string;
   id?: number;
   qid: string;
   group: string;
@@ -716,6 +719,7 @@ export function getAuditIssues(slug: string) {
 // ---- Sampling runs ----
 
 export type SampleRunRow = {
+ prompt_revision?: string; sampling_language?: string; target_region?: string;
   id: number;
   trigger: string;
   status: string;
@@ -801,3 +805,8 @@ export type TaskObservation = {id: number; task_code: string; hypothesis: string
 export function listObservations(slug: string, code?: string) {return request<{items: TaskObservation[]}>(`/api/projects/${slug}/${code ? `tasks/${encodeURIComponent(code)}/` : ""}observations`);}
 export function releaseTask(slug: string, code: string, input: Record<string, unknown>) {return request<TaskObservation>(`/api/projects/${slug}/tasks/${encodeURIComponent(code)}/releases`,{method:"POST",body:JSON.stringify(input)});}
 export function evaluateObservation(slug: string, code: string, id: number, notes: string) {return request<ObservationResult>(`/api/projects/${slug}/tasks/${encodeURIComponent(code)}/observations/${id}/evaluate`,{method:"POST",body:JSON.stringify({refresh:true,notes})});}
+
+export type QuestionLibrary = {id: number; revision: string; language: string; region: string; questions: Question[]; created_at: number};
+export function questionLibraries(slug: string) {return request<{items: QuestionLibrary[]}>(`/api/projects/${slug}/question-libraries`);}
+export type SamplingPreview = {calls: number; questions: number; repeat: number; engines: string[]; available: string[]; est_tokens: number; revision: string};
+export function samplingPreview(slug: string, platforms: string, repeat: number, limit: number) {return request<SamplingPreview>(`/api/projects/${slug}/sample-preview?${new URLSearchParams({platforms,repeat:String(repeat),limit:String(limit)})}`);}

@@ -41,6 +41,7 @@ export function FilterBar({
   range,
   platform,
   access = "",
+ language="",region="",revision="",
   tags,
   sort,
   q,
@@ -52,6 +53,7 @@ export function FilterBar({
   range: string;
   platform: string;
   access?: string;
+ language?: string;region?: string;revision?: string;
   tags: string[];
   sort: string;
   q: string;
@@ -71,6 +73,8 @@ export function FilterBar({
   const currentAccess = access || data?.access || "api";
   return (
     <div className="flex flex-wrap items-center gap-2">
+      {([{key:"language",value:language,options:data?.languages,label:"sampling.languageFilter"},{key:"region",value:region,options:data?.regions,label:"sampling.regionFilter"},{key:"revision",value:revision,options:data?.revisions,label:"sampling.versionFilter"}] as const).map(f=><label className="text-xs" key={f.key}>{t(f.label)}<select className="input ml-2 max-w-44 text-xs" aria-label={t(f.label)} value={f.value} onChange={e=>onChange(f.key,e.target.value)}><option value="">{t("sampling.all")}</option>{(f.options||[]).map(v=><option key={v} value={v}>{v==="unknown"?t("sampling.unknown"):f.key==="revision"?v.slice(0,12):v}</option>)}</select></label>)}
+      {data?.mixed_versions&&<p className="w-full text-xs text-amber-700">{t("sampling.mixed")}</p>}
       {(data?.accesses?.length ?? 0) > 1 && (
         <div className="tabs" title={t("measure.filters.apiWebHint")}>
           {(["api", "web"] as const).map((id) => (

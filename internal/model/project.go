@@ -46,6 +46,9 @@ type Targets struct {
 }
 
 type Project struct {
+	SamplingLanguage     string         `gorm:"size:8;not null;default:''" json:"sampling_language"`
+	SiteLanguage         string         `gorm:"size:8;not null;default:''" json:"site_language"`
+	TargetRegion         string         `gorm:"size:64;not null;default:''" json:"target_region"`
 	ReportLanguage       string         `gorm:"size:8;not null;default:en" json:"report_language"`
 	SearchMode           string         `gorm:"size:16;not null;default:auto" json:"search_mode"`
 	SearchMinImpressions int            `gorm:"not null;default:500" json:"search_min_impressions"`

@@ -52,6 +52,7 @@ export type PromptHead = {
 };
 
 export type MeasureView = {
+ languages?: string[]; regions?: string[]; revisions?: string[]; mixed_versions?: boolean;
   brand: string;
   range: string;
   visibility: number | null;
@@ -131,6 +132,7 @@ export function useMeasure(qid = "") {
   const range = sp.get("range") || "30d";
   const platform = sp.get("platform") || "";
   const access = sp.get("access") || "";
+ const language=sp.get("language")||"",region=sp.get("region")||"",revision=sp.get("revision")||"";
   const tags = (sp.get("tags") || "").split(",").map((item) => item.trim()).filter(Boolean);
   const sort = sp.get("sort") || "asc";
   const q = sp.get("q") || "";
@@ -140,11 +142,12 @@ export function useMeasure(qid = "") {
     params.set("range", range);
     if (platform) params.set("platform", platform);
     if (access) params.set("access", access);
+ if(language)params.set("language",language);if(region)params.set("region",region);if(revision)params.set("revision",revision);
     if (tags.length) params.set("tags", tags.join(","));
     if (sort === "desc") params.set("sort", sort);
     if (qid) params.set("qid", qid);
     return params.toString();
-  }, [range, platform, access, tags.join(","), sort, qid]);
+  }, [range, platform, access, language,region,revision,tags.join(","), sort, qid]);
   const [data, setData] = useState<MeasureView | null>(null);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(true);
@@ -178,7 +181,7 @@ export function useMeasure(qid = "") {
     setSp(next, { replace: true });
   }
 
-  return { slug, data, err, loading, range, platform, access, tags, sort, q, tab, setFilter, search: sp.toString() };
+  return { slug, data, err, loading, range, platform, access,language,region,revision,tags, sort, q, tab, setFilter, search: sp.toString() };
 }
 
 const BRAND_COLOR = "#2563eb";
