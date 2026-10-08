@@ -79,6 +79,7 @@ type GscFact struct {
 func (GscFact) TableName() string { return "gsc_facts" }
 
 type GaFact struct {
+	Hostname           string    `gorm:"size:255;not null;default:''" json:"hostname"`
 	EngagementDuration *float64  `json:"engagement_duration"`
 	EventValue         *float64  `json:"event_value"`
 	ID                 uint64    `gorm:"primaryKey" json:"id"`

@@ -5,6 +5,7 @@ package webstats
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/craftsail/craftsail-growth/internal/model"
@@ -14,6 +15,7 @@ import (
 type GAMetric = repo.GAMetric
 
 type GAExplore struct {
+	EventMode        bool                `json:"event_mode"`
 	Items            []repo.GAMetric     `json:"items"`
 	Total            int64               `json:"total"`
 	Page             int                 `json:"page"`
@@ -35,8 +37,27 @@ func (s *Service) analyticsFilter(ctx context.Context, slug, report string, in E
 	if report != "channel" && report != "landing" {
 		return f, nil, invalidSearch("invalid GA report")
 	}
-	if in.Country != "" || in.Device != "" || in.Value != "" {
+	if in.Value != "" || in.Brand != "" || in.SearchType != "" {
 		return f, nil, invalidSearch("filters are not available in this GA report")
+	}
+	if len(in.Country) > 128 || (in.Device != "" && in.Device != "mobile" && in.Device != "desktop" && in.Device != "tablet") {
+		return f, nil, invalidSearch("invalid GA country or device")
+	}
+	var events []string
+	if in.Events != "" {
+		for _, v := range strings.Split(in.Events, ",") {
+			v = strings.TrimSpace(v)
+			if v == "" || len(v) > 255 {
+				return f, nil, invalidSearch("invalid event name")
+			}
+			events = append(events, v)
+		}
+		if len(events) > 20 {
+			return f, nil, invalidSearch("at most 20 event names")
+		}
+		report += "_event"
+	} else if in.Country != "" || in.Device != "" {
+		report += "_segment"
 	}
 	p, err := s.projects.Get(ctx, slug)
 	if err != nil {
@@ -82,11 +103,20 @@ func (s *Service) analyticsFilter(ctx context.Context, slug, report string, in E
 	}
 	if in.Sort == "" {
 		in.Sort = "sessions"
+		if len(events) > 0 {
+			in.Sort = "event_count"
+		}
 	}
 	switch in.Sort {
-	case "sessions", "engaged", "key_events", "engagement_rate", "duration", "duration_per_session", "sessions_change":
+	case "event_count", "event_change", "sessions", "engaged", "key_events", "engagement_rate", "duration", "duration_per_session", "sessions_change":
 	default:
 		return f, nil, invalidSearch("invalid GA sort")
+	}
+	if len(events) > 0 && in.Sort != "event_count" && in.Sort != "event_change" && in.Sort != "key_events" {
+		in.Sort = "event_count"
+	}
+	if len(events) == 0 && (in.Sort == "event_count" || in.Sort == "event_change") {
+		in.Sort = "sessions"
 	}
 	if in.Direction == "" {
 		in.Direction = "desc"
@@ -97,8 +127,8 @@ func (s *Service) analyticsFilter(ctx context.Context, slug, report string, in E
 	in.From = from.Format("2006-01-02")
 	in.Through = through.Format("2006-01-02")
 	previousFrom, previousThrough := previousWindow(from, through)
-	f = repo.GAFilter{ProjectID: p.ID, Property: property, Report: report, Text: in.Text, From: from, Through: through, PreviousFrom: previousFrom, Sort: in.Sort, Direction: in.Direction, Offset: (in.Page - 1) * in.PageSize, Limit: in.PageSize}
-	out := &GAExplore{Page: in.Page, PageSize: in.PageSize, Filters: in, Property: property, Timezone: timezone, ReportState: "missing"}
+	f = repo.GAFilter{Country: in.Country, Device: in.Device, Events: events, ProjectID: p.ID, Property: property, Report: report, Text: in.Text, From: from, Through: through, PreviousFrom: previousFrom, Sort: in.Sort, Direction: in.Direction, Offset: (in.Page - 1) * in.PageSize, Limit: in.PageSize}
+	out := &GAExplore{EventMode: len(events) > 0, Page: in.Page, PageSize: in.PageSize, Filters: in, Property: property, Timezone: timezone, ReportState: "missing"}
 	reports, err := s.rows.SyncReports(ctx, p.ID, "ga4", property)
 	if err != nil {
 		return f, nil, err

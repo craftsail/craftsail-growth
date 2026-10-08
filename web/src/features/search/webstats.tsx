@@ -221,7 +221,7 @@ export function Webstats() {
 
 function SyncProgressTable({ rows, busy }: { rows: GoogleSyncProgress[]; busy: boolean }) {
   const { t, tn } = useI18n();
-  const reports = ["channel", "landing", "daily", "query", "country_device", "page_country_device", "query_country_device", "query_page", "query_page_country_device", "country", "device", "appearance", "hour", "session", "page", "event"];
+  const reports = ["channel_segment", "landing_segment", "channel_event", "landing_event", "landing_context", "channel", "landing", "daily", "query", "country_device", "page_country_device", "query_country_device", "query_page", "query_page_country_device", "country", "device", "appearance", "hour", "session", "page", "event"];
   const searchTypes = ["web", "image", "video", "news", "discover", "googleNews"];
   const states = ["running", "backfilling", "completed", "paused", "failed", "partial", "unsupported"];
   const errors = ["budget", "restricted", "cancelled", "truncated", "storage", "rate_limited", "needs_reauth", "config_invalid", "unsupported"];

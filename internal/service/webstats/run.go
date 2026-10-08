@@ -101,7 +101,7 @@ func (s *Service) run(ctx context.Context, slug string) (*RunResult, error) {
 	if live && token != "test" {
 		s.client().OnPage = func(report, request, body string) {
 			source := "gsc"
-			if strings.HasPrefix(report, "ga4/") || report == "channel" || report == "landing" || report == "session" || report == "page" || report == "event" || report == "hour" {
+			if strings.HasPrefix(report, "ga4/") || strings.HasPrefix(report, "channel") || strings.HasPrefix(report, "landing") || report == "session" || report == "page" || report == "event" || report == "hour" {
 				source = "ga4"
 			}
 			s.archivePage(ctx, p.ID, source, report, request, body, now)

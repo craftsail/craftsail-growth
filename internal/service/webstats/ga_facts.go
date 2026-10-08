@@ -23,6 +23,22 @@ type gaFactSpec struct {
 
 func gaFactSpecByName(report string) (gaFactSpec, bool) {
 	switch report {
+	case "channel_segment", "landing_segment", "channel_event", "landing_event", "landing_context":
+		base := "channel"
+		if strings.HasPrefix(report, "landing") {
+			base = "landing"
+		}
+		spec, _ := gaFactSpecByName(base)
+		spec.Dimensions = append(spec.Dimensions, "country", "deviceCategory")
+		if report == "landing_context" {
+			spec.Dimensions = append(spec.Dimensions, "hostName")
+		}
+		if strings.HasSuffix(report, "_event") {
+			spec.Dimensions = append(spec.Dimensions, "eventName")
+			spec.Metrics = []string{"eventCount", "keyEvents"}
+		}
+		return spec, true
+
 	case "channel":
 		return gaFactSpec{Dimensions: []string{"date", "sessionDefaultChannelGroup", "sessionSource", "sessionMedium"}, Metrics: []string{"sessions", "engagedSessions", "keyEvents", "userEngagementDuration"}}, true
 	case "landing":
@@ -106,7 +122,7 @@ func (c *Client) FetchGAReport(ctx context.Context, token, property, report, sta
 		if page.RowCount > expected {
 			expected = page.RowCount
 		}
-		if report == "channel" || report == "landing" {
+		if strings.HasPrefix(report, "channel") || strings.HasPrefix(report, "landing") {
 			if page.Metadata != nil {
 				for _, raw := range page.Metadata.Restrictions.Metrics {
 					var restriction struct {
@@ -124,7 +140,7 @@ func (c *Client) FetchGAReport(ctx context.Context, token, property, report, sta
 			}
 		}
 		for _, row := range page.Rows {
-			if report == "channel" || report == "landing" {
+			if strings.HasPrefix(report, "channel") || strings.HasPrefix(report, "landing") {
 				if len(row.DimensionValues) != len(spec.Dimensions) || len(row.MetricValues) != len(spec.Metrics) {
 					return nil, quality, ErrIncompleteReport
 				}
@@ -192,6 +208,8 @@ func factFromGA(report string, spec gaFactSpec, row gaAPIRow) model.GaFact {
 			fact.PagePath = val
 		case "pageTitle":
 			fact.PageTitle = val
+		case "hostName":
+			fact.Hostname = val
 		case "country":
 			fact.Country = val
 		case "deviceCategory":

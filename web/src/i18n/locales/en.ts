@@ -2,6 +2,23 @@
 
 // UI strings. Edit en.ts, zh.ts and pt.ts together: zh and pt are typed against en, so a missing key fails the build.
 export const en = {
+  gaSegments: {
+  "country": "Country (GA4 name)",
+  "events": "Value event names (comma separated)",
+  "note": "Enter exact GA4 country names and up to 20 event names. Empty events shows session quality. Selected events use a separate event report: counts are occurrences, never user conversion rates. Incompatible reports stay unavailable.",
+  "event": "Event",
+  "count": "Event occurrences",
+  "previous": "Previous occurrences",
+  "change": "Occurrence change",
+  "mapping": "Find search page candidates",
+  "mappingNote": "Candidate links use observed GA host + landing path and GSC page URLs. Only known tracking parameters and fragments are removed; content parameters and raw URLs are retained. GA host is event context, so this does not prove the session’s landing host. Cross-domain/duplicate candidates need review. Counts are not joined into a conversion funnel.",
+  "candidate": "One observed candidate — review before use",
+  "ambiguous": "Ambiguous — multiple hosts or URLs",
+  "unmatched": "No observed match",
+  "unverified": "Incomplete or unknown coverage — candidates unverified",
+  "hosts": "Observed GA host context",
+  "empty": "No matching GSC URL in this period"
+},
   searchSegments: {
   "countries": "Countries",
   "devices": "Devices",
@@ -918,6 +935,12 @@ export const en = {
       "days_one": "{n} / {total} day",
       "days_other": "{n} / {total} days",
       "reports": {
+channel_segment: "Channels by country/device",
+landing_segment: "Landings by country/device",
+channel_event: "Channel events",
+landing_event: "Landing events",
+landing_context: "Landing host context",
+
       "channel": "GA4 channels",
       "landing": "GA4 landing pages",
       "query": "Queries",

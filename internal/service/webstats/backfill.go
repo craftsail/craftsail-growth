@@ -33,7 +33,7 @@ type factTask struct {
 func factTasks(gscKey, gaKey string, endGSC, endGA time.Time) []factTask {
 	var tasks []factTask
 	if gaKey != "" {
-		for _, report := range []string{"channel", "landing", "session", "page", "event", "hour"} {
+		for _, report := range []string{"channel", "landing", "channel_segment", "landing_segment", "channel_event", "landing_event", "landing_context", "session", "page", "event", "hour"} {
 			tasks = append(tasks, factTask{source: "ga4", property: gaKey, report: report, through: endGA})
 		}
 	}
@@ -173,7 +173,7 @@ func (s *Service) SyncFacts(ctx context.Context, projectID uint64, token, gscSit
 				}
 				return repo.SyncBatch{GSC: rows, Quality: quality}, nil
 			}
-			if !checked && (task.report == "channel" || task.report == "landing") {
+			if !checked && (strings.HasPrefix(task.report, "channel") || strings.HasPrefix(task.report, "landing")) {
 				if err := s.client().CheckGACompatibility(partCtx, token, task.property, task.report); err != nil {
 					return repo.SyncBatch{}, err
 				}

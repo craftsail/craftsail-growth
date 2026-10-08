@@ -39,7 +39,7 @@ func TestGAReadPermissionsAndCSV(t *testing.T) {
 	}
 	r := testEngine(w.h)
 	base := "/api/projects/alpha/ga-channels?from=2026-09-20&through=2026-09-20"
-	for _, path := range []string{base, base + "&format=csv", "/api/projects/alpha/ga-landings"} {
+	for _, path := range []string{base, base + "&format=csv", "/api/projects/alpha/ga-landings", "/api/projects/alpha/ga-page-mapping?value=%2FA", base + "&country=Brazil&device=mobile&events=sign_up"} {
 		if res := call(r, "GET", path, "", w.viewer); res.Code != 200 {
 			t.Fatalf("viewer %s %d %s", path, res.Code, res.Body.String())
 		}
@@ -47,7 +47,7 @@ func TestGAReadPermissionsAndCSV(t *testing.T) {
 			t.Fatalf("outsider %d", res.Code)
 		}
 	}
-	for _, query := range []string{"&country=usa", "&device=mobile", "&page=abc", "&page=-1", "&sort=revenue"} {
+	for _, query := range []string{"&brand=brand", "&device=invalid", "&page=abc", "&page=-1", "&sort=revenue"} {
 		if res := call(r, "GET", base+query, "", w.viewer); res.Code != 400 {
 			t.Fatalf("invalid %s %d", query, res.Code)
 		}

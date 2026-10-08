@@ -14,6 +14,7 @@ import (
 )
 
 type ExploreInput struct {
+	Events     string `form:"events" json:"events"`
 	SearchType string `form:"search_type" json:"search_type"`
 	Brand      string `form:"brand" json:"brand"`
 	From       string `form:"from" json:"from"`

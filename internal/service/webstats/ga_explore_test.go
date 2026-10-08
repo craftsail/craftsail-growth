@@ -63,7 +63,7 @@ func TestGAExploreCoverageQualityAndValidation(t *testing.T) {
 	if err != nil || out.Comparable || out.ReportState != "missing" || out.Total != 0 {
 		t.Fatalf("no fallback %#v %v", out, err)
 	}
-	for _, in := range []ExploreInput{{Country: "usa"}, {Device: "mobile"}, {Value: "/"}, {From: "2026-01-01"}, {Page: -1}, {PageSize: 201}, {Sort: "revenue"}, {Direction: "SQL"}} {
+	for _, in := range []ExploreInput{{Country: strings.Repeat("x", 129)}, {Device: "invalid"}, {Value: "/"}, {From: "2026-01-01"}, {Page: -1}, {PageSize: 201}, {Sort: "revenue"}, {Direction: "SQL"}} {
 		if _, err := s.ExploreGA(ctx, p.Slug, "channel", in); err == nil {
 			t.Fatalf("accepted %#v", in)
 		}
@@ -170,7 +170,7 @@ func TestGASyncCompatibilityFailureDoesNotBlockOtherReports(t *testing.T) {
 	if _, err := s.SyncFacts(ctx, 1, "token", "", "123", now); err != nil {
 		t.Fatal(err)
 	}
-	if checks != 2 || landingRuns != 8 {
+	if checks != 7 || landingRuns != 8 {
 		t.Fatalf("checks %d landing batches %d", checks, landingRuns)
 	}
 	reports, err := s.rows.SyncReports(ctx, 1, "ga4", "123")

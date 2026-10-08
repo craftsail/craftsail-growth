@@ -34,6 +34,9 @@ func (r *Webstats) UpsertGaFacts(ctx context.Context, rows []model.GaFact) error
 	for i := range rows {
 		if rows[i].KeyHash == "" {
 			rows[i].KeyHash = model.RowKey(rows[i].Hour, rows[i].Source, rows[i].Medium, rows[i].Campaign, rows[i].Channel, rows[i].Landing, rows[i].PagePath, rows[i].PageTitle, rows[i].Country, rows[i].Device, rows[i].EventName)
+			if rows[i].Hostname != "" {
+				rows[i].KeyHash = model.RowKey(rows[i].KeyHash, rows[i].Hostname)
+			}
 		}
 	}
 	return r.DB.WithContext(ctx).Clauses(clause.OnConflict{

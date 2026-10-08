@@ -751,12 +751,14 @@ export function overrideSample(slug: string, id: number, body: { mentioned?: boo
 }
 
 export type GAMetric = {
+ event_name:string; event_count:number; previous_event_count:number; event_change:number;
  channel: string; source: string; medium: string; landing: string;
  current_rows: number; previous_rows: number; sessions: number; engaged: number; key_events: number;
  duration: number | null; engagement_rate: number | null; duration_per_session: number | null;
  previous_sessions: number; sessions_change: number;
 };
 export type GAExplore = {
+ event_mode:boolean;
  items: GAMetric[] | null; total: number; page: number; page_size: number;
  filters: SearchExplore["filters"]; property: string; timezone: string; report_state: string; error_class: string;
  coverage: GrainCoverage; previous_coverage: GrainCoverage; quality: GoogleQuality; previous_quality: GoogleQuality; comparable: boolean;
@@ -814,3 +816,6 @@ export type QuestionLibrary = {id: number; revision: string; language: string; r
 export function questionLibraries(slug: string) {return request<{items: QuestionLibrary[]}>(`/api/projects/${slug}/question-libraries`);}
 export type SamplingPreview = {calls: number; questions: number; repeat: number; engines: string[]; available: string[]; est_tokens: number; revision: string};
 export function samplingPreview(slug: string, platforms: string, repeat: number, limit: number) {return request<SamplingPreview>(`/api/projects/${slug}/sample-preview?${new URLSearchParams({platforms,repeat:String(repeat),limit:String(limit)})}`);}
+
+export type PageMapping = { state:"candidate"|"ambiguous"|"unmatched"|"unverified"; landing:string; hosts:{hostname:string;landing:string}[]; urls:string[]; ga_coverage:GrainCoverage; gsc_coverage:GrainCoverage };
+export function getPageMapping(slug:string, params:URLSearchParams){return request<PageMapping>(`/api/projects/${slug}/ga-page-mapping?${params}`);}

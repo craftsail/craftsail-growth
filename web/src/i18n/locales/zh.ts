@@ -4,6 +4,23 @@
 import type { Messages } from "./en";
 
 export const zh: Messages = {
+  gaSegments: {
+  "country": "国家（GA4 名称）",
+  "events": "价值事件名称（逗号分隔）",
+  "note": "填写 GA4 的完整国家名及最多 20 个事件名。事件留空时显示会话质量；选择事件时使用独立事件报表，次数表示发生次数，不是用户转化率。不兼容报表会显示不可用。",
+  "event": "事件",
+  "count": "事件发生次数",
+  "previous": "前期发生次数",
+  "change": "发生次数变化",
+  "mapping": "查找搜索页面候选",
+  "mappingNote": "按观察到的 GA 主机名＋落地路径关联 GSC 页面 URL。仅去除已知追踪参数和片段，保留内容参数及原始 URL。GA 主机名是事件上下文，不能证明会话落地主机；跨域或重复候选需复核。不会将两边计数拼成转化漏斗。",
+  "candidate": "一个已观察候选，使用前请复核",
+  "ambiguous": "存在歧义：多个主机或 URL",
+  "unmatched": "未观察到匹配",
+  "unverified": "覆盖不完整或质量未知，候选尚未验证",
+  "hosts": "观察到的 GA 主机上下文",
+  "empty": "当前时间段没有匹配的 GSC URL"
+},
   searchSegments: {
   "countries": "国家",
   "devices": "设备",
@@ -920,6 +937,12 @@ export const zh: Messages = {
       "days_one": "{n} / {total} 天",
       "days_other": "{n} / {total} 天",
       "reports": {
+channel_segment: "渠道国家/设备细分",
+landing_segment: "落地页国家/设备细分",
+channel_event: "渠道事件",
+landing_event: "落地页事件",
+landing_context: "落地页主机上下文",
+
       "channel": "GA4 渠道",
       "landing": "GA4 落地页",
       "query": "查询词",

@@ -13,12 +13,18 @@ import (
 )
 
 type GAFilter struct {
+	Country, Device                         string
+	Events                                  []string
 	ProjectID                               uint64
 	Property, Report, Text, Sort, Direction string
 	From, Through, PreviousFrom             time.Time
 	Offset, Limit                           int
 }
 type GAMetric struct {
+	EventName          string   `json:"event_name"`
+	EventCount         float64  `json:"event_count"`
+	PreviousEventCount float64  `json:"previous_event_count"`
+	EventChange        float64  `json:"event_change"`
 	Channel            string   `json:"channel"`
 	Source             string   `json:"source"`
 	Medium             string   `json:"medium"`
@@ -37,12 +43,24 @@ type GAMetric struct {
 
 func (r *Webstats) gaQuery(ctx context.Context, f GAFilter) (*gorm.DB, []string, error) {
 	fields := []string{"channel", "source", "medium"}
-	if f.Report == "landing" {
+	if strings.HasPrefix(f.Report, "landing") {
 		fields = []string{"landing"}
-	} else if f.Report != "channel" {
+	} else if !strings.HasPrefix(f.Report, "channel") {
 		return nil, nil, fmt.Errorf("invalid GA report")
 	}
+	if strings.HasSuffix(f.Report, "_event") {
+		fields = append(fields, "event_name")
+	}
 	q := r.DB.WithContext(ctx).Model(&model.GaFact{}).Where("project_id = ? AND property = ? AND report = ? AND date(day) >= ? AND date(day) <= ?", f.ProjectID, f.Property, f.Report, f.PreviousFrom.Format("2006-01-02"), f.Through.Format("2006-01-02"))
+	if f.Country != "" {
+		q = q.Where("country = ?", f.Country)
+	}
+	if f.Device != "" {
+		q = q.Where("device = ?", f.Device)
+	}
+	if len(f.Events) > 0 {
+		q = q.Where("event_name IN ?", f.Events)
+	}
 	if f.Text != "" {
 		needle := "%" + strings.NewReplacer("!", "!!", "%", "!%", "_", "!_").Replace(strings.ToLower(f.Text)) + "%"
 		var clauses []string
@@ -75,12 +93,12 @@ func (r *Webstats) gaQuery(ctx context.Context, f GAFilter) (*gorm.DB, []string,
 	ratio := func(n, d string) string {
 		return "CASE WHEN " + d + " > 0 THEN 1.0 * (" + n + ") / " + d + " ELSE NULL END"
 	}
-	selects = append(selects, sum("1", false)+" AS current_rows", sum("1", true)+" AS previous_rows", sessions+" AS sessions", previous+" AS previous_sessions", "("+sessions+" - "+previous+") AS sessions_change", engaged+" AS engaged", sum("key_events", false)+" AS key_events", duration+" AS duration", ratio(engaged, sessions)+" AS engagement_rate", ratio(duration, sessions)+" AS duration_per_session")
+	selects = append(selects, sum("event_count", false)+" AS event_count", sum("event_count", true)+" AS previous_event_count", "("+sum("event_count", false)+" - "+sum("event_count", true)+") AS event_change", sum("1", false)+" AS current_rows", sum("1", true)+" AS previous_rows", sessions+" AS sessions", previous+" AS previous_sessions", "("+sessions+" - "+previous+") AS sessions_change", engaged+" AS engaged", sum("key_events", false)+" AS key_events", duration+" AS duration", ratio(engaged, sessions)+" AS engagement_rate", ratio(duration, sessions)+" AS duration_per_session")
 	return q.Select(strings.Join(selects, ", ")).Group(strings.Join(groups, ", ")), fields, nil
 }
 func gaOrder(f GAFilter, fields []string) (string, error) {
 	switch f.Sort {
-	case "sessions", "engaged", "key_events", "engagement_rate", "duration", "duration_per_session", "sessions_change":
+	case "event_count", "event_change", "sessions", "engaged", "key_events", "engagement_rate", "duration", "duration_per_session", "sessions_change":
 	default:
 		return "", fmt.Errorf("invalid GA sort")
 	}

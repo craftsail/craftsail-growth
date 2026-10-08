@@ -106,6 +106,7 @@ func Mount(engine *gin.Engine, h *Handler) {
 	r("GET", "/projects/:slug/search-dimensions/:kind", permView, func(c *gin.Context) { h.searchList(c, c.Param("kind")) })
 	r("GET", "/projects/:slug/search-detail", permView, h.getSearchDetail)
 	r("GET", "/projects/:slug/ga-channels", permView, h.getGAChannels)
+	r("GET", "/projects/:slug/ga-page-mapping", permView, h.mapLanding)
 	r("GET", "/projects/:slug/ga-landings", permView, h.getGALandings)
 	r("GET", "/projects/:slug/saved-keywords", permView, h.listSavedKeywords)
 	r("GET", "/projects/:slug/observations", permView, h.listObservations)

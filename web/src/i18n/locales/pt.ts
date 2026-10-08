@@ -4,6 +4,23 @@
 import type { Messages } from "./en";
 
 export const pt: Messages = {
+  gaSegments: {
+  "country": "País (nome no GA4)",
+  "events": "Eventos de valor (separados por vírgulas)",
+  "note": "Informe nomes exatos de países do GA4 e até 20 eventos. Sem eventos, mostra qualidade de sessões. Eventos selecionados usam um relatório separado: contagens são ocorrências, nunca taxas de conversão de usuários. Relatórios incompatíveis ficam indisponíveis.",
+  "event": "Evento",
+  "count": "Ocorrências do evento",
+  "previous": "Ocorrências anteriores",
+  "change": "Variação de ocorrências",
+  "mapping": "Buscar páginas candidatas",
+  "mappingNote": "Links candidatos usam host observado no GA + caminho de entrada e URLs do GSC. Apenas parâmetros conhecidos de rastreamento e fragmentos são removidos; parâmetros de conteúdo e URLs originais são preservados. O host do GA é contexto do evento, não prova do host de entrada da sessão. Múltiplos domínios ou URLs exigem revisão. Contagens não são unidas em um funil de conversão.",
+  "candidate": "Um candidato observado — revise antes de usar",
+  "ambiguous": "Ambíguo — múltiplos hosts ou URLs",
+  "unmatched": "Nenhuma correspondência observada",
+  "unverified": "Cobertura incompleta ou qualidade desconhecida — candidatos não verificados",
+  "hosts": "Contexto de host observado no GA",
+  "empty": "Nenhuma URL do GSC correspondente neste período"
+},
   searchSegments: {
   "countries": "Países",
   "devices": "Dispositivos",
@@ -920,6 +937,12 @@ export const pt: Messages = {
       "days_one": "{n} / {total} dia",
       "days_other": "{n} / {total} dias",
       "reports": {
+channel_segment: "Canais por país/dispositivo",
+landing_segment: "Entradas por país/dispositivo",
+channel_event: "Eventos por canal",
+landing_event: "Eventos por entrada",
+landing_context: "Contexto de host da entrada",
+
       "channel": "Canais GA4",
       "landing": "Páginas de entrada GA4",
       "query": "Consultas",
