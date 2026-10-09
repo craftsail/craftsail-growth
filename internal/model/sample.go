@@ -6,13 +6,16 @@ import "time"
 
 type Sample struct {
 	ID                   uint64         `gorm:"primaryKey" json:"id"`
-	ProjectID            uint64         `gorm:"uniqueIndex:uk_sample;not null" json:"project_id"`
-	SampledOn            time.Time      `gorm:"type:date;uniqueIndex:uk_sample;not null" json:"sampled_on"`
-	Platform             string         `gorm:"size:32;uniqueIndex:uk_sample;not null" json:"platform"`
-	QID                  string         `gorm:"column:qid;size:16;uniqueIndex:uk_sample;not null" json:"qid"`
-	Round                int            `gorm:"uniqueIndex:uk_sample;not null;default:1" json:"round"`
+	ProjectID            uint64         `gorm:"uniqueIndex:uk_sample_v2;not null" json:"project_id"`
+	SampledOn            time.Time      `gorm:"type:date;uniqueIndex:uk_sample_v2;not null" json:"sampled_on"`
+	Platform             string         `gorm:"size:32;uniqueIndex:uk_sample_v2;not null" json:"platform"`
+	QID                  string         `gorm:"column:qid;size:16;uniqueIndex:uk_sample_v2;not null" json:"qid"`
+	Round                int            `gorm:"uniqueIndex:uk_sample_v2;not null;default:1" json:"round"`
 	RunID                *uint64        `gorm:"index" json:"run_id"`
-	SampleMode           string         `gorm:"size:16;uniqueIndex:uk_sample;not null;default:api" json:"sample_mode"`
+	SampleMode           string         `gorm:"size:16;uniqueIndex:uk_sample_v2;not null;default:api" json:"sample_mode"`
+	PromptRevision       string         `gorm:"size:64;uniqueIndex:uk_sample_v2;not null;default:''" json:"prompt_revision"`
+	SamplingLanguage     string         `gorm:"size:8;not null;default:''" json:"sampling_language"`
+	TargetRegion         string         `gorm:"size:64;not null;default:''" json:"target_region"`
 	QuestionText         string         `gorm:"type:text" json:"question_text"`
 	Answer               string         `gorm:"type:longtext" json:"answer"`
 	Cited                []Citation     `gorm:"serializer:json" json:"cited"`

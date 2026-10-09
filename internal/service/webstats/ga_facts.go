@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -22,6 +23,26 @@ type gaFactSpec struct {
 
 func gaFactSpecByName(report string) (gaFactSpec, bool) {
 	switch report {
+	case "channel_segment", "landing_segment", "channel_event", "landing_event", "landing_context":
+		base := "channel"
+		if strings.HasPrefix(report, "landing") {
+			base = "landing"
+		}
+		spec, _ := gaFactSpecByName(base)
+		spec.Dimensions = append(spec.Dimensions, "country", "deviceCategory")
+		if report == "landing_context" {
+			spec.Dimensions = append(spec.Dimensions, "hostName")
+		}
+		if strings.HasSuffix(report, "_event") {
+			spec.Dimensions = append(spec.Dimensions, "eventName")
+			spec.Metrics = []string{"eventCount", "keyEvents"}
+		}
+		return spec, true
+
+	case "channel":
+		return gaFactSpec{Dimensions: []string{"date", "sessionDefaultChannelGroup", "sessionSource", "sessionMedium"}, Metrics: []string{"sessions", "engagedSessions", "keyEvents", "userEngagementDuration"}}, true
+	case "landing":
+		return gaFactSpec{Dimensions: []string{"date", "landingPagePlusQueryString"}, Metrics: []string{"sessions", "engagedSessions", "keyEvents", "userEngagementDuration"}}, true
 	case "session":
 		return gaFactSpec{
 			Dimensions: []string{"date", "sessionSource", "sessionMedium", "sessionCampaignName", "sessionDefaultChannelGroup", "landingPagePlusQueryString", "country", "deviceCategory"},
@@ -55,28 +76,36 @@ func (c *Client) gaFactLimit() int {
 }
 
 func (c *Client) FetchGAFacts(ctx context.Context, token, property, report, start, end string) ([]model.GaFact, error) {
+	rows, _, err := c.FetchGAReport(ctx, token, property, report, start, end)
+	return rows, err
+}
+
+func (c *Client) FetchGAReport(ctx context.Context, token, property, report, start, end string) ([]model.GaFact, model.GoogleQuality, error) {
+	quality := model.GoogleQuality{Known: true}
 	id := strings.TrimPrefix(strings.TrimSpace(property), "properties/")
 	if id == "" {
-		return nil, nil
+		return nil, quality, nil
 	}
 	spec, ok := gaFactSpecByName(report)
 	if !ok {
-		return nil, fmt.Errorf("unknown ga report %s", report)
+		return nil, quality, fmt.Errorf("unknown ga report %s", report)
 	}
 	limit := c.gaFactLimit()
 	endpoint := "https://analyticsdata.googleapis.com/v1beta/properties/" + id + ":runReport"
 	var out []model.GaFact
+	expected := 0
 	for offset := 0; ; {
 		body := gaReportBody{
-			DateRanges: []gaDateRange{{StartDate: start, EndDate: end}},
-			Dimensions: names(spec.Dimensions),
-			Metrics:    names(spec.Metrics),
-			Limit:      limit,
-			Offset:     offset,
+			DateRanges:          []gaDateRange{{StartDate: start, EndDate: end}},
+			Dimensions:          names(spec.Dimensions),
+			Metrics:             names(spec.Metrics),
+			Limit:               limit,
+			Offset:              offset,
+			ReturnPropertyQuota: true,
 		}
 		b, err := c.postJSON(ctx, token, endpoint, "ga", body)
 		if err != nil {
-			return nil, err
+			return nil, quality, err
 		}
 		if c != nil && c.OnPage != nil {
 			req, _ := json.Marshal(body)
@@ -84,21 +113,60 @@ func (c *Client) FetchGAFacts(ctx context.Context, token, property, report, star
 		}
 		var page gaFactPage
 		if err := json.Unmarshal(b, &page); err != nil {
-			return nil, fmt.Errorf("ga facts: %w", err)
+			return nil, quality, fmt.Errorf("ga facts: %w", err)
+		}
+		mergeQuality(&quality, qualityFromGA(page.Metadata))
+		if page.Metadata != nil && (len(page.Metadata.Truncation) > 0 || page.Metadata.EmptyReason != "") {
+			return nil, quality, ErrIncompleteReport
+		}
+		if page.RowCount > expected {
+			expected = page.RowCount
+		}
+		if strings.HasPrefix(report, "channel") || strings.HasPrefix(report, "landing") {
+			if page.Metadata != nil {
+				for _, raw := range page.Metadata.Restrictions.Metrics {
+					var restriction struct {
+						Name string `json:"metricName"`
+					}
+					if err := json.Unmarshal(raw, &restriction); err != nil {
+						return nil, quality, err
+					}
+					for _, metric := range spec.Metrics {
+						if restriction.Name == metric {
+							return nil, quality, ErrMetricRestricted
+						}
+					}
+				}
+			}
 		}
 		for _, row := range page.Rows {
+			if strings.HasPrefix(report, "channel") || strings.HasPrefix(report, "landing") {
+				if len(row.DimensionValues) != len(spec.Dimensions) || len(row.MetricValues) != len(spec.Metrics) {
+					return nil, quality, ErrIncompleteReport
+				}
+				for _, v := range row.MetricValues {
+					n, err := strconv.ParseFloat(v.Value, 64)
+					if err != nil || math.IsNaN(n) || math.IsInf(n, 0) {
+						return nil, quality, ErrIncompleteReport
+					}
+				}
+			}
 			out = append(out, factFromGA(report, spec, row))
 		}
 		if len(page.Rows) < limit {
-			return out, nil
+			if len(out) < expected {
+				return nil, quality, ErrIncompleteReport
+			}
+			return out, quality, nil
 		}
 		offset += len(page.Rows)
 	}
 }
 
 type gaFactPage struct {
-	Rows     []gaAPIRow `json:"rows"`
-	RowCount int        `json:"rowCount"`
+	Metadata *gaMetadata `json:"metadata"`
+	Rows     []gaAPIRow  `json:"rows"`
+	RowCount int         `json:"rowCount"`
 }
 
 func names(in []string) []gaName {
@@ -140,6 +208,8 @@ func factFromGA(report string, spec gaFactSpec, row gaAPIRow) model.GaFact {
 			fact.PagePath = val
 		case "pageTitle":
 			fact.PageTitle = val
+		case "hostName":
+			fact.Hostname = val
 		case "country":
 			fact.Country = val
 		case "deviceCategory":
@@ -164,10 +234,12 @@ func factFromGA(report string, spec gaFactSpec, row gaAPIRow) model.GaFact {
 			fact.NewUsers = n
 		case "screenPageViews":
 			fact.Views = n
-		case "eventCount", "eventValue":
-			if metric == "eventCount" {
-				fact.EventCount = n
-			}
+		case "eventCount":
+			fact.EventCount = n
+		case "eventValue":
+			fact.EventValue = metricPtr(row, spec.Metrics, metric)
+		case "userEngagementDuration":
+			fact.EngagementDuration = metricPtr(row, spec.Metrics, metric)
 		case "keyEvents":
 			fact.KeyEvents = n
 		case "totalRevenue":

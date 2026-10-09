@@ -1,9 +1,13 @@
 export GOTOOLCHAIN ?= local
 
-.PHONY: test web build tidy demo
+.PHONY: test test-mysql web build tidy demo
 
 test:
 	go test ./...
+
+# Requires Docker; creates and removes an isolated MySQL 8 server.
+test-mysql:
+	python3 scripts/test-mysql.py
 
 web:
 	cd web && npm install && npm run build

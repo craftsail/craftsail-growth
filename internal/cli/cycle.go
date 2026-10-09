@@ -101,13 +101,13 @@ func periodServeCmd() *cobra.Command {
 }
 
 func reportCmd() *cobra.Command {
-	var slug string
+	var slug, language string
 	cmd := &cobra.Command{
 		Use:   "report",
 		Short: "Build the report for the current window",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runJob("report", func(ejob.Context) error {
-				out, err := report.New(invoker.DB).Build(cmd.Context(), slug)
+				out, err := report.New(invoker.DB).Build(cmd.Context(), slug, language)
 				if err != nil {
 					return err
 				}
@@ -116,6 +116,7 @@ func reportCmd() *cobra.Command {
 			})
 		},
 	}
+	cmd.Flags().StringVar(&language, "language", "", "report language: en, zh, pt (default: project setting)")
 	cmd.Flags().StringVar(&slug, "slug", "", "project slug")
 	_ = cmd.MarkFlagRequired("slug")
 	return cmd

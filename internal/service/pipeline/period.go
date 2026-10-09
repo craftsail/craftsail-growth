@@ -82,9 +82,11 @@ func (s *Service) Period(ctx context.Context, slug string, opt Options) error {
 
 	banner("webstats")
 	if strings.TrimSpace(p.GscSite) != "" || strings.TrimSpace(p.GA4Property) != "" || (!p.NoSite && strings.TrimSpace(p.Site) != "" && webstats.UserConnected()) {
-		if _, err := s.web.Run(ctx, slug); err != nil {
+		if result, err := s.web.Run(ctx, slug); err != nil {
 			s.web.RecordFailure(ctx, slug, err)
 			note("webstats", err)
+		} else if result != nil && result.Pending {
+			s.info("Google sync batch saved; use Sync Google to continue importing the remaining history")
 		}
 	} else {
 		s.info("skipped: Google is not connected for this project")

@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { TimeSeries, type ChartPoint } from "../../components/charts/series";
-import { getJob, getWebstats, listJobs, startJob, type OfficialRow, type SourceView, type WebQueryRow, type WebstatsSnapshot } from "../../api";
+import { getJob, getWebstats, runningJob, startJob, stopJob, type JobRow, type GoogleSyncProgress, type OfficialRow, type SourceView, type WebQueryRow, type WebstatsSnapshot } from "../../api";
 import { useI18n, type Key, type Vars } from "../../i18n";
 import { HelpTip } from "../../components/HelpTip";
+import { SearchObservationCard } from "./search-observation";
 import { useAccess } from "../../app/access";
 
 function num(v: number | null | undefined) {
@@ -69,56 +70,80 @@ function byDay(rows: OfficialRow[]) {
 
 export function Webstats() {
   const { slug } = useParams();
-  const { t } = useI18n();
+  const { t, date } = useI18n();
   const { canEdit } = useAccess();
   const [snap, setSnap] = useState<WebstatsSnapshot | null>(null);
   const [err, setErr] = useState("");
-  const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [jobId, setJobId] = useState<number | null>(null);
+  const [activeJob, setActiveJob] = useState<JobRow | null>(null);
+  const [stopping, setStopping] = useState(false);
 
   function load() {
     if (!slug) return;
-    getWebstats(slug)
-      .then((d) => setSnap(d || {}))
+    getWebstats(slug).then((d) => { setSnap(d || {}); setErr(""); })
       .catch((e: Error) => setErr(e.message));
   }
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let disposed = false;
+    setSnap(null); setJobId(null); setActiveJob(null); setStopping(false); setBusy(false); setErr("");
+    if (slug) {
+      getWebstats(slug).then(d => { if (!disposed) setSnap(d || {}); })
+        .catch((e: Error) => { if (!disposed) setErr(e.message); });
+      runningJob(slug, ["webstats"]).then(job => {
+        if (!disposed && job) { setJobId(job.id); setActiveJob(job); setBusy(true); }
+      }).catch((e: Error) => { if (!disposed) setErr(e.message); });
+    }
+    return () => { disposed = true; };
   }, [slug]);
+
+  useEffect(() => {
+    if (!jobId || !slug) return;
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout>;
+    async function poll() {
+      try {
+        const result = await getJob(jobId!);
+        if (disposed) return;
+        const done = !["running", "queued"].includes(result.job.status);
+        setActiveJob(done ? null : result.job);
+        if (done) { setBusy(false); setJobId(null); }
+        setErr(result.job.error || "");
+        const data = await getWebstats(slug!);
+        if (disposed) return;
+        setSnap(data || {});
+        if (done) return;
+      } catch (e) {
+        if (disposed) return;
+        setErr((e as Error).message);
+      }
+      if (!disposed) timer = setTimeout(poll, 3000);
+    }
+    void poll();
+    return () => { disposed = true; clearTimeout(timer); };
+  }, [jobId, slug]);
 
   async function pull() {
     if (!slug) return;
-    setBusy(true);
-    setErr("");
-    setNote(t("search.syncing"));
+    setBusy(true); setErr("");
     try {
       const started = await startJob(slug, "webstats");
-      let id = started.job?.id;
-      if (!id) {
-        const listed = await listJobs(slug);
-        id = listed.running || listed.jobs?.[0]?.id;
-      }
-      if (id) {
-        for (let i = 0; i < 240; i++) {
-          const r = await getJob(id);
-          const status = r.job?.status;
-          if (status && status !== "running" && status !== "queued") {
-            if (r.job.error) setErr(r.job.error);
-            break;
-          }
-          if (i % 3 === 2) {
-            getWebstats(slug).then(setSnap).catch(() => undefined);
-          }
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
-      }
-      setSnap((await getWebstats(slug)) || {});
+      const job = started.job || await runningJob(slug, ["webstats"]);
+      if (!job) throw new Error(t("search.imports.noJob"));
+      setJobId(job.id); setActiveJob(job);
     } catch (e) {
-      setErr((e as Error).message);
+      setErr((e as Error).message); setBusy(false);
     }
-    setBusy(false);
+  }
+
+
+  async function stop() {
+    if (!jobId) return;
+    setStopping(true);
+    try { await stopJob(jobId); setJobId(null); setActiveJob(null); setBusy(false); load(); }
+    catch (e) { setErr((e as Error).message); }
+    finally { setStopping(false); }
   }
 
   const sources = snap?.sources || [];
@@ -127,27 +152,27 @@ export function Webstats() {
   const insight = snap?.insight;
   const top = rowsOf(insight?.top_queries);
   const gaps = rowsOf(insight?.gap_queries);
-  const sitemaps = snap?.sitemaps || [];
-  const indexed = snap?.index || [];
-  const submitted = sitemaps.reduce((n, row) => n + (row.submitted || 0), 0);
-  const indexedN = indexed.filter((row) => row.verdict === "PASS").length;
+
   const gscWindow = windows.find((row) => row.source === "gsc");
   const gaWindow = windows.find((row) => row.source === "ga4");
 
   return (
     <section>
       <p className="page-description mb-5">{t("search.perfDescription")}</p>
-      <div className="mb-5 flex gap-2">
+      <div className="mb-5 flex flex-wrap gap-2">
         {canEdit && <span className="inline-flex items-center gap-1"><button className="btn btn-primary" disabled={busy} onClick={pull}>{t("search.sync")}</button><HelpTip id="searchSync" /></span>}
-        <button className="btn btn-secondary" disabled={busy} onClick={load}>{t("common.refresh")}</button>
+        {canEdit && jobId && <button className="btn btn-secondary" disabled={stopping} onClick={stop}>{t("search.imports.stop")}</button>}
+        <button className="btn btn-secondary" onClick={load}>{t("common.refresh")}</button>
       </div>
       {err && <pre className="whitespace-pre-wrap alert alert-error">{err}</pre>}
-      {note && <p className="hint">{note}</p>}
+      {busy && <p className="hint" role="status">{activeJob?.status === "queued" && activeJob.resume_at ? t("search.imports.continuing", { time: date(activeJob.resume_at * 1000, { hour: "2-digit", minute: "2-digit", second: "2-digit" }) }) : t("search.syncing")}</p>}
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
         {sources.map((row) => (
           <StatusCard key={row.source} row={row} slug={slug || ""} />
         ))}
       </div>
+      {snap?.observation && <SearchObservationCard key={slug} slug={slug || ""} value={snap.observation} onSaved={load} />}
+      <SyncProgressTable rows={snap?.sync || []} busy={busy} />
       <div className="my-2 grid grid-cols-1 gap-3 md:grid-cols-3">
         <Kpi title={t("search.clicks")} value={num(gscWindow?.clicks)} note={deltaLabel(t, snap?.deltas, "gsc", "clicks")} up={deltaDir(snap?.deltas, "gsc", "clicks") === "up"} />
         <Kpi title={t("search.impressions")} value={num(gscWindow?.impressions)} note={deltaLabel(t, snap?.deltas, "gsc", "impressions")} up={deltaDir(snap?.deltas, "gsc", "impressions") === "up"} />
@@ -158,11 +183,11 @@ export function Webstats() {
         <TimeSeries label={t("search.clicks")} points={seriesOf(official, "gsc", "clicks")} empty={t("search.emptyClicks")} height={260} />
         <TimeSeries label={t("search.impressions")} points={seriesOf(official, "gsc", "impressions")} empty={t("search.emptyImpressions")} height={260} />
         <TimeSeries label={t("search.sessions")} points={seriesOf(official, "ga4", "sessions")} empty={t("search.emptySessions")} height={260} />
-        <TimeSeries label={t("search.position")} points={seriesOf(official, "gsc", "position")} reversed empty={t("search.emptyPosition")} height={260} />
+        {snap?.observation?.mode !== "new_site" && <TimeSeries label={t("search.position")} points={seriesOf(official, "gsc", "position")} reversed empty={t("search.emptyPosition")} height={260} />}
       </div>
       {snap && (
         <>
-          <div className="mt-5 card p-5">
+          <div className="mt-5 card overflow-x-auto p-5">
             <div className="stat-label">{t("search.dailyTotals")}</div>
             <table className="table">
               <thead>
@@ -182,26 +207,7 @@ export function Webstats() {
               </tbody>
             </table>
           </div>
-          <div className="mt-5 card p-5">
-            <div className="stat-label">{t("search.index")}</div>
-            <p className="hint">{t("search.indexNote", { submitted: num(submitted), checked: indexed.length, indexed: indexedN })}</p>
-            <table className="table">
-              <thead>
-                <tr><th>{t("search.url")}</th><th>{t("search.verdict")}</th><th>{t("search.coverage")}</th><th>{t("search.lastCrawl")}</th></tr>
-              </thead>
-              <tbody>
-                {indexed.map((row) => (
-                  <tr key={row.url}>
-                    <td>{row.url}</td>
-                    <td>{verdictLabel(t, row.verdict)}</td>
-                    <td>{row.coverage_state || "—"}</td>
-                    <td>{dayOf(row.last_crawl)}</td>
-                  </tr>
-                ))}
-                {indexed.length === 0 && <tr><td colSpan={4} className="hint">{t("search.noIndex")}</td></tr>}
-              </tbody>
-            </table>
-          </div>
+          <div className="mt-5 card p-5"><Link className="text-primary-700 underline" to={`/p/${slug}/search/indexing`}>{t("nav.tabs.indexing")}</Link><p className="hint mt-2">{t("search.indexing.description")}</p></div>
           {insight && (
             <p className="hint">{t("search.aiSessions", { n: num(insight.ai_sessions) })}</p>
           )}
@@ -211,6 +217,42 @@ export function Webstats() {
       )}
     </section>
   );
+}
+
+function SyncProgressTable({ rows, busy }: { rows: GoogleSyncProgress[]; busy: boolean }) {
+  const { t, tn } = useI18n();
+  const reports = ["channel_segment", "landing_segment", "channel_event", "landing_event", "landing_context", "channel", "landing", "daily", "query", "country_device", "page_country_device", "query_country_device", "query_page", "query_page_country_device", "country", "device", "appearance", "hour", "session", "page", "event"];
+  const searchTypes = ["web", "image", "video", "news", "discover", "googleNews"];
+  const states = ["running", "backfilling", "completed", "paused", "failed", "partial", "unsupported"];
+  const errors = ["budget", "restricted", "cancelled", "truncated", "storage", "rate_limited", "needs_reauth", "config_invalid", "unsupported"];
+  return <details className="card mb-5 p-5" open={busy || undefined}>
+    <summary className="cursor-pointer font-medium text-gray-900">{t("search.imports.title")}</summary>
+    <p className="hint">{t("search.imports.description")}</p>
+    <div className="overflow-x-auto">
+      <table className="table min-w-[640px]">
+        <thead><tr><th>{t("search.imports.report")}</th><th>{t("search.imports.state")}</th><th>{t("search.imports.recent")}</th><th>{t("search.imports.history")}</th><th>{t("search.quality.title")}</th></tr></thead>
+        <tbody>{rows.map(row => {
+          const state = row.state === "running" && !busy ? "paused" : states.includes(row.state) ? row.state : "failed";
+          return <tr key={`${row.source}/${row.property}/${row.report}/${row.search_type}`}>
+            <td><div>{sourceName(row.source)} · {t(`search.imports.reports.${reports.includes(row.report) ? row.report : "other"}` as Key)}{searchTypes.includes(row.search_type) && ` · ${t(`search.imports.types.${row.search_type}` as Key)}`}</div><div className="text-xs text-gray-500">{row.property}</div></td>
+            <td><span className={state === "completed" ? "text-emerald-700" : ["failed", "partial", "paused"].includes(state) ? "text-amber-700" : "text-gray-700"}>{t(`search.imports.states.${state}` as Key)}</span>{row.error_class && <div className="text-xs text-gray-500">{t(`search.imports.errors.${errors.includes(row.error_class) ? row.error_class : "provider"}` as Key)}</div>}</td>
+            <td>{tn("search.imports.days", row.recent_covered_days, { total: row.recent_total_days })}</td>
+            <td>{tn("search.imports.days", row.covered_days, { total: row.total_days })}<div className="text-xs text-gray-500">{row.from} – {row.through}</div>
+ <div className="text-xs text-gray-500">{t("google.lastSuccess")}: {row.last_success_at ? new Date(row.last_success_at*1000).toLocaleString() : t("common.none")}</div>
+ {!!row.retry_at && <div className="text-xs text-amber-700">{t("google.retryAt")}: {new Date(row.retry_at*1000).toLocaleString()}</div>}
+ {!!row.gaps?.length && <details><summary className="cursor-pointer text-xs text-gray-500">{t("google.missingDates")}</summary>{row.gaps.map(g=><div key={g.from} className="text-xs text-gray-500">{g.from} – {g.through}</div>)}</details>}
+ </td>
+            <td>{row.source === "ga4" ? <>
+              {!row.quality?.known && <div>{t("search.quality.unknown")}</div>}
+              {(["sampled", "thresholded", "other_row", "restricted", "empty_reason"] as const).filter(flag => row.quality?.[flag]).map(flag => <div key={flag} className="text-amber-700">{t(`search.quality.${flag}`)}</div>)}
+              {row.quality?.known && ![row.quality.sampled, row.quality.thresholded, row.quality.other_row, row.quality.restricted, row.quality.empty_reason].some(Boolean) && <div>{t("search.quality.noFlags")}</div>}
+              <div className="text-xs text-gray-500">{[...(row.quality?.currencies || []), ...(row.quality?.time_zones || [])].join(" · ")}</div>
+            </> : t("search.quality.gsc")}</td>
+          </tr>;
+        })}{rows.length === 0 && <tr><td colSpan={5} className="hint">{t("search.imports.empty")}</td></tr>}</tbody>
+      </table>
+    </div>
+  </details>;
 }
 
 function StatusCard({ row, slug }: { row: SourceView; slug: string }) {
@@ -238,17 +280,10 @@ function Kpi({ title, value, note, up }: { title: string; value: string; note: s
   );
 }
 
-function verdictLabel(t: (k: Key) => string, v: string | undefined) {
-  if (v === "PASS") return t("search.indexed");
-  if (v === "FAIL") return t("search.notIndexed");
-  if (v === "NEUTRAL") return t("search.excluded");
-  return v || "—";
-}
-
 function QueryTable({ title, rows, showPosition, hint }: { title: string; rows: WebQueryRow[]; showPosition?: boolean; hint?: string }) {
   const { t } = useI18n();
   return (
-    <div className="mt-5 card p-5">
+    <div className="mt-5 card overflow-x-auto p-5">
       <div className="stat-label">{title}</div>
       {hint && <p className="hint">{hint}</p>}
       <table className="table">

@@ -34,6 +34,9 @@ func (r *Webstats) UpsertGaFacts(ctx context.Context, rows []model.GaFact) error
 	for i := range rows {
 		if rows[i].KeyHash == "" {
 			rows[i].KeyHash = model.RowKey(rows[i].Hour, rows[i].Source, rows[i].Medium, rows[i].Campaign, rows[i].Channel, rows[i].Landing, rows[i].PagePath, rows[i].PageTitle, rows[i].Country, rows[i].Device, rows[i].EventName)
+			if rows[i].Hostname != "" {
+				rows[i].KeyHash = model.RowKey(rows[i].KeyHash, rows[i].Hostname)
+			}
 		}
 	}
 	return r.DB.WithContext(ctx).Clauses(clause.OnConflict{
@@ -185,10 +188,15 @@ func (r *Webstats) PutSync(ctx context.Context, projectID uint64, source string,
 
 // ListQueryPage returns the web query x page slice for one property.
 func (r *Webstats) ListQueryPage(ctx context.Context, projectID uint64, property string, from, to time.Time) ([]model.GscFact, error) {
+	return r.ListGscSlice(ctx, projectID, property, "query_page", from, to)
+}
+
+// ListGscSlice keeps report grain explicit; no fallback to query/page details.
+func (r *Webstats) ListGscSlice(ctx context.Context, projectID uint64, property, slice string, from, to time.Time) ([]model.GscFact, error) {
 	var out []model.GscFact
 	err := r.DB.WithContext(ctx).
 		Where("project_id = ? AND property = ? AND slice = ? AND search_type = ? AND date(day) >= ? AND date(day) <= ?",
-			projectID, property, "query_page", "web", from.Format("2006-01-02"), to.Format("2006-01-02")).
+			projectID, property, slice, "web", from.Format("2006-01-02"), to.Format("2006-01-02")).
 		Find(&out).Error
 	return out, err
 }

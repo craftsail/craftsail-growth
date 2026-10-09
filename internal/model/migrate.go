@@ -12,7 +12,8 @@ import (
 func AutoMigrate(db *gorm.DB) error {
 	models := []any{
 		&Project{},
-		&Question{},
+		&ProjectProgress{},
+		&Question{}, &QuestionLibrary{},
 		&Competitor{},
 		&Fact{},
 		&Page{},
@@ -25,6 +26,8 @@ func AutoMigrate(db *gorm.DB) error {
 		&SampleRun{},
 		&Metric{},
 		&Task{},
+		&OpportunityScore{},
+		&Observation{}, &ObservationResult{},
 		&Asset{},
 		&Report{},
 		&Job{},
@@ -32,10 +35,17 @@ func AutoMigrate(db *gorm.DB) error {
 		&VerifyResult{},
 		&GscSitemap{},
 		&GscIndex{},
+		&IndexURL{},
+		&IndexInspection{},
+		&SitemapScan{},
+		&SitemapURL{},
+		&GoogleQuota{},
 		&GscFact{},
 		&GaFact{},
 		&GoogleRaw{},
 		&WebSyncState{},
+		&WebSyncReport{},
+		&WebSyncDay{},
 		&GscDaily{},
 		&GaDaily{},
 		&WebImport{},
@@ -58,6 +68,12 @@ func AutoMigrate(db *gorm.DB) error {
 				}
 				continue
 			}
+			return err
+		}
+	}
+	// The extended unique index is installed before dropping its legacy predecessor.
+	if db.Migrator().HasIndex(&Sample{}, "uk_sample") {
+		if err := db.Migrator().DropIndex(&Sample{}, "uk_sample"); err != nil {
 			return err
 		}
 	}

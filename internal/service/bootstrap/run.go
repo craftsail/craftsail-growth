@@ -67,7 +67,10 @@ func (s *Service) Run(ctx context.Context, slug string, skipLLM bool) (*Result, 
 		return nil, fmt.Errorf("no crawl results or brand materials; run crawl or add materials first")
 	}
 
-	lang := langx.Detect(digest)
+	lang := p.SamplingLanguage
+	if lang == "" {
+		lang = langx.Detect(digest)
+	}
 	if skipLLM || s.LLM == nil {
 		return s.runTemplates(ctx, p, lang)
 	}
@@ -88,7 +91,10 @@ func (s *Service) Run(ctx context.Context, slug string, skipLLM bool) (*Result, 
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() { defer wg.Done(); compMap, _ = s.LLM.AskJSON(ctx, competitorPrompt(facts)) }()
-	go func() { defer wg.Done(); qMap, _ = s.LLM.AskJSON(ctx, questionPrompt(facts, lang)) }()
+	go func() {
+		defer wg.Done()
+		qMap, _ = s.LLM.AskJSON(ctx, questionPrompt(facts, lang)+"\nTarget audience region: "+p.TargetRegion+". This describes the audience, not simulated engine geolocation.")
+	}()
 	wg.Wait()
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -103,6 +109,9 @@ func (s *Service) Run(ctx context.Context, slug string, skipLLM bool) (*Result, 
 	if qMap != nil {
 		if rows, ok := qMap["questions"].([]any); ok {
 			qs = NormalizeQuestions(asMaps(rows))
+			for i := range qs {
+				qs[i].Language = lang
+			}
 		}
 	}
 	if len(qs) == 0 {
@@ -212,6 +221,9 @@ func (s *Service) SaveQuestions(ctx context.Context, slug string, rows []model.Q
 		return err
 	}
 	for i := range rows {
+		if rows[i].Language != "" && rows[i].Language != "en" && rows[i].Language != "zh" && rows[i].Language != "pt" {
+			return project.ErrInvalidLanguage
+		}
 		if rows[i].Intent == "" {
 			rows[i].Intent = model.IntentOf(rows[i].GroupName)
 		}
@@ -323,8 +335,19 @@ func questionPrompt(f BrandFacts, lang string) string {
 	if lang == "zh" {
 		language = "Chinese"
 	}
+	if lang == "pt" {
+		language = "Portuguese"
+	}
 	return fmt.Sprintf("Design a prompt library for the brand %s (%s) as JSON {\"questions\": [{\"id\", \"group\", \"text\"}]}. "+
 		"Use exactly these seven group keys: 推荐 (recommendation), 比较 (comparison), 替代 (alternatives), 价格 (pricing), 风险 (risks), 品牌验证 (brand check), 场景 (use case). "+
 		"Most prompts must be unbranded buyer questions; only the 品牌验证 group may name the brand. "+
 		"Name the product category the way a buyer would. Write every prompt in %s.", f.Name, f.Industry, language)
+}
+
+func (s *Service) Libraries(ctx context.Context, slug string) ([]model.QuestionLibrary, error) {
+	p, err := s.projects.Get(ctx, slug)
+	if err != nil {
+		return nil, err
+	}
+	return s.questions.Libraries(ctx, p.ID)
 }

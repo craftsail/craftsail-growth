@@ -14,21 +14,26 @@ import (
 	"github.com/craftsail/craftsail-growth/internal/service/audit"
 	"github.com/craftsail/craftsail-growth/internal/service/project"
 	"github.com/craftsail/craftsail-growth/internal/service/sample"
+	"github.com/craftsail/craftsail-growth/internal/service/webstats"
 )
 
 type Service struct {
-	projects *project.Service
-	audit    *audit.Service
-	sample   *sample.Service
-	tasks    *repo.Tasks
+	projects     *project.Service
+	audit        *audit.Service
+	sample       *sample.Service
+	tasks        *repo.Tasks
+	observations *repo.Observations
+	web          *webstats.Service
+	Now          func() time.Time
 }
 
 func New(db *gorm.DB) *Service {
 	return &Service{
-		projects: project.New(db),
-		audit:    audit.New(db),
-		sample:   sample.New(db, sample.NewAsker()),
-		tasks:    &repo.Tasks{DB: db},
+		projects:     project.New(db),
+		observations: &repo.Observations{DB: db}, web: webstats.New(db), Now: time.Now,
+		audit:  audit.New(db),
+		sample: sample.New(db, sample.NewAsker()),
+		tasks:  &repo.Tasks{DB: db},
 	}
 }
 

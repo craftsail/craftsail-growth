@@ -3,6 +3,8 @@
 package model
 
 type Job struct {
+	Resumable  bool           `gorm:"not null;default:false" json:"-"`
+	ResumeAt   *int64         `gorm:"index" json:"resume_at,omitempty"`
 	ID         uint64         `gorm:"primaryKey" json:"id"`
 	ProjectID  *uint64        `gorm:"index" json:"project_id"`
 	Action     string         `gorm:"size:32;not null" json:"action"`

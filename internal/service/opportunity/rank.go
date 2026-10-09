@@ -112,6 +112,9 @@ func FromSearch(ops []webstats.SearchOp, b Brand) []Item {
 	out := make([]Item, 0, len(ops))
 	seen := map[string]int{}
 	for _, o := range ops {
+		if o.Type == "multiple_pages" || o.Reason == "coverage" || o.Reason == "small_sample" || o.Reason == "new_site" || o.Reason == "association_only" {
+			continue
+		}
 		q := strings.TrimSpace(o.Query)
 		if strings.HasPrefix(strings.ToLower(q), "site:") {
 			continue // the owner's own site: searches are not demand
@@ -139,7 +142,8 @@ func FromSearch(ops []webstats.SearchOp, b Brand) []Item {
 		out = append(out, Item{
 			Key: fmt.Sprintf("search:%s:%s", o.Type, id), Source: "search", Kind: o.Type, Priority: "P2",
 			Title: searchTitle(o), Why: o.Detail, URLs: urls, Acceptance: map[string]any{"type": "manual"},
-			Detail: map[string]any{"query": q, "metric": o.Metric, "severity": o.Severity},
+			Detail:   map[string]any{"query": q, "metric": o.Metric, "severity": o.Severity, "reason": o.Reason, "facts": o.Facts, "url": o.URL, "reference": o.Reference},
+			Baseline: map[string]any{"reference": o.Reference, "facts": o.Facts}, Evidence: audit.EvObservational,
 		})
 	}
 	return out
@@ -201,13 +205,52 @@ func FromMetric(access string, prevX, prevN, curX, curN int) []Item {
 
 var sourceOrder = map[string]int{"audit": 0, "metric": 1, "citation": 2, "search": 3}
 
-// Sort orders by priority, then source, keeping input order otherwise.
+// Sort keeps technical faults first within a priority, then stage, evidence,
+// human ICE, reach and effort. Key breaks ties for repeatable weekly choices.
 func Sort(items []Item) {
 	sort.SliceStable(items, func(i, j int) bool {
 		if items[i].Priority != items[j].Priority {
 			return items[i].Priority < items[j].Priority
 		}
-		return sourceOrder[items[i].Source] < sourceOrder[items[j].Source]
+		a, b := items[i], items[j]
+		technical := func(x Item) bool {
+			return x.Source == "audit" && (x.Evidence == audit.EvStandard || x.Evidence == audit.EvVendor)
+		}
+		if technical(a) != technical(b) {
+			return technical(a)
+		}
+		stage := func(x Item) int {
+			if x.Stage == "new_site" && x.Source == "audit" {
+				return 0
+			}
+			return 1
+		}
+		if stage(a) != stage(b) {
+			return stage(a) < stage(b)
+		}
+		evidence := map[string]int{audit.EvStandard: 4, audit.EvVendor: 4, audit.EvExperiment: 3, audit.EvObservational: 2, audit.EvHeuristic: 1}
+		if evidence[a.Evidence] != evidence[b.Evidence] {
+			return evidence[a.Evidence] > evidence[b.Evidence]
+		}
+		ice := func(x Item) int {
+			if x.Score == nil {
+				return 0
+			}
+			return x.Score.Impact * x.Score.Confidence * x.Score.Ease
+		}
+		if ice(a) != ice(b) {
+			return ice(a) > ice(b)
+		}
+		if len(a.URLs) != len(b.URLs) {
+			return len(a.URLs) > len(b.URLs)
+		}
+		if a.Score != nil && b.Score != nil && a.Score.EffortHours > 0 && b.Score.EffortHours > 0 && a.Score.EffortHours != b.Score.EffortHours {
+			return a.Score.EffortHours < b.Score.EffortHours
+		}
+		if sourceOrder[a.Source] != sourceOrder[b.Source] {
+			return sourceOrder[a.Source] < sourceOrder[b.Source]
+		}
+		return a.Key < b.Key
 	})
 }
 
@@ -221,7 +264,7 @@ func nonEmpty(s string) []string {
 func searchTitle(o webstats.SearchOp) string {
 	switch o.Type {
 	case "striking_distance":
-		return "Close to the top three: " + o.Title
+		return "Ranking candidate to review: " + o.Title
 	case "low_ctr":
 		return "Low click-through: " + o.Title
 	case "content_decay":

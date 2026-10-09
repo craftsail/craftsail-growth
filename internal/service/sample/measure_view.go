@@ -17,13 +17,14 @@ import (
 const measureRowCap = 20000
 
 type MeasureQuery struct {
-	Access   string // api | web; "" picks the larger group
-	Range    string
-	Platform string
-	Tag      string
-	TagList  []string
-	QID      string
-	Sort     string
+	Language, Region, Revision string
+	Access                     string // api | web; "" picks the larger group
+	Range                      string
+	Platform                   string
+	Tag                        string
+	TagList                    []string
+	QID                        string
+	Sort                       string
 }
 
 type MeasurePoint struct {
@@ -118,6 +119,12 @@ type MeasureNotes struct {
 }
 
 type MeasureView struct {
+	Languages        []string           `json:"languages"`
+	Regions          []string           `json:"regions"`
+	Revisions        []string           `json:"revisions"`
+	MixedVersions    bool               `json:"mixed_versions"`
+	ScopeKey         string             `json:"scope_key"`
+	ScopeCounts      map[string]int     `json:"scope_counts"`
 	Brand            string             `json:"brand"`
 	Range            string             `json:"range"`
 	Visibility       *float64           `json:"visibility"`
@@ -213,6 +220,19 @@ func (s *Service) measure(ctx context.Context, p *model.Project, q MeasureQuery,
 	if !until.IsZero() {
 		dbq = dbq.Where("sampled_on < ?", until.Format("2006-01-02"))
 	}
+	facets, err := s.samples.ScopeFacets(ctx, p.ID, since, until)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range []struct{ column, value string }{{"sampling_language", q.Language}, {"target_region", q.Region}, {"prompt_revision", q.Revision}} {
+		if f.value != "" {
+			value := f.value
+			if value == "unknown" {
+				value = ""
+			}
+			dbq = dbq.Where(f.column+" = ?", value)
+		}
+	}
 	if err := dbq.Order("sampled_on, id").Limit(measureRowCap).Find(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -231,6 +251,7 @@ func (s *Service) measure(ctx context.Context, p *model.Project, q MeasureQuery,
 		Rows: rows, Cites: cites, Query: q, Now: time.Now(),
 	})
 	view.Truncated = len(rows) >= measureRowCap
+	view.Languages, view.Regions, view.Revisions = sampleScopes(facets)
 	return view, nil
 }
 
@@ -319,6 +340,7 @@ func buildMeasure(in measureBuild) *MeasureView {
 		texts[item.ID] = item.Text
 		active[item.ID] = true
 	}
+	view.Languages, view.Regions, view.Revisions = sampleScopes(in.Rows)
 	view.Engines = measureEngines(in.Rows)
 	view.Tags = measureTagOptions(in.Questions)
 
@@ -334,6 +356,8 @@ func buildMeasure(in measureBuild) *MeasureView {
 		q.Access = metrics.DefaultAccess(allObs, q.Platform)
 	}
 	view.Access = q.Access
+	view.ScopeKey, view.ScopeCounts = sampleScopeKey(in.Rows, q, in)
+	view.MixedVersions = view.ScopeKey == ""
 
 	var filtered []model.Sample
 	var keptObs []metrics.Obs
@@ -663,6 +687,12 @@ func ensureQ(byQ map[string]*qAcc, qids *[]string, sm model.Sample, texts, group
 }
 
 func keepMeasureSample(sm model.Sample, q MeasureQuery, in measureBuild) bool {
+	match := func(value, filter string) bool {
+		return filter == "" || value == filter || (filter == "unknown" && value == "")
+	}
+	if !match(sm.SamplingLanguage, q.Language) || !match(sm.TargetRegion, q.Region) || !match(sm.PromptRevision, q.Revision) {
+		return false
+	}
 	if q.Platform != "" && sm.Platform != q.Platform {
 		return false
 	}
@@ -670,7 +700,7 @@ func keepMeasureSample(sm model.Sample, q MeasureQuery, in measureBuild) bool {
 		return false
 	}
 	for _, item := range in.Questions {
-		if item.ID == sm.QID && item.Off {
+		if item.ID == sm.QID && item.Off && sm.PromptRevision == "" {
 			return false
 		}
 	}
@@ -685,6 +715,19 @@ func keepMeasureSample(sm model.Sample, q MeasureQuery, in measureBuild) bool {
 // measurePromptText returns the current prompt text and user tags for a sample.
 func measurePromptText(sm model.Sample, in measureBuild) (string, []string) {
 	text, tags := sm.QuestionText, []string{}
+	if sm.PromptRevision != "" {
+		switch v := sm.Raw["question_tags"].(type) {
+		case []string:
+			tags = v
+		case []any:
+			for _, x := range v {
+				if s, ok := x.(string); ok {
+					tags = append(tags, s)
+				}
+			}
+		}
+		return text, tags
+	}
 	for _, item := range in.Questions {
 		if item.ID == sm.QID {
 			if item.Text != "" {

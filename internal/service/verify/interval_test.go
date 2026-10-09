@@ -72,3 +72,20 @@ func TestNextStatus(t *testing.T) {
 		}
 	}
 }
+
+func TestReleasedTaskNeedsFreshCrawlSnapshot(t *testing.T) {
+	release := int64(500)
+	task := model.Task{ReleasedAt: &release, Affected: []string{"https://a.test/"}, Acceptance: map[string]any{"type": "auto", "check": "issue.absent:SPA_SHELL"}}
+	in := Inputs{HaveIssues: true, Audit: model.Audit{RunAt: 600}, Pages: []model.AuditPage{{URL: "https://a.test/", CrawledAt: 400}}}
+	if o := CheckWith(task, in); o.OK != nil {
+		t.Fatal("old crawl verified release", o)
+	}
+	in.Pages[0].CrawledAt = 550
+	if o := CheckWith(task, in); o.OK == nil || !*o.OK {
+		t.Fatal(o)
+	}
+	task.Acceptance["check"] = "metrics.visibility_not_down:api"
+	if o := CheckWith(task, in); o.OK != nil {
+		t.Fatal("rolling metrics verified release", o)
+	}
+}

@@ -21,6 +21,7 @@ type Audit struct {
 }
 
 type AuditPage struct {
+	CrawledAt   int64          `json:"crawled_at"`
 	ID          uint64         `gorm:"primaryKey" json:"id"`
 	AuditID     uint64         `gorm:"index;not null" json:"audit_id"`
 	PageID      uint64         `gorm:"index;not null" json:"page_id"`

@@ -87,19 +87,25 @@ func (s *Service) List(ctx context.Context, slug string, f ListFilter) ([]Item, 
 		}
 		out = append(out, it)
 	}
-	Sort(out)
+	if err := s.rank(ctx, pid, out); err != nil {
+		return nil, err
+	}
 	return out, nil
 }
 
 func (s *Service) Accept(ctx context.Context, slug, key string) (*model.Task, error) {
-	return s.materialize(ctx, slug, key, model.TaskOpen)
+	return s.materialize(ctx, slug, key, model.TaskOpen, 0)
 }
 
 func (s *Service) Dismiss(ctx context.Context, slug, key string) (*model.Task, error) {
-	return s.materialize(ctx, slug, key, model.TaskDismissed)
+	return s.materialize(ctx, slug, key, model.TaskDismissed, 0)
 }
 
-func (s *Service) materialize(ctx context.Context, slug, key, status string) (*model.Task, error) {
+func (s *Service) AcceptReviewed(ctx context.Context, slug, key string, user uint64) (*model.Task, error) {
+	return s.materialize(ctx, slug, key, model.TaskOpen, user)
+}
+
+func (s *Service) materialize(ctx context.Context, slug, key, status string, reviewer uint64) (*model.Task, error) {
 	pid, err := s.projectID(ctx, slug)
 	if err != nil {
 		return nil, err
@@ -129,8 +135,23 @@ func (s *Service) materialize(ctx context.Context, slug, key, status string) (*m
 			Status: status, Source: it.Source, SourceKey: &k, Acceptance: it.Acceptance, Affected: it.URLs,
 			Baseline: it.Baseline, BaselineCount: len(it.URLs),
 		}
-		if err := s.tasks.Create(ctx, t); err != nil {
-			return nil, err
+		if t.Baseline == nil {
+			t.Baseline = map[string]any{}
+		}
+		t.Baseline["opportunity_detail"] = it.Detail
+		var createErr error
+		// A reviewed title alone is not evidence. Keep ordinary acceptance
+		// behavior, but record value only for a diagnostic with support.
+		hasEvidence := strings.TrimSpace(it.Why) != "" && (len(it.URLs) > 0 || len(it.Baseline) > 0 || it.Detail["facts"] != nil)
+		if store, ok := s.tasks.(interface {
+			CreateReviewed(context.Context, *model.Task, uint64) error
+		}); ok && reviewer > 0 && hasEvidence {
+			createErr = store.CreateReviewed(ctx, t, reviewer)
+		} else {
+			createErr = s.tasks.Create(ctx, t)
+		}
+		if createErr != nil {
+			return nil, createErr
 		}
 		return t, nil
 	}
@@ -148,6 +169,11 @@ func itemFromTask(t model.Task) Item {
 	}
 	return Item{
 		Key: key, Source: t.Source, Kind: kind, Priority: t.Priority, Title: t.Title, Why: t.Why, Fix: t.Action,
-		URLs: t.Affected, Acceptance: t.Acceptance, Status: t.Status, TaskCode: t.Code,
+		Detail: taskDetail(t), URLs: t.Affected, Acceptance: t.Acceptance, Status: t.Status, TaskCode: t.Code,
 	}
+}
+
+func taskDetail(t model.Task) map[string]any {
+	m, _ := t.Baseline["opportunity_detail"].(map[string]any)
+	return m
 }

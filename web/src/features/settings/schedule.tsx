@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import { SamplingPreview } from "./sampling-preview";
 import { useEffect, useState } from "react";
 import { useOutletContext, useParams } from "react-router-dom";
 import { getJob, listJobs, listRuns, patchMonitor, retryRun, startJob, stopJob, type JobRow, type Project, type SampleRunRow } from "../../api";
@@ -12,9 +13,9 @@ function when(sec: number | null | undefined, intl: string) {
   return new Date(sec * 1000).toLocaleString(intl, { hour12: false });
 }
 
-const ACTIONS = ["serve", "sample", "webstats", "crawl", "audit", "verify"];
-const ACTION_TIPS = { serve: "serve", sample: "sample", webstats: "syncGoogle", crawl: "crawl", audit: "audit", verify: "verify" } as const;
-const KNOWN_ACTIONS = [...ACTIONS, "bootstrap", "report"];
+const ACTIONS = ["serve", "webstats", "indexing", "crawl", "audit", "verify"];
+const ACTION_TIPS = { serve: "serve", sample: "sample", webstats: "syncGoogle", indexing: "indexing", crawl: "crawl", audit: "audit", verify: "verify" } as const;
+const KNOWN_ACTIONS = [...ACTIONS,"sample", "bootstrap", "report", "first-check"];
 const JOB_STATUS = ["running", "queued", "done", "failed", "error", "stopped", "interrupted", "ok"];
 
 // Schedule & Runs: how often a period runs, how many samples per prompt, and
@@ -105,6 +106,7 @@ export function Schedule() {
         </fieldset>
       </div>
 
+      <SamplingPreview slug={slug} onStarted={load}/>
       {canEdit && <div className="flex flex-wrap gap-2">
         {ACTIONS.map((action) => (
           <button key={action} type="button" className={action === "serve" ? "btn btn-primary" : "btn btn-secondary"} onClick={() => act(() => startJob(slug, action))}>{t(`schedule.actions.${action}` as Key)}</button>
@@ -120,7 +122,7 @@ export function Schedule() {
             <tbody>
               {runs.map((r) => (
                 <tr key={r.id} className="border-t border-gray-100">
-                  <td className="py-1.5">{when(r.started_at, intl)}</td>
+                  <td className="py-1.5">{when(r.started_at, intl)}<span className="mt-1 block text-xs text-gray-500">{r.sampling_language||t("sampling.unknown")} · {r.target_region||t("sampling.unknown")} · {r.prompt_revision?.slice(0,12)||t("sampling.unknown")}</span></td>
                   <td>{["manual", "schedule", "retry", "import"].includes(r.trigger) ? t(`schedule.triggers.${r.trigger}` as Key) : r.trigger}</td>
                   <td>{r.status === "running" ? t("schedule.running") : r.status === "cancelled" ? t("schedule.cancelled") : ["succeeded", "partial", "failed"].includes(r.outcome) ? t(`schedule.outcomes.${r.outcome}` as Key) : r.outcome}</td>
                   <td className="text-right tabular-nums">{r.succeeded} / {r.planned}</td>

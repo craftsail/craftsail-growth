@@ -9,21 +9,33 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/craftsail/craftsail-growth/internal/invoker"
-	"github.com/craftsail/craftsail-growth/internal/service/webstats"
+	"github.com/craftsail/craftsail-growth/internal/service/jobs"
 )
 
 func webstatsCmd() *cobra.Command {
+	return googleJobCmd("webstats", "Pull Search Console and GA4 into the local database")
+}
+func indexingCmd() *cobra.Command {
+	return googleJobCmd("indexing", "Discover sitemap URLs and inspect indexing independently")
+}
+func googleJobCmd(action, description string) *cobra.Command {
 	var slug string
 	cmd := &cobra.Command{
-		Use:   "webstats",
-		Short: "Pull Search Console and GA4 into the local database",
+		Use:   action,
+		Short: description,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runJob("webstats", func(ejob.Context) error {
-				res, err := webstats.New(invoker.DB).Run(cmd.Context(), slug)
+			return runJob(action, func(ejob.Context) error {
+				js := jobs.New(invoker.DB)
+				jobs.Bind(js, invoker.DB)
+				j, err := js.Start(cmd.Context(), slug, action, nil)
 				if err != nil {
 					return err
 				}
-				fmt.Printf("[craftsail-growth] Google sync: %d query rows, %d GA4 rows, %s to %s\n", res.GscRows, res.GaRows, res.From, res.To)
+				fmt.Printf("[craftsail-growth] Google job %d started; work continues in batches.\n", j.ID)
+				if err := js.Wait(cmd.Context(), j.ID); err != nil {
+					return err
+				}
+				fmt.Printf("[craftsail-growth] Google job %d completed\n", j.ID)
 				return nil
 			})
 		},

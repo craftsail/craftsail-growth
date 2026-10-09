@@ -22,6 +22,7 @@ type gscSitemapList struct {
 }
 
 type gscSitemapItem struct {
+	IsIndex   bool           `json:"isSitemapsIndex"`
 	Path      string         `json:"path"`
 	IsPending bool           `json:"isPending"`
 	Errors    flexFloat      `json:"errors"`
@@ -42,10 +43,14 @@ type inspectBody struct {
 type inspectResponse struct {
 	InspectionResult struct {
 		IndexStatusResult struct {
-			Verdict       string `json:"verdict"`
-			CoverageState string `json:"coverageState"`
-			IndexingState string `json:"indexingState"`
-			LastCrawlTime string `json:"lastCrawlTime"`
+			Verdict         string `json:"verdict"`
+			GoogleCanonical string `json:"googleCanonical"`
+			UserCanonical   string `json:"userCanonical"`
+			RobotsTxtState  string `json:"robotsTxtState"`
+			PageFetchState  string `json:"pageFetchState"`
+			CoverageState   string `json:"coverageState"`
+			IndexingState   string `json:"indexingState"`
+			LastCrawlTime   string `json:"lastCrawlTime"`
 		} `json:"indexStatusResult"`
 	} `json:"inspectionResult"`
 }
@@ -71,7 +76,7 @@ func urlInProperty(site, page string) bool {
 	site = strings.TrimSpace(site)
 	page = strings.TrimSpace(page)
 	u, err := url.Parse(page)
-	if err != nil || u.Host == "" || u.Scheme == "" {
+	if err != nil || u.Host == "" || (u.Scheme != "https" && u.Scheme != "http") || u.User != nil {
 		return false
 	}
 	if strings.HasPrefix(strings.ToLower(site), "sc-domain:") {
@@ -83,7 +88,7 @@ func urlInProperty(site, page string) bool {
 	if err != nil || prop.Host == "" {
 		return false
 	}
-	if !strings.EqualFold(u.Scheme, prop.Scheme) || !strings.EqualFold(u.Hostname(), prop.Hostname()) {
+	if !strings.EqualFold(u.Scheme, prop.Scheme) || !strings.EqualFold(u.Host, prop.Host) {
 		return false
 	}
 	prefix := prop.EscapedPath()
@@ -105,7 +110,10 @@ type gscSiteList struct {
 }
 
 func (c *Client) FetchSites(token string) ([]string, error) {
-	b, err := c.getJSON(token, "https://www.googleapis.com/webmasters/v3/sites", "gsc")
+	return c.FetchSitesContext(context.Background(), token)
+}
+func (c *Client) FetchSitesContext(ctx context.Context, token string) ([]string, error) {
+	b, err := c.getJSONContext(ctx, token, "https://www.googleapis.com/webmasters/v3/sites", "gsc")
 	if err != nil {
 		return nil, err
 	}
@@ -186,11 +194,14 @@ func sameSite(property, host string) bool {
 }
 
 func (c *Client) FetchSitemaps(token, site string) ([]model.GscSitemap, error) {
+	return c.FetchSitemapsContext(context.Background(), token, site)
+}
+func (c *Client) FetchSitemapsContext(ctx context.Context, token, site string) ([]model.GscSitemap, error) {
 	if strings.TrimSpace(site) == "" {
 		return nil, nil
 	}
 	rawURL := "https://www.googleapis.com/webmasters/v3/sites/" + url.QueryEscape(site) + "/sitemaps"
-	b, err := c.getJSON(token, rawURL, "gsc")
+	b, err := c.getJSONContext(ctx, token, rawURL, "gsc")
 	if err != nil {
 		return nil, err
 	}
@@ -207,6 +218,8 @@ func (c *Client) FetchSitemaps(token, site string) ([]model.GscSitemap, error) {
 		}
 		out = append(out, model.GscSitemap{
 			Path:      item.Path,
+			Property:  site,
+			IsIndex:   item.IsIndex,
 			Submitted: submitted,
 			Errors:    float64(item.Errors),
 			Warnings:  float64(item.Warnings),
@@ -218,10 +231,13 @@ func (c *Client) FetchSitemaps(token, site string) ([]model.GscSitemap, error) {
 }
 
 func (c *Client) InspectURL(token, site, page string) (model.GscIndex, error) {
-	b, err := c.postJSON(context.Background(), token, "https://searchconsole.googleapis.com/v1/urlInspection/index:inspect", "gsc", inspectBody{
+	return c.InspectURLContext(context.Background(), token, site, page)
+}
+func (c *Client) InspectURLContext(ctx context.Context, token, site, page string) (model.GscIndex, error) {
+	b, err := c.postJSON(ctx, token, "https://searchconsole.googleapis.com/v1/urlInspection/index:inspect", "gsc", inspectBody{
 		InspectionURL: page,
 		SiteURL:       site,
-		LanguageCode:  "zh-CN",
+		LanguageCode:  "en-US",
 	})
 	if err != nil {
 		return model.GscIndex{}, err
@@ -231,13 +247,21 @@ func (c *Client) InspectURL(token, site, page string) (model.GscIndex, error) {
 		return model.GscIndex{}, fmt.Errorf("gsc inspect: %w", err)
 	}
 	st := res.InspectionResult.IndexStatusResult
+	if st.Verdict == "" {
+		return model.GscIndex{}, fmt.Errorf("gsc inspect: missing index status verdict")
+	}
 	return model.GscIndex{
-		URL:           page,
-		Verdict:       st.Verdict,
-		CoverageState: st.CoverageState,
-		IndexingState: st.IndexingState,
-		LastCrawl:     st.LastCrawlTime,
-		Raw:           string(b),
+		URL:             page,
+		Property:        site,
+		GoogleCanonical: st.GoogleCanonical,
+		UserCanonical:   st.UserCanonical,
+		RobotsTxtState:  st.RobotsTxtState,
+		PageFetchState:  st.PageFetchState,
+		Verdict:         st.Verdict,
+		CoverageState:   st.CoverageState,
+		IndexingState:   st.IndexingState,
+		LastCrawl:       st.LastCrawlTime,
+		Raw:             string(b),
 	}, nil
 }
 
@@ -246,7 +270,13 @@ func (c *Client) UserInfo(token string) ([]byte, error) {
 }
 
 func (c *Client) getJSON(token, rawURL, api string) ([]byte, error) {
-	req, err := http.NewRequest(http.MethodGet, rawURL, nil)
+	return c.getJSONContext(context.Background(), token, rawURL, api)
+}
+func (c *Client) getJSONContext(ctx context.Context, token, rawURL, api string) ([]byte, error) {
+	if err := takeSyncBudget(ctx, true); err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -5,14 +5,46 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  image:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require a stable version tag (also for manual runs)
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          test "$REF_TYPE" = tag
+          [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci && npx tsc --noEmit && npm run check:cjk && npm run check:report && npm run build
+        working-directory: web
+      - run: go test ./... && go vet ./... && scripts/license-headers.sh
+      - name: Build release archives and image binaries together
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: scripts/build-release.sh "$RELEASE_TAG"
+      - name: Verify packaged checksums and executable metadata
+        run: |
+          (cd dist/release && sha256sum -c checksums.txt)
+          dist/release/bin/linux_amd64/craftsail-growth --version-json
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
@@ -20,7 +52,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # v1.2.3 is tagged 1.2.3, 1.2 and latest.
       - id: meta
         uses: docker/metadata-action@v5
         with:
@@ -28,13 +59,18 @@ jobs:
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=ref,event=branch
       - uses: docker/build-push-action@v6
         with:
           context: .
+          file: Dockerfile.release
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Publish verified archives after images are available
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh release create "$RELEASE_TAG" --verify-tag --generate-notes dist/release/*.tar.gz dist/release/checksums.txt

@@ -15,3 +15,11 @@ config/*.toml
 internal/webembed/dist/*
 !internal/webembed/dist/.gitkeep
 demo
+
+# Public release images copy only the already-built binaries.
+dist/*
+dist/release/*
+!dist/
+!dist/release/
+!dist/release/bin/
+!dist/release/bin/**

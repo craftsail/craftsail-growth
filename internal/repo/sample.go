@@ -28,7 +28,7 @@ func (r *Samples) Upsert(ctx context.Context, rows []model.Sample) error {
 	return r.DB.WithContext(ctx).Clauses(clause.OnConflict{
 		Columns: []clause.Column{
 			{Name: "project_id"}, {Name: "sampled_on"}, {Name: "platform"},
-			{Name: "qid"}, {Name: "round"}, {Name: "sample_mode"},
+			{Name: "qid"}, {Name: "round"}, {Name: "sample_mode"}, {Name: "prompt_revision"},
 		},
 		UpdateAll: true,
 	}).Create(&rows).Error
@@ -64,9 +64,13 @@ func (r *Samples) AggregateDays(ctx context.Context, projectID uint64) ([]Sample
 	return rows, err
 }
 
-func (r *Samples) CountRounds(ctx context.Context, projectID uint64, day time.Time, platform, qid, mode string) (int, error) {
+func (r *Samples) CountRounds(ctx context.Context, projectID uint64, day time.Time, platform, qid, mode string, revisions ...string) (int, error) {
 	var n int64
-	err := r.DB.WithContext(ctx).Model(&model.Sample{}).
+	q := r.DB.WithContext(ctx).Model(&model.Sample{})
+	if len(revisions) > 0 {
+		q = q.Where("prompt_revision = ?", revisions[0])
+	}
+	err := q.
 		Where("project_id = ? AND sampled_on >= ? AND sampled_on < ? AND platform = ? AND qid = ? AND sample_mode = ? AND ok = ?",
 			projectID, dateOnly(day), dateOnly(day).Add(24*time.Hour), platform, qid, mode, true).
 		Count(&n).Error
@@ -138,7 +142,7 @@ func (r *Metrics) Latest(ctx context.Context, projectID uint64) (*model.Metric, 
 }
 
 func sampleKey(s model.Sample) string {
-	return fmt.Sprintf("%d|%s|%s|%s|%d|%s", s.ProjectID, s.SampledOn.Format("2006-01-02"), s.Platform, s.QID, s.Round, s.SampleMode)
+	return fmt.Sprintf("%d|%s|%s|%s|%d|%s|%s", s.ProjectID, s.SampledOn.Format("2006-01-02"), s.Platform, s.QID, s.Round, s.SampleMode, s.PromptRevision)
 }
 
 func (r *Samples) withoutOverridden(ctx context.Context, rows []model.Sample) ([]model.Sample, error) {
@@ -151,7 +155,7 @@ func (r *Samples) withoutOverridden(ctx context.Context, rows []model.Sample) ([
 		ids = append(ids, id)
 	}
 	var locked []model.Sample
-	if err := r.DB.WithContext(ctx).Select("project_id, sampled_on, platform, qid, round, sample_mode").
+	if err := r.DB.WithContext(ctx).Select("project_id, sampled_on, platform, qid, round, sample_mode, prompt_revision").
 		Where("project_id IN ? AND manual_override = ?", ids, true).Find(&locked).Error; err != nil {
 		return nil, err
 	}

@@ -52,8 +52,8 @@ func TestSearchBoardPeriodReadsOfficialDailies(t *testing.T) {
 	if !board.Period.Measured {
 		t.Fatal("official totals exist, period must be measured")
 	}
-	if len(board.Keywords) == 0 || board.Keywords[0].Query != "example tool" {
-		t.Fatalf("keywords %#v", board.Keywords)
+	if len(board.Keywords) != 0 || len(board.Pages) != 0 || board.QueryCoverage.State != "missing" {
+		t.Fatalf("query/page details must not substitute independent totals: %#v", board)
 	}
 }
 

@@ -39,8 +39,13 @@ export const NAV: NavSection[] = [
       {
         id: "search", label: "nav.search", icon: "search", to: "search", tabs: [
           { label: "nav.tabs.performance", to: "search" },
+          { label: "nav.tabs.indexing", to: "search/indexing" },
           { label: "nav.tabs.keywords", to: "search/keywords" },
           { label: "nav.tabs.pages", to: "search/pages" },
+          {label:"searchSegments.countries",to:"search/countries"},
+          {label:"searchSegments.devices",to:"search/devices"},
+          { label: "nav.tabs.channels", to: "search/channels" },
+          { label: "nav.tabs.landings", to: "search/landings" },
         ],
       },
       { id: "reports", label: "nav.reports", icon: "report", to: "reports" },
@@ -60,6 +65,7 @@ export const NAV: NavSection[] = [
       { id: "users", label: "nav.users", icon: "usercog", to: "settings/users", admin: true },
       { id: "providers", label: "nav.providers", icon: "cpu", to: "settings/providers", admin: true },
       { id: "google", label: "nav.google", icon: "google", to: "settings/google", admin: true },
+      { id: "system", label: "nav.system", icon: "cpu", to: "settings/system", admin: true },
     ],
   },
 ];
@@ -104,8 +110,12 @@ export function helpTopicFor(path: string): string | null {
   if (leaf.startsWith("ai/")) return "numbers";
   if (leaf.startsWith("opportunities")) return "opportunities";
   if (leaf.startsWith("audit")) return "audit";
-  if (leaf.startsWith("search") || leaf === "settings/google") return "google";
-  if (leaf === "reports") return "pages";
+  if (leaf === "search/indexing") return "indexing";
+  if (leaf === "search/channels" || leaf === "search/landings") return "channels";
+  if (leaf.startsWith("search")) return "search";
+  if (leaf === "settings/system") return "updates";
+  if (leaf === "settings/google") return "google";
+  if (leaf === "reports") return "reports";
   if (leaf === "settings/questions") return "prompts";
   if (leaf === "settings/providers") return "providers";
   if (leaf === "settings/schedule") return "schedule";

@@ -7,7 +7,7 @@ import (
 	"sort"
 )
 
-// KeywordRow is one query after collapsing query×page×day rows.
+// KeywordRow is one query aggregated across dates at the selected grain.
 // Position is impression-weighted, matching crawlseo lib/google/aggregate.ts.
 type KeywordRow struct {
 	Query       string  `json:"query"`
@@ -90,6 +90,9 @@ func AggregateKeywords(rows []QueryRow) []KeywordRow {
 	}
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].Clicks == out[j].Clicks {
+			if out[i].Impressions == out[j].Impressions {
+				return out[i].Query < out[j].Query
+			}
 			return out[i].Impressions > out[j].Impressions
 		}
 		return out[i].Clicks > out[j].Clicks
@@ -138,7 +141,12 @@ func AggregatePages(rows []QueryRow) []PageRow {
 			CTR: round4(ctr), Position: round2(pos), Band: PositionBand(pos),
 		})
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].Clicks > out[j].Clicks })
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Clicks == out[j].Clicks {
+			return out[i].URL < out[j].URL
+		}
+		return out[i].Clicks > out[j].Clicks
+	})
 	return out
 }
 

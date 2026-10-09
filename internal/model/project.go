@@ -46,24 +46,32 @@ type Targets struct {
 }
 
 type Project struct {
-	ID               uint64         `gorm:"primaryKey" json:"id"`
-	Slug             string         `gorm:"size:48;uniqueIndex;not null" json:"slug"`
-	Name             string         `gorm:"size:80;not null" json:"name"`
-	Site             string         `gorm:"size:512" json:"site"`
-	GscSite          string         `gorm:"size:512" json:"gsc_site"`
-	GA4Property      string         `gorm:"size:32" json:"ga4_property"`
-	Market           string         `gorm:"size:16;not null" json:"market"`
-	NoSite           bool           `json:"no_site"`
-	Brand            Brand          `gorm:"serializer:json" json:"brand"`
-	Platforms        []string       `gorm:"serializer:json" json:"platforms"`
-	PagesSeed        []string       `gorm:"serializer:json" json:"pages_seed"`
-	PagesMax         int            `json:"pages_max"`
-	Targets          Targets        `gorm:"serializer:json" json:"targets"`
-	Materials        string         `gorm:"type:longtext" json:"materials"`
-	Notes            string         `gorm:"type:text" json:"notes"`
-	Bootstrap        *BootstrapMeta `gorm:"serializer:json" json:"bootstrap"`
-	MonitorEveryDays *int           `json:"monitor_every_days"`
-	MonitorNextRun   *time.Time     `gorm:"type:date" json:"monitor_next_run"`
+	DemoScenario         string         `gorm:"size:24;not null;default:''" json:"demo_scenario"`
+	GoogleHistoryStart   string         `gorm:"size:10;not null;default:''" json:"google_history_start"`
+	SamplingLanguage     string         `gorm:"size:8;not null;default:''" json:"sampling_language"`
+	SiteLanguage         string         `gorm:"size:8;not null;default:''" json:"site_language"`
+	TargetRegion         string         `gorm:"size:64;not null;default:''" json:"target_region"`
+	ReportLanguage       string         `gorm:"size:8;not null;default:en" json:"report_language"`
+	SearchMode           string         `gorm:"size:16;not null;default:auto" json:"search_mode"`
+	SearchMinImpressions int            `gorm:"not null;default:500" json:"search_min_impressions"`
+	ID                   uint64         `gorm:"primaryKey" json:"id"`
+	Slug                 string         `gorm:"size:48;uniqueIndex;not null" json:"slug"`
+	Name                 string         `gorm:"size:80;not null" json:"name"`
+	Site                 string         `gorm:"size:512" json:"site"`
+	GscSite              string         `gorm:"size:512" json:"gsc_site"`
+	GA4Property          string         `gorm:"size:32" json:"ga4_property"`
+	Market               string         `gorm:"size:16;not null" json:"market"`
+	NoSite               bool           `json:"no_site"`
+	Brand                Brand          `gorm:"serializer:json" json:"brand"`
+	Platforms            []string       `gorm:"serializer:json" json:"platforms"`
+	PagesSeed            []string       `gorm:"serializer:json" json:"pages_seed"`
+	PagesMax             int            `json:"pages_max"`
+	Targets              Targets        `gorm:"serializer:json" json:"targets"`
+	Materials            string         `gorm:"type:longtext" json:"materials"`
+	Notes                string         `gorm:"type:text" json:"notes"`
+	Bootstrap            *BootstrapMeta `gorm:"serializer:json" json:"bootstrap"`
+	MonitorEveryDays     *int           `json:"monitor_every_days"`
+	MonitorNextRun       *time.Time     `gorm:"type:date" json:"monitor_next_run"`
 	// MonitorRunsPerDay is the target number of runs per prompt and engine per day.
 	MonitorRunsPerDay int   `gorm:"not null;default:3" json:"monitor_runs_per_day"`
 	CreatedAt         int64 `json:"created_at"`

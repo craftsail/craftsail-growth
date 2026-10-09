@@ -25,6 +25,7 @@ import (
 	"github.com/craftsail/craftsail-growth/internal/service/project"
 	"github.com/craftsail/craftsail-growth/internal/service/report"
 	"github.com/craftsail/craftsail-growth/internal/service/sample"
+	"github.com/craftsail/craftsail-growth/internal/service/update"
 	"github.com/craftsail/craftsail-growth/internal/service/webstats"
 )
 
@@ -54,6 +55,7 @@ func Wire(db *gorm.DB, token string, js *jobs.Service) (*Handler, error) {
 	}
 	h.web = webstats.New(db)
 	h.jobs = js
+	h.updater = update.New(js.PrepareRestart)
 	h.opportunity = opportunity.NewDB(db)
 	h.accounts = account.New(db)
 	h.EnvRoot = dotenv.FindRoot()
@@ -186,7 +188,12 @@ func (h *Handler) buildReport(c *gin.Context) {
 		writeErr(c, fmt.Errorf("report service not configured"))
 		return
 	}
-	out, err := h.report.Build(c.Request.Context(), c.Param("slug"))
+	language := c.Query("language")
+	if language != "" && language != "en" && language != "zh" && language != "pt" {
+		fail(c, resp.CodeBadRequest, http.StatusBadRequest, "unsupported report language")
+		return
+	}
+	out, err := h.report.Build(c.Request.Context(), c.Param("slug"), language)
 	if err != nil {
 		writeErr(c, err)
 		return

@@ -3,6 +3,7 @@
 package webstats
 
 import (
+	"context"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
@@ -83,10 +84,16 @@ func ParseSA(raw string) (SA, error) {
 
 // AccessToken returns a cached Google access token, refreshing via RS256 JWT when needed.
 func (c *Client) AccessToken(raw string) (string, error) {
+	return c.AccessTokenContext(context.Background(), raw)
+}
+func (c *Client) AccessTokenContext(ctx context.Context, raw string) (string, error) {
 	raw = strings.TrimSpace(raw)
 	now := c.now()
 	if tok, ok := c.cached(raw, now); ok {
 		return tok, nil
+	}
+	if err := takeSyncBudget(ctx, true); err != nil {
+		return "", err
 	}
 	sa, err := ParseSA(raw)
 	if err != nil {
@@ -98,7 +105,7 @@ func (c *Client) AccessToken(raw string) (string, error) {
 	}
 	// Keep the URN literal. QueryEscape would turn ':' into %3A.
 	form := "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=" + url.QueryEscape(assertion)
-	req, err := http.NewRequest(http.MethodPost, sa.TokenURI, strings.NewReader(form))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, sa.TokenURI, strings.NewReader(form))
 	if err != nil {
 		return "", err
 	}

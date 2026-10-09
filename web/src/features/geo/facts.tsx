@@ -5,6 +5,7 @@ import { useOutletContext, useParams } from "react-router-dom";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
 import { getBrand, saveBrand, type BrandFacts, type KeyNumber, type Project } from "../../api";
 import { useI18n } from "../../i18n";
+import { ReviewConfirmation } from "../onboarding/review";
 import { HelpTip } from "../../components/HelpTip";
 import { useAccess } from "../../app/access";
 
@@ -27,22 +28,29 @@ export function Facts() {
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
   const [busy, setBusy] = useState(false);
+  const [revision, setRevision] = useState("");
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
+    setRevision("");
     getBrand(slug).then((d) => {
+      setRevision(d.review_revision); setDirty(false);
       setName(d.name); setSite(d.site); setCard(d.facts_markdown || "");
       setB({ ...EMPTY, ...d.brand, key_numbers: d.brand.key_numbers || [] });
     }).catch((e: Error) => setErr(e.message));
   }, [slug]);
 
-  const set = <K extends keyof BrandFacts>(k: K, v: BrandFacts[K]) => { setOk(""); setB({ ...b, [k]: v }); };
+  const set = <K extends keyof BrandFacts>(k: K, v: BrandFacts[K]) => { setOk(""); setDirty(true); setB({ ...b, [k]: v }); };
 
   async function save() {
     setBusy(true); setErr(""); setOk("");
     try {
       const r = await saveBrand(slug, name, b);
       setCard(r.facts_markdown);
+      const saved = await getBrand(slug);
+      setName(saved.name); setB({ ...EMPTY, ...saved.brand, key_numbers: saved.brand.key_numbers || [] });
+      setRevision(saved.review_revision); setDirty(false);
       if (ctx?.project && name.trim() && name.trim() !== ctx.project.name) ctx.onProject?.({ ...ctx.project, name: name.trim() });
       setOk(t("brand.saved"));
     } catch (e) {
@@ -62,7 +70,7 @@ export function Facts() {
       <fieldset disabled={!canEdit} className="contents">
       <Card title={t("brand.identity")}>
         <Field label={t("brand.name")} hint={t("brand.nameHint")}>
-          <input className="input" value={name} onChange={(e) => { setOk(""); setName(e.target.value); }} />
+          <input className="input" value={name} onChange={(e) => { setOk(""); setDirty(true); setName(e.target.value); }} />
         </Field>
         <Field label={t("brand.aliases")} hint={t("brand.aliasesHint")}>
           <Lines value={b.aliases} onChange={(v) => set("aliases", v)} rows={3} placeholder={"acme\nAcme Inc"} />
@@ -128,6 +136,7 @@ export function Facts() {
         </div>
       )}
 
+      <ReviewConfirmation key={slug} slug={slug} kind="brand" revision={revision} dirty={dirty || busy} />
       <details className="card">
         <summary className="cursor-pointer px-5 py-4 text-sm font-medium text-gray-700">{t("brand.card")}</summary>
         <div className="border-t border-gray-100 p-5">

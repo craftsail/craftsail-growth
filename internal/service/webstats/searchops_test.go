@@ -4,25 +4,30 @@ package webstats
 
 import "testing"
 
-func TestSearchOpsFourKinds(t *testing.T) {
-	kws := []KeywordRow{
-		{Query: "acme vs salesforce", Position: 8, Impressions: 1000, Clicks: 10, CTR: 0.01},
-		{Query: "acme login", Position: 1.2, Impressions: 500, Clicks: 20, CTR: 0.04},
+func TestSearchDiagnosticsSeparateActionsFromObservations(t *testing.T) {
+	kws := []KeywordRow{{Query: "large", Position: 8, Impressions: 1000, Clicks: 10, CTR: 0.01}, {Query: "small", Position: 8, Impressions: 30}, {Query: "top low ctr", Position: 1, Impressions: 5000, CTR: 0.001}}
+	pages := []PageClicks{{URL: "/sustained", Current: 0, Previous: 300, Sustained: true}, {URL: "/small", Current: 0, Previous: 10, Sustained: true}, {URL: "/burst", Current: 0, Previous: 300}}
+	pairs := []QueryPage{{Query: "shared", Page: "/a", Impressions: 80}, {Query: "shared", Page: "/b", Impressions: 70}}
+	policy := SearchPolicy{Mode: "established", MinImpressions: 500, QueriesCovered: true, PagesComparable: true, PairsCovered: true}
+	actions, observations := SearchOpportunities(kws, pages, pairs, policy)
+	if len(actions) != 2 || len(observations) != 2 {
+		t.Fatalf("actions %#v observations %#v", actions, observations)
 	}
-	pages := []PageClicks{{URL: "/blog/old", Current: 2, Previous: 40}}
-	pairs := []QueryPage{
-		{Query: "acme pricing", Page: "/pricing", Impressions: 80},
-		{Query: "acme pricing", Page: "/plans", Impressions: 70},
-	}
-	got := SearchOpportunities(kws, pages, pairs)
-	seen := map[string]bool{}
-	for _, op := range got {
-		seen[op.Type] = true
-		if op.Detail == "" || op.Title == "" {
-			t.Fatalf("empty copy %+v", op)
+	for _, op := range actions {
+		if op.Type == "low_ctr" || op.Type == "cannibalization" || op.Type == "position_change" || op.Severity == "high" || op.URL == "/small" || op.URL == "/burst" {
+			t.Fatalf("unsupported conclusion %#v", op)
 		}
 	}
-	if !seen["striking_distance"] || !seen["low_ctr"] || !seen["content_decay"] || !seen["cannibalization"] {
-		t.Fatalf("%+v", got)
+	policy.Mode = "new_site"
+	actions, observations = SearchOpportunities(kws, nil, nil, policy)
+	if len(actions) != 0 || len(observations) != 2 {
+		t.Fatalf("new site %#v %#v", actions, observations)
+	}
+	policy.Mode = "established"
+	policy.QueriesCovered = false
+	policy.PagesComparable = false
+	actions, _ = SearchOpportunities(kws, pages, pairs, policy)
+	if len(actions) != 0 {
+		t.Fatalf("manual mode bypassed coverage %#v", actions)
 	}
 }

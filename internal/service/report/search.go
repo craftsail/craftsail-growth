@@ -79,10 +79,24 @@ func writeSearchSection(b *strings.Builder, board *webstats.SearchBoard) {
 		return
 	}
 	b.WriteString("### Search Console, last 28 days\n\n")
+	if o := board.Observation; o != nil {
+		fmt.Fprintf(b, "Window: %s to %s. Daily coverage: %d/28 days; previous: %d/28.\n\n", o.Coverage.From, o.Coverage.Through, o.Coverage.CoveredDays, o.PreviousCoverage.CoveredDays)
+		if o.Mode == "new_site" {
+			b.WriteString("Observation mode: follow weekly clicks, impressions and pages gaining impressions. Ranking candidates remain leads until there is sufficient evidence.\n\n")
+		}
+		if o.PagesWithImpressions != nil {
+			fmt.Fprintf(b, "Pages with impressions: %d.\n\n", *o.PagesWithImpressions)
+		}
+		if !board.Period.Comparable {
+			b.WriteString("Period comparison is unavailable until both daily windows have complete coverage.\n\n")
+		}
+	}
 	b.WriteString("> Query rows exclude anonymized queries, so they add up to less than the daily totals.\n\n")
 	if board.Period.Measured {
-		fmt.Fprintf(b, "%.0f clicks, %.0f impressions, average position %.1f, CTR %.2f%%",
-			board.Period.Clicks, board.Period.Impressions, board.Period.Position, board.Period.CTR*100)
+		fmt.Fprintf(b, "%.0f clicks, %.0f impressions", board.Period.Clicks, board.Period.Impressions)
+		if board.Observation == nil || board.Observation.Mode != "new_site" {
+			fmt.Fprintf(b, ", average position %.1f, CTR %.2f%%", board.Period.Position, board.Period.CTR*100)
+		}
 		if board.Period.HasPrevious && board.Period.ClicksDelta != nil {
 			fmt.Fprintf(b, "; clicks %+.1f%% versus the previous window", *board.Period.ClicksDelta)
 		}

@@ -30,19 +30,7 @@ type BrandFacts struct {
 // is still recognized in stored data.
 const Pending = "TBD"
 
-func isPending(s string) bool {
-	s = strings.TrimSpace(s)
-	if s == "" || s == Pending || s == "待确认" {
-		return true
-	}
-	// Template placeholders: "(TBD: …)" and the legacy "（待补：…）".
-	for _, p := range []string{"(TBD", "（TBD", "TBD:", "（待补", "(待补"} {
-		if strings.HasPrefix(s, p) {
-			return true
-		}
-	}
-	return false
-}
+func isPending(s string) bool { return model.IsPendingFact(s) }
 
 func RenderFacts(brand BrandFacts, site string, comps []model.Competitor) string {
 	name := orPending(brand.Name)

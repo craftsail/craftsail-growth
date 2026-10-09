@@ -22,7 +22,7 @@ export function Onboard({ onCreated }: { onCreated: (p: Project) => void }) {
         <CreateProjectForm onCreated={onCreated} />
         <p className="mt-6 border-t border-gray-100 pt-4 text-sm text-gray-500">
           <strong className="text-gray-700">{t("onboard.keyFirst")}</strong> {t("onboard.keyWhy")}{" "}
-          <Link to="/settings">{t("onboard.addKeys")}</Link>
+          <Link to="/settings">{t("onboard.addKeys")}</Link>{" · "}<Link to="/settings/system">{t("nav.system")}</Link>
         </p>
         <LanguagePicker />
       </div>

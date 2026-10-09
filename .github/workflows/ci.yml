@@ -18,6 +18,7 @@ jobs:
       - run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
       - run: go vet ./...
       - run: go test ./... -count=1
+      - run: make test-mysql
       - run: scripts/license-headers.sh
 
   web:

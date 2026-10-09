@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -17,11 +18,12 @@ import (
 )
 
 var (
-	ErrNameRequired = errors.New("a project without a site needs a brand name")
-	ErrSlugTaken    = errors.New("project slug is taken")
-	ErrInvalidSlug  = errors.New("invalid project slug")
-	ErrNotFound     = errors.New("project not found")
-	ErrInvalidSite  = errors.New("invalid website URL")
+	ErrNameRequired          = errors.New("a project without a site needs a brand name")
+	ErrSlugTaken             = errors.New("project slug is taken")
+	ErrInvalidSlug           = errors.New("invalid project slug")
+	ErrNotFound              = errors.New("project not found")
+	ErrInvalidSearchSettings = errors.New("search mode must be auto, new_site or established; minimum impressions must be 100–1000000")
+	ErrInvalidSite           = errors.New("invalid website URL")
 )
 
 type CreateInput struct {
@@ -155,19 +157,66 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (*model.Project, e
 }
 
 type UpdateInput struct {
-	URL         *string
-	Name        *string
-	NoSite      *bool
-	Materials   *string
-	MaxPages    *int
-	GscSite     *string
-	GA4Property *string
+	GoogleHistoryStart                                           *string
+	SamplingLanguage, SiteLanguage, TargetRegion, ReportLanguage *string
+	SearchMode                                                   *string
+	SearchMinImpressions                                         *int
+	URL                                                          *string
+	Name                                                         *string
+	NoSite                                                       *bool
+	Materials                                                    *string
+	MaxPages                                                     *int
+	GscSite                                                      *string
+	GA4Property                                                  *string
 }
 
 func (s *Service) Update(ctx context.Context, sl string, in UpdateInput) (*model.Project, error) {
 	p, err := s.Get(ctx, sl)
 	if err != nil {
 		return nil, err
+	}
+	for _, pair := range []struct {
+		value *string
+		dest  *string
+	}{{in.SamplingLanguage, &p.SamplingLanguage}, {in.SiteLanguage, &p.SiteLanguage}, {in.ReportLanguage, &p.ReportLanguage}} {
+		if pair.value != nil {
+			v := *pair.value
+			if v != "" && v != "en" && v != "zh" && v != "pt" {
+				return nil, ErrInvalidLanguage
+			}
+			*pair.dest = v
+		}
+	}
+	if in.GoogleHistoryStart != nil {
+		v := strings.TrimSpace(*in.GoogleHistoryStart)
+		if v != "" {
+			d, err := time.Parse("2006-01-02", v)
+			if err != nil || d.After(time.Now().UTC()) {
+				return nil, ErrInvalidHistoryStart
+			}
+		}
+		p.GoogleHistoryStart = v
+	}
+	if in.TargetRegion != nil {
+		v := strings.TrimSpace(*in.TargetRegion)
+		if len(v) > 64 || strings.ContainsAny(v, "\n\r") {
+			return nil, ErrInvalidLanguage
+		}
+		p.TargetRegion = v
+	}
+	if in.SearchMode != nil {
+		switch *in.SearchMode {
+		case "auto", "new_site", "established":
+			p.SearchMode = *in.SearchMode
+		default:
+			return nil, ErrInvalidSearchSettings
+		}
+	}
+	if in.SearchMinImpressions != nil {
+		if *in.SearchMinImpressions < 100 || *in.SearchMinImpressions > 1000000 {
+			return nil, ErrInvalidSearchSettings
+		}
+		p.SearchMinImpressions = *in.SearchMinImpressions
 	}
 	if in.Name != nil {
 		name := strings.TrimSpace(*in.Name)
@@ -238,3 +287,7 @@ func hostOf(raw string) string {
 	}
 	return u.Hostname()
 }
+
+var ErrInvalidLanguage = errors.New("language must be en, zh, pt or unspecified; target region must be at most 64 characters")
+
+var ErrInvalidHistoryStart = errors.New("history start must be a valid date, no later than today")

@@ -52,3 +52,14 @@ func TestFetchGSCFactsPages(t *testing.T) {
 		t.Fatalf("body %s", body)
 	}
 }
+
+func TestFetchGSCFactsRejectsDailyCap(t *testing.T) {
+	calls := 0
+	row := `{"keys":["2026-09-01","term","https://example.com/"],"clicks":1,"impressions":2}`
+	body := `{"rows":[` + strings.TrimSuffix(strings.Repeat(row+",", 25000), ",") + `]}`
+	c := &Client{HTTP: &http.Client{Transport: roundTrip(func(*http.Request) (int, string) { calls++; return 200, body })}}
+	_, err := c.FetchGSCFacts(context.Background(), "tok", "sc-domain:example.com", "query_page", "web", "2026-09-01", "2026-09-01")
+	if err != ErrIncompleteReport || calls != 2 {
+		t.Fatalf("calls=%d error=%v", calls, err)
+	}
+}

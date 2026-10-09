@@ -3,6 +3,7 @@
 package model
 
 type Question struct {
+	Language   string         `gorm:"size:8;not null;default:''" json:"language"`
 	ID         uint64         `gorm:"primaryKey" json:"id"`
 	ProjectID  uint64         `gorm:"index;uniqueIndex:uk_project_qid;not null" json:"project_id"`
 	QID        string         `gorm:"column:qid;size:16;uniqueIndex:uk_project_qid;not null" json:"qid"`

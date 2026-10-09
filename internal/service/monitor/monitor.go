@@ -53,6 +53,16 @@ func attach(db *gorm.DB, js *jobs.Service) {
 			return
 		}
 		advance(db, j)
+		// A full scheduled period leaves indexing to its own resumable job, so
+		// traffic backfill and inspection quota waits do not rerun the period.
+		if j.Status == "done" {
+			p, err := (&repo.Projects{DB: db}).ByID(context.Background(), *j.ProjectID)
+			if err == nil && p != nil && ((!p.NoSite && p.Site != "") || p.GscSite != "") {
+				if _, err := js.Start(context.Background(), p.Slug, "indexing", map[string]any{"monitor": true}); err != nil && !errors.Is(err, jobs.ErrBusy) {
+					log.Println("monitor indexing:", err)
+				}
+			}
+		}
 	})
 }
 

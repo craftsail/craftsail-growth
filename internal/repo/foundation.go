@@ -24,14 +24,33 @@ func (r *Questions) Replace(ctx context.Context, projectID uint64, rows []model.
 		if err := tx.Where("project_id = ?", projectID).Delete(&model.Question{}).Error; err != nil {
 			return err
 		}
+		var p model.Project
+		if err := tx.Where("id = ?", projectID).First(&p).Error; err != nil {
+			return err
+		}
+		if _, err := (&Questions{DB: tx}).Snapshot(ctx, &p, rows); err != nil {
+			return err
+		}
 		if len(rows) == 0 {
 			return nil
 		}
+		disabled := []string{}
 		for i := range rows {
 			rows[i].ProjectID = projectID
 			rows[i].ID = 0
+			if !rows[i].Enabled {
+				disabled = append(disabled, rows[i].QID)
+			}
 		}
-		return tx.Create(&rows).Error
+		if err := tx.Create(&rows).Error; err != nil {
+			return err
+		}
+		if len(disabled) > 0 {
+			if err := tx.Model(&model.Question{}).Where("project_id = ? AND qid IN ?", projectID, disabled).Update("enabled", false).Error; err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
 

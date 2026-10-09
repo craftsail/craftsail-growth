@@ -25,6 +25,26 @@ type Inputs struct {
 // falls back to Check for the older expressions.
 func CheckWith(task model.Task, in Inputs) Outcome {
 	expr, _ := task.Acceptance["check"].(string)
+	if task.ReleasedAt != nil {
+		if strings.HasPrefix(expr, "metrics.") {
+			return Outcome{Note: "release effect is evaluated in its fixed observation window"}
+		}
+		if in.Audit.RunAt <= *task.ReleasedAt {
+			return Outcome{Note: "run a fresh crawl and audit after release"}
+		}
+		if len(task.Affected) == 0 {
+			return Outcome{Note: "release targets need fresh crawl evidence"}
+		}
+		by := map[string]model.AuditPage{}
+		for _, p := range in.Pages {
+			by[p.URL] = p
+		}
+		for _, u := range task.Affected {
+			if p, ok := by[u]; !ok || p.CrawledAt <= *task.ReleasedAt {
+				return Outcome{Note: "release targets need fresh crawl evidence"}
+			}
+		}
+	}
 	yes, no := true, false
 	switch {
 	case strings.HasPrefix(expr, "issue.absent:"):

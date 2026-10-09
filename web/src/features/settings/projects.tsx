@@ -9,7 +9,7 @@ import { HelpTip } from "../../components/HelpTip";
 type Ctx = { project?: Project; projects?: Project[]; onProject?: (p: Project) => void; onCreated?: (p: Project) => void } | undefined;
 
 // CreateProjectForm is shared by first-run onboarding and the Projects page.
-// By default it starts the first period so the new project has data to show.
+// The first technical check runs without AI or Google credentials.
 export function CreateProjectForm({
   onCreated,
   submitLabel,
@@ -32,11 +32,15 @@ export function CreateProjectForm({
     setErr("");
     try {
       const p = await createProject({ url: noSite ? "" : url.trim(), name: name.trim(), no_site: noSite });
-      if (runNow) {
-        await startJob(p.slug, "serve").catch(() => undefined);
+      let startError = "";
+      if (runNow && !noSite) {
+        try { await startJob(p.slug, "first-check"); }
+        catch (ex) { startError = (ex as Error).message; }
       }
+      // Creation already succeeded. A failed start must never invite another
+      // create request; recovery happens against this same project.
       onCreated(p);
-      nav(runNow ? `/p/${p.slug}/settings/schedule` : `/p/${p.slug}/overview`);
+      nav(`/p/${p.slug}/overview`, { state: { firstCheckError: startError } });
     } catch (ex) {
       setErr((ex as Error).message);
     } finally {
@@ -60,10 +64,10 @@ export function CreateProjectForm({
         <label>{t("projects.brandName")}</label>
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder={noSite ? t("projects.nameRequired") : t("projects.nameOptional")} required={noSite} />
       </div>
-      <label className="checkbox-row">
+      {!noSite && <label className="checkbox-row">
         <input type="checkbox" checked={runNow} onChange={(e) => setRunNow(e.target.checked)} />
         {t("projects.runNow")}
-      </label>
+      </label>}
       {err && <div className="alert alert-error">{err}</div>}
       <button className="btn btn-primary" disabled={busy} type="submit">{busy ? t("projects.creating") : submitLabel || t("projects.create")}</button>
       <HelpTip id="createProject" />
@@ -144,15 +148,19 @@ function ProjectForm({
   const [url, setUrl] = useState(seed?.site || "");
   const [name, setName] = useState(seed?.name || "");
   const [noSite, setNoSite] = useState(!!seed?.no_site);
+  const [sampling,setSampling]=useState({sampling_language:seed?.sampling_language||"",site_language:seed?.site_language||"",report_language:seed?.report_language||"en",target_region:seed?.target_region||""});
+  const [historyStart,setHistoryStart]=useState(seed?.google_history_start||"");
   const [gscSite, setGscSite] = useState(seed?.gsc_site || "");
   const [ga4Property, setGa4Property] = useState(seed?.ga4_property || "");
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     getProject(slug).then((got) => {
       setP(got);
+ setSampling({sampling_language:got.sampling_language||"",site_language:got.site_language||"",report_language:got.report_language||"en",target_region:got.target_region||""});
       setUrl(got.site || "");
       setName(got.name || "");
       setNoSite(!!got.no_site);
+      setHistoryStart(got.google_history_start||"");
       setGscSite(got.gsc_site || "");
       setGa4Property(got.ga4_property || "");
     }).catch((e: Error) => onError(e.message));
@@ -162,8 +170,8 @@ function ProjectForm({
     onError("");
     try {
       const got = await patchProject(slug, {
-        name, no_site: noSite, url: noSite ? "" : url,
-        gsc_site: gscSite.trim(),
+        ...sampling, name, no_site: noSite, url: noSite ? "" : url,
+        google_history_start:historyStart, gsc_site: gscSite.trim(),
         ga4_property: ga4Property.trim(),
       });
       setP(got);
@@ -178,6 +186,7 @@ function ProjectForm({
     <div>
       <h2 className="section-title">{p?.name || slug}</h2>
       <p className="hint">{t("projects.recrawl")}</p>
+ <div className="field"><label htmlFor="google-history-start">{t("google.historyStart")}</label><input id="google-history-start" className="input" type="date" value={historyStart} onChange={e=>setHistoryStart(e.target.value)}/><p className="hint">{t("google.historyHint")}</p></div>
       <div className="field">
         <label>{t("projects.brandName")}</label>
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
@@ -192,6 +201,10 @@ function ProjectForm({
           <input className="input" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://" />
         </div>
       )}
+      <fieldset className="my-5 space-y-3 rounded-lg border border-gray-200 p-4"><legend className="px-2 font-medium">{t("sampling.title")}</legend><p className="text-sm text-gray-500">{t("sampling.note")}</p>
+        {([['sampling_language','sampling.language'],['site_language','sampling.site'],['report_language','weeklyReport.language']] as const).map(([field,label])=><label className="flex flex-wrap items-center gap-3" key={field}>{t(label)}<select className="input" name={field} value={sampling[field]} onChange={e=>setSampling({...sampling,[field]:e.target.value})}>{field!=="report_language"&&<option value="">{t("sampling.unknown")}</option>}{([['en','english'],['zh','chinese'],['pt','portuguese']] as const).map(([v,k])=><option key={v} value={v}>{t(`weeklyReport.${k}`)}</option>)}</select></label>)}
+        <label className="block">{t("sampling.region")}<input name="target_region" className="input mt-1 w-full" maxLength={64} value={sampling.target_region} onChange={e=>setSampling({...sampling,target_region:e.target.value})}/></label>
+      </fieldset>
       <button className="btn btn-primary" disabled={busy} onClick={save}>{busy ? t("common.saving") : t("projects.save")}</button>
     </div>
   );

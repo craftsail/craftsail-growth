@@ -10,6 +10,7 @@ import (
 )
 
 type Row struct {
+	PromptRevision  string
 	Platform        string
 	QuestionID      string
 	Round           int
@@ -54,7 +55,7 @@ func DedupRows(rows []Row) []Row {
 	seen := map[string]Row{}
 	var order []string
 	for _, r := range rows {
-		k := r.Day + "|" + r.Platform + "|" + r.QuestionID + "|" + itoa(r.Round) + "|" + r.SampleMode
+		k := r.Day + "|" + r.Platform + "|" + r.QuestionID + "|" + itoa(r.Round) + "|" + r.SampleMode + "|" + r.PromptRevision
 		if _, ok := seen[k]; !ok {
 			order = append(order, k)
 		}

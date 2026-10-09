@@ -36,7 +36,7 @@ func (r *Jobs) ByID(ctx context.Context, id uint64) (*model.Job, error) {
 
 func (r *Jobs) Running(ctx context.Context, projectID uint64) (*model.Job, error) {
 	var j model.Job
-	err := r.DB.WithContext(ctx).Where("project_id = ? AND status = ?", projectID, "running").Order("id desc").First(&j).Error
+	err := r.DB.WithContext(ctx).Where("project_id = ? AND status IN ?", projectID, []string{"running", "queued"}).Order("id desc").First(&j).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}
@@ -61,6 +61,9 @@ func (r *Jobs) Recent(ctx context.Context, projectID uint64, limit int) ([]model
 
 func (r *Jobs) InterruptRunning(ctx context.Context) error {
 	now := time.Now().Unix()
+	if err := r.DB.WithContext(ctx).Model(&model.Job{}).Where("status = ? AND resumable = ?", "running", true).Updates(map[string]any{"status": "queued", "resume_at": now, "error": ""}).Error; err != nil {
+		return err
+	}
 	return r.DB.WithContext(ctx).Model(&model.Job{}).Where("status = ?", "running").
 		Updates(map[string]any{"status": "interrupted", "finished_at": now, "error": "interrupted by a server restart"}).Error
 }

@@ -13,12 +13,18 @@ import (
 // values ("TBD" and the legacy Chinese marker) come back empty so a form can
 // show them as blanks.
 func (s *Service) Brand(ctx context.Context, slug string) (*model.Project, error) {
+	p, _, err := s.BrandForReview(ctx, slug)
+	return p, err
+}
+
+func (s *Service) BrandForReview(ctx context.Context, slug string) (*model.Project, string, error) {
 	p, err := s.projects.Get(ctx, slug)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
+	revision := model.BrandReviewRevision(p)
 	p.Brand = cleanBrand(p.Brand)
-	return p, nil
+	return p, revision, nil
 }
 
 // SaveBrand stores the structured brand facts, then regenerates the facts

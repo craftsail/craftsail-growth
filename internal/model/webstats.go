@@ -18,6 +18,8 @@ func RowKey(parts ...string) string {
 
 // GscSitemap is one Search Console sitemap. Indexed is deprecated by Google and often zero.
 type GscSitemap struct {
+	Property  string  `gorm:"type:text" json:"property"`
+	IsIndex   bool    `json:"is_index"`
 	ID        uint64  `gorm:"primaryKey" json:"id"`
 	ProjectID uint64  `gorm:"uniqueIndex:uk_gsc_sitemap;not null" json:"project_id"`
 	KeyHash   string  `gorm:"size:64;uniqueIndex:uk_gsc_sitemap;not null" json:"key_hash"`
@@ -34,16 +36,21 @@ func (GscSitemap) TableName() string { return "gsc_sitemaps" }
 
 // GscIndex is one URL Inspection result. Verdict PASS means Google indexed it.
 type GscIndex struct {
-	ID            uint64 `gorm:"primaryKey" json:"id"`
-	ProjectID     uint64 `gorm:"uniqueIndex:uk_gsc_index;not null" json:"project_id"`
-	KeyHash       string `gorm:"size:64;uniqueIndex:uk_gsc_index;not null" json:"key_hash"`
-	URL           string `gorm:"type:text;not null" json:"url"`
-	Verdict       string `gorm:"size:32" json:"verdict"`
-	CoverageState string `gorm:"size:255" json:"coverage_state"`
-	IndexingState string `gorm:"size:64" json:"indexing_state"`
-	LastCrawl     string `gorm:"size:40" json:"last_crawl"`
-	Raw           string `gorm:"type:longtext" json:"raw"`
-	FetchedAt     int64  `json:"fetched_at"`
+	Property        string `gorm:"type:text" json:"property"`
+	GoogleCanonical string `gorm:"type:text" json:"google_canonical"`
+	UserCanonical   string `gorm:"type:text" json:"user_canonical"`
+	RobotsTxtState  string `gorm:"size:64" json:"robots_txt_state"`
+	PageFetchState  string `gorm:"size:64" json:"page_fetch_state"`
+	ID              uint64 `gorm:"primaryKey" json:"id"`
+	ProjectID       uint64 `gorm:"uniqueIndex:uk_gsc_index;not null" json:"project_id"`
+	KeyHash         string `gorm:"size:64;uniqueIndex:uk_gsc_index;not null" json:"key_hash"`
+	URL             string `gorm:"type:text;not null" json:"url"`
+	Verdict         string `gorm:"size:32" json:"verdict"`
+	CoverageState   string `gorm:"size:255" json:"coverage_state"`
+	IndexingState   string `gorm:"size:64" json:"indexing_state"`
+	LastCrawl       string `gorm:"size:40" json:"last_crawl"`
+	Raw             string `gorm:"type:longtext" json:"raw"`
+	FetchedAt       int64  `json:"fetched_at"`
 }
 
 func (GscIndex) TableName() string { return "gsc_indexes" }
@@ -72,34 +79,37 @@ type GscFact struct {
 func (GscFact) TableName() string { return "gsc_facts" }
 
 type GaFact struct {
-	ID             uint64    `gorm:"primaryKey" json:"id"`
-	ProjectID      uint64    `gorm:"uniqueIndex:uk_ga_fact;not null" json:"project_id"`
-	Property       string    `gorm:"size:64;uniqueIndex:uk_ga_fact;not null;default:''" json:"property"`
-	Report         string    `gorm:"size:32;uniqueIndex:uk_ga_fact;not null" json:"report"`
-	Day            time.Time `gorm:"type:date;uniqueIndex:uk_ga_fact;not null" json:"day"`
-	Hour           string    `gorm:"size:2" json:"hour"`
-	KeyHash        string    `gorm:"size:64;uniqueIndex:uk_ga_fact;not null" json:"key_hash"`
-	Source         string    `gorm:"type:text" json:"source"`
-	Medium         string    `gorm:"type:text" json:"medium"`
-	Campaign       string    `gorm:"type:text" json:"campaign"`
-	Channel        string    `gorm:"size:128" json:"channel"`
-	Landing        string    `gorm:"type:text" json:"landing"`
-	PagePath       string    `gorm:"type:text" json:"page_path"`
-	PageTitle      string    `gorm:"type:text" json:"page_title"`
-	Country        string    `gorm:"size:128" json:"country"`
-	Device         string    `gorm:"size:32" json:"device"`
-	EventName      string    `gorm:"size:255" json:"event_name"`
-	Sessions       float64   `json:"sessions"`
-	Engaged        float64   `json:"engaged"`
-	ActiveUsers    float64   `json:"active_users"`
-	NewUsers       float64   `json:"new_users"`
-	Views          float64   `json:"views"`
-	EventCount     float64   `json:"event_count"`
-	KeyEvents      float64   `json:"key_events"`
-	Revenue        float64   `json:"revenue"`
-	EngagementRate float64   `json:"engagement_rate"`
-	BounceRate     float64   `json:"bounce_rate"`
-	FetchedAt      int64     `json:"fetched_at"`
+	Hostname           string    `gorm:"size:255;not null;default:''" json:"hostname"`
+	EngagementDuration *float64  `json:"engagement_duration"`
+	EventValue         *float64  `json:"event_value"`
+	ID                 uint64    `gorm:"primaryKey" json:"id"`
+	ProjectID          uint64    `gorm:"uniqueIndex:uk_ga_fact;not null" json:"project_id"`
+	Property           string    `gorm:"size:64;uniqueIndex:uk_ga_fact;not null;default:''" json:"property"`
+	Report             string    `gorm:"size:32;uniqueIndex:uk_ga_fact;not null" json:"report"`
+	Day                time.Time `gorm:"type:date;uniqueIndex:uk_ga_fact;not null" json:"day"`
+	Hour               string    `gorm:"size:2" json:"hour"`
+	KeyHash            string    `gorm:"size:64;uniqueIndex:uk_ga_fact;not null" json:"key_hash"`
+	Source             string    `gorm:"type:text" json:"source"`
+	Medium             string    `gorm:"type:text" json:"medium"`
+	Campaign           string    `gorm:"type:text" json:"campaign"`
+	Channel            string    `gorm:"size:128" json:"channel"`
+	Landing            string    `gorm:"type:text" json:"landing"`
+	PagePath           string    `gorm:"type:text" json:"page_path"`
+	PageTitle          string    `gorm:"type:text" json:"page_title"`
+	Country            string    `gorm:"size:128" json:"country"`
+	Device             string    `gorm:"size:32" json:"device"`
+	EventName          string    `gorm:"size:255" json:"event_name"`
+	Sessions           float64   `json:"sessions"`
+	Engaged            float64   `json:"engaged"`
+	ActiveUsers        float64   `json:"active_users"`
+	NewUsers           float64   `json:"new_users"`
+	Views              float64   `json:"views"`
+	EventCount         float64   `json:"event_count"`
+	KeyEvents          float64   `json:"key_events"`
+	Revenue            float64   `json:"revenue"`
+	EngagementRate     float64   `json:"engagement_rate"`
+	BounceRate         float64   `json:"bounce_rate"`
+	FetchedAt          int64     `json:"fetched_at"`
 }
 
 func (GaFact) TableName() string { return "ga_facts" }
@@ -179,14 +189,16 @@ func (WebImport) TableName() string { return "web_imports" }
 
 // WebProperty archives a previous resource key so its daily rows stay readable.
 type WebProperty struct {
-	ID          uint64 `gorm:"primaryKey" json:"id"`
-	ProjectID   uint64 `gorm:"uniqueIndex:uk_web_property;not null" json:"project_id"`
-	Source      string `gorm:"size:16;uniqueIndex:uk_web_property;not null" json:"source"`
-	PropertyKey string `gorm:"size:512;uniqueIndex:uk_web_property;not null" json:"property_key"`
-	Status      string `gorm:"size:16;index" json:"status"`
-	Timezone    string `gorm:"size:64" json:"timezone"`
-	ActivatedAt int64  `json:"activated_at"`
-	ArchivedAt  *int64 `json:"archived_at,omitempty"`
+	SearchEstablishedThrough *time.Time `gorm:"type:date" json:"search_established_through,omitempty"`
+	SearchStageVersion       int        `json:"search_stage_version"`
+	ID                       uint64     `gorm:"primaryKey" json:"id"`
+	ProjectID                uint64     `gorm:"uniqueIndex:uk_web_property;not null" json:"project_id"`
+	Source                   string     `gorm:"size:16;uniqueIndex:uk_web_property;not null" json:"source"`
+	PropertyKey              string     `gorm:"size:512;uniqueIndex:uk_web_property;not null" json:"property_key"`
+	Status                   string     `gorm:"size:16;index" json:"status"`
+	Timezone                 string     `gorm:"size:64" json:"timezone"`
+	ActivatedAt              int64      `json:"activated_at"`
+	ArchivedAt               *int64     `json:"archived_at,omitempty"`
 }
 
 func (WebProperty) TableName() string { return "web_properties" }

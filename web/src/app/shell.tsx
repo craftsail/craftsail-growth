@@ -96,15 +96,16 @@ export function AppShell({
               )}
             </div>
             {tabs && (
-              <nav className="mb-6 flex gap-6 border-b border-gray-200" aria-label={page}>
+              <nav className="mb-6 flex gap-6 overflow-x-auto border-b border-gray-200" aria-label={page}>
                 {tabs.map((x) => (
                   <NavLink key={x.to} to={`/p/${current?.slug}/${x.to}`} end
-                    className={({ isActive }) => "-mb-px border-b-2 px-0.5 pb-2.5 text-sm font-medium no-underline transition-colors " + (isActive ? "border-primary-600 text-primary-700" : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-800")}>
+                    className={({ isActive }) => "-mb-px shrink-0 border-b-2 px-0.5 pb-2.5 text-sm font-medium no-underline transition-colors " + (isActive ? "border-primary-600 text-primary-700" : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-800")}>
                     {t(x.label)}
                   </NavLink>
                 ))}
               </nav>
             )}
+            {current?.demo_scenario && <div className="mb-5 rounded-lg border border-primary-200 bg-primary-50 p-4 text-sm text-gray-700">{t("demoGuide.banner")} <Link className="text-primary-700 underline" to={`/p/${current.slug}/overview#demo-guide`}>{t("demoGuide.title")}</Link></div>}
             <Outlet context={{ project: current, projects, onProject, onCreated }} />
           </main>
         </div>

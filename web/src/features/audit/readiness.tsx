@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Link } from "react-router-dom";
+import { ReviewConfirmation } from "../onboarding/review";
 import { EmptyState } from "../../components/EmptyState";
 import { LayerStatus } from "../../components/metrics/LayerStatus";
 import { AuditActions, useAudit } from "./shared";
@@ -45,6 +46,7 @@ export function Readiness() {
           </li>
         ))}
       </ol>
+      {a.rep?.id && !a.rep.no_site && a.rep.page_count > 0 && <ReviewConfirmation key={`${a.slug}/${a.rep.id}`} slug={a.slug} kind="audit_helpful" auditID={a.rep.id} />}
     </section>
   );
 }

@@ -26,13 +26,13 @@ LABEL org.opencontainers.image.source="https://github.com/craftsail/craftsail-gr
       org.opencontainers.image.licenses="AGPL-3.0-or-later"
 RUN apk add --no-cache ca-certificates tzdata \
  && adduser -D -H -u 10001 app \
- && mkdir -p /app/config /app/data \
+ && mkdir -p /app/bin /app/config /app/data \
  && chown -R app:app /app
 WORKDIR /app
-COPY --from=build /out/craftsail-growth /usr/local/bin/craftsail-growth
+COPY --from=build --chown=app:app /out/craftsail-growth /app/bin/craftsail-growth
 COPY --chown=app:app config/default.example.toml config/default.example.toml
 USER app
-ENV CRAFTSAIL_GROWTH_HOST=0.0.0.0
+ENV PATH="/app/bin:${PATH}" CRAFTSAIL_GROWTH_HOST=0.0.0.0
 EXPOSE 8765
 VOLUME ["/app/config", "/app/data"]
 ENTRYPOINT ["craftsail-growth"]

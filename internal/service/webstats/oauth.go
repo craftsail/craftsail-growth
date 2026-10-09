@@ -3,6 +3,7 @@
 package webstats
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -61,6 +62,9 @@ func (c *Client) ExchangeCode(clientID, secret, code, redirectURI string) (token
 }
 
 func (c *Client) UserAccessToken() (string, error) {
+	return c.UserAccessTokenContext(context.Background())
+}
+func (c *Client) UserAccessTokenContext(ctx context.Context) (string, error) {
 	refresh := strings.TrimSpace(os.Getenv("GOOGLE_REFRESH_TOKEN"))
 	id := strings.TrimSpace(os.Getenv("GOOGLE_OAUTH_CLIENT_ID"))
 	secret := strings.TrimSpace(os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"))
@@ -76,7 +80,7 @@ func (c *Client) UserAccessToken() (string, error) {
 	form.Set("client_id", id)
 	form.Set("client_secret", secret)
 	form.Set("grant_type", "refresh_token")
-	out, err := c.postToken(form)
+	out, err := c.postTokenContext(ctx, form)
 	if err != nil {
 		return "", err
 	}
@@ -85,7 +89,13 @@ func (c *Client) UserAccessToken() (string, error) {
 }
 
 func (c *Client) postToken(form url.Values) (tokenResponse, error) {
-	req, err := http.NewRequest(http.MethodPost, defaultTokenURI, strings.NewReader(form.Encode()))
+	return c.postTokenContext(context.Background(), form)
+}
+func (c *Client) postTokenContext(ctx context.Context, form url.Values) (tokenResponse, error) {
+	if err := takeSyncBudget(ctx, true); err != nil {
+		return tokenResponse{}, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, defaultTokenURI, strings.NewReader(form.Encode()))
 	if err != nil {
 		return tokenResponse{}, err
 	}

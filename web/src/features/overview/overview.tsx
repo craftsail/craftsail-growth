@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
-import { getAudit, listOpportunities, listRuns, type AuditReport, type OpportunityItem, type Project, type SampleRunRow } from "../../api";
+import { listOpportunities, listRuns, type AuditReport, type OpportunityItem, type Project, type SampleRunRow } from "../../api";
 import { useI18n, type Key } from "../../i18n";
 import { opportunityTitle } from "../actions/title";
 import { AreaSeries } from "../../components/charts/series";
 import { LayerStatus } from "../../components/metrics/LayerStatus";
 import { RateStat } from "../../components/metrics/RateStat";
 import { keepSearch, useMeasure } from "../measure/data";
+import { DemoGuide } from "./demo-guide";
+import { FirstCheck } from "./first-check";
 import { FilterBar } from "../measure/filters";
 
 const BRAND = "#2563eb";
@@ -27,12 +29,14 @@ export function Overview() {
   const [opps, setOpps] = useState<OpportunityItem[] | null>(null);
   const [runs, setRuns] = useState<SampleRunRow[]>([]);
 
+  useEffect(() => { setAudit(null); setOpps(null); setRuns([]); }, [slug]);
   useEffect(() => {
     if (!slug) return;
-    getAudit(slug).then(setAudit).catch(() => setAudit(null));
-    listOpportunities(slug, { status: "new" }).then((d) => setOpps(d.items || [])).catch(() => setOpps([]));
-    listRuns(slug).then((d) => setRuns(d.items || [])).catch(() => setRuns([]));
-  }, [slug]);
+    let disposed = false;
+    listOpportunities(slug).then((d) => { if (!disposed) setOpps((d.items || []).filter(it=>it.recommended)); }).catch(() => { if (!disposed) setOpps([]); });
+    listRuns(slug).then((d) => { if (!disposed) setRuns(d.items || []); }).catch(() => { if (!disposed) setRuns([]); });
+    return () => { disposed = true; };
+  }, [slug, audit?.id]);
 
   const layers = audit?.layers || [];
   const passed = layers.filter((l) => l.status === "ok" && !l.blocked_by).length;
@@ -42,6 +46,8 @@ export function Overview() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5">
+      {ctx?.project?.demo_scenario && <DemoGuide project={ctx.project} />}
+      {ctx?.project && <FirstCheck key={slug} project={ctx.project} onAudit={setAudit} />}
       <FilterBar {...m} onChange={m.setFilter} />
       {m.err && <p className="text-sm text-red-700">{m.err}</p>}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -106,17 +112,17 @@ export function Overview() {
         </section>
         <section className="card p-5">
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="card-title">{t("overview.nextSteps")}</h2>
+            <h2 className="card-title">{t("prioritization.weekly")}</h2>
             <Link to={`/p/${slug}/opportunities`} className="text-sm">{t("overview.all")}</Link>
           </div>
           {opps === null ? <p className="text-sm text-gray-500">{t("common.loading")}</p> : opps.length === 0 ? (
             <p className="text-sm text-gray-500">{t("overview.noOpen")}</p>
           ) : (
             <ul className="space-y-1.5">
-              {opps.slice(0, 5).map((o) => (
+              {opps.slice(0, 3).map((o) => (
                 <li key={o.key} className="flex items-start gap-2 text-sm">
                   <span className="mt-0.5 rounded border border-gray-300 px-1 text-[11px] font-semibold text-gray-700">{o.priority}</span>
-                  <Link to={`/p/${slug}/opportunities?key=${encodeURIComponent(o.key)}`} className="text-gray-800">{oppTitle(o)}</Link>
+                  <Link to={`/p/${slug}/opportunities?tab=${o.status ? "progress" : "suggested"}&key=${encodeURIComponent(o.key)}`} className="text-gray-800">{oppTitle(o)}</Link>
                 </li>
               ))}
             </ul>

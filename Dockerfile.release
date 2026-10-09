@@ -1,0 +1,19 @@
+# Release images use the same executable bytes shipped in GitHub archives.
+FROM alpine:3.20
+ARG TARGETOS TARGETARCH
+LABEL org.opencontainers.image.source="https://github.com/craftsail/craftsail-growth" \
+      org.opencontainers.image.description="Self-hosted GEO and AI SEO dashboard" \
+      org.opencontainers.image.licenses="AGPL-3.0-or-later"
+RUN apk add --no-cache ca-certificates tzdata \
+ && adduser -D -H -u 10001 app \
+ && mkdir -p /app/bin /app/config /app/data \
+ && chown -R app:app /app
+WORKDIR /app
+COPY --chown=app:app dist/release/bin/${TARGETOS}_${TARGETARCH}/craftsail-growth /app/bin/craftsail-growth
+COPY --chown=app:app config/default.example.toml config/default.example.toml
+USER app
+ENV PATH="/app/bin:${PATH}" CRAFTSAIL_GROWTH_HOST=0.0.0.0
+EXPOSE 8765
+VOLUME ["/app/config", "/app/data"]
+ENTRYPOINT ["craftsail-growth"]
+CMD ["server"]

@@ -12,6 +12,9 @@ import (
 var BuyerGroups = map[string]bool{"价格": true, "推荐": true, "比较": true, "替代": true}
 
 type SheetRec struct {
+	Model                                        string `json:"model"`
+	Language                                     string `json:"language"`
+	Region                                       string `json:"region"`
 	Platform, QID, Question, Answer, SessionMode string
 	WebQueries                                   []string
 	Citations                                    []Citation
