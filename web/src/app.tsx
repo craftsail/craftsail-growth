@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { SIGNED_OUT, getSession, listProjects, logout, type Project, type SessionUser } from "./api";
 import { useAccess } from "./app/access";
 import { Logo } from "./components/brand/Logo";
+import { SystemUpdates } from "./features/settings/system";
 import { Users } from "./features/settings/users";
 import { PasswordPage } from "./features/settings/password";
 import { AppShell } from "./app/shell";
@@ -100,6 +101,7 @@ export function App() {
     return (
       <Routes>
         <Route path="/settings" element={<div className="mx-auto max-w-6xl p-6"><Link className="btn btn-secondary mb-4" to="/">{t("auth.backToFirst")}</Link><h1 className="page-title mb-6">{t("nav.providers")}</h1><ModelProviders /></div>} />
+        <Route path="/settings/system" element={<div className="mx-auto max-w-4xl p-6"><Link className="btn btn-secondary mb-4" to="/">{t("auth.backToFirst")}</Link><h1 className="page-title mb-6">{t("nav.system")}</h1><SystemUpdates /></div>} />
         <Route path="/help" element={<div className="p-6"><Help /></div>} />
         <Route path="*" element={<Onboard onCreated={(p) => setProjects([p])} />} />
       </Routes>
@@ -110,6 +112,7 @@ export function App() {
     <Routes>
       <Route path="/" element={<Navigate to={`/p/${projects[0].slug}/overview`} replace />} />
       <Route path="/onboard" element={user?.role === "admin" ? <Onboard onCreated={(p) => setProjects([p, ...projects])} /> : <Navigate to="/" replace />} />
+      <Route path="/settings/system" element={<Navigate to={`/p/${projects[0].slug}/settings/system`} replace />} />
       <Route path="/settings" element={<Navigate to={`/p/${projects[0].slug}/settings`} replace />} />
       <Route path="/help" element={<Navigate to={`/p/${projects[0].slug}/help`} replace />} />
       <Route path="/p/:slug" element={<AppShell user={user} projects={projects} onProject={(p) => {
@@ -137,6 +140,7 @@ export function App() {
         <Route path="search/landings" element={<GAExplorer report="landing" />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings/projects" element={<AdminOnly><Projects /></AdminOnly>} />
+        <Route path="settings/system" element={<AdminOnly><SystemUpdates /></AdminOnly>} />
         <Route path="settings/users" element={<AdminOnly><Users /></AdminOnly>} />
         <Route path="settings/password" element={<PasswordPage />} />
         <Route path="settings/brand" element={<Facts />} />

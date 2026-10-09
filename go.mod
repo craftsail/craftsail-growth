@@ -11,6 +11,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/crypto v0.33.0
 	golang.org/x/net v0.35.0
+	golang.org/x/sys v0.30.0
 	gorm.io/gorm v1.25.12
 )
 
@@ -115,7 +116,6 @@ require (
 	golang.org/x/arch v0.8.0 // indirect
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	golang.org/x/sync v0.11.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230711160842-782d3b101e98 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230711160842-782d3b101e98 // indirect

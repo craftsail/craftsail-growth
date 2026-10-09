@@ -23,10 +23,12 @@ import (
 	"github.com/craftsail/craftsail-growth/internal/service/project"
 	"github.com/craftsail/craftsail-growth/internal/service/report"
 	"github.com/craftsail/craftsail-growth/internal/service/sample"
+	"github.com/craftsail/craftsail-growth/internal/service/update"
 	"github.com/craftsail/craftsail-growth/internal/service/webstats"
 )
 
 type Handler struct {
+	updater     *update.Service
 	projects    *project.Service
 	audit       *audit.Service
 	bootstrap   *bootstrap.Service
@@ -63,6 +65,10 @@ func Mount(engine *gin.Engine, h *Handler) {
 	r("POST", "/me/password", permAuthed, h.changeOwnPassword)
 
 	// Workspace: admins only.
+	r("GET", "/system/version", permAdmin, h.systemVersion)
+	r("POST", "/system/update", permAdmin, h.systemUpdate)
+	r("POST", "/system/rollback", permAdmin, h.systemRollback)
+	r("POST", "/system/restart", permAdmin, h.systemRestart)
 	r("POST", "/projects", permAdmin, h.createProject)
 	r("PATCH", "/projects/:slug", permAdmin, h.patchProject)
 	r("GET", "/keys", permAdmin, h.getKeys)

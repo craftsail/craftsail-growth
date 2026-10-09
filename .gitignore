@@ -21,3 +21,5 @@ config/*.toml
 internal/webembed/dist/*
 !internal/webembed/dist/.gitkeep
 /demo/
+
+/dist/

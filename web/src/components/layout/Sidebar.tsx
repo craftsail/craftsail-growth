@@ -7,6 +7,7 @@ import {
   IconFolders, IconHome, IconId, IconKey, IconLanguage, IconListCheck, IconListDetails, IconLogout, IconMessages,
   IconQuote, IconReport, IconSelector, IconStethoscope, IconUserCog, IconUsersGroup, IconWorldSearch, type Icon as TablerIcon,
 } from "@tabler/icons-react";
+import { VersionBadge } from "../../features/settings/system";
 import { NAV, itemFor, type NavIcon } from "../../app/nav";
 import { LogoMark, Wordmark } from "../brand/Logo";
 import { LOCALES, useI18n } from "../../i18n";
@@ -89,6 +90,7 @@ export function Sidebar({
       </nav>
 
       <div className="shrink-0 px-3 pb-3">
+        {isAdmin && <VersionBadge collapsed={collapsed} />}
         <NavLink
           to={`/p/${slug}/help`}
           onClick={onNavigate}

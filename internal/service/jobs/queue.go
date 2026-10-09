@@ -16,6 +16,11 @@ func (d *Deferred) Error() string { return "job has more batches to process" }
 
 func (s *Service) ResumeDue(ctx context.Context) { s.resumeDue(ctx, 0) }
 func (s *Service) resumeDue(ctx context.Context, onlyID uint64) {
+	s.admission.RLock()
+	defer s.admission.RUnlock()
+	if s.restarting {
+		return
+	}
 	rows, err := s.jobs.Due(ctx, time.Now().Unix(), onlyID)
 	if err != nil {
 		return

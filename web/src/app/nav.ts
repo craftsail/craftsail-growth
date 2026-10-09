@@ -65,6 +65,7 @@ export const NAV: NavSection[] = [
       { id: "users", label: "nav.users", icon: "usercog", to: "settings/users", admin: true },
       { id: "providers", label: "nav.providers", icon: "cpu", to: "settings/providers", admin: true },
       { id: "google", label: "nav.google", icon: "google", to: "settings/google", admin: true },
+      { id: "system", label: "nav.system", icon: "cpu", to: "settings/system", admin: true },
     ],
   },
 ];
@@ -112,6 +113,7 @@ export function helpTopicFor(path: string): string | null {
   if (leaf === "search/indexing") return "indexing";
   if (leaf === "search/channels" || leaf === "search/landings") return "channels";
   if (leaf.startsWith("search")) return "search";
+  if (leaf === "settings/system") return "updates";
   if (leaf === "settings/google") return "google";
   if (leaf === "reports") return "reports";
   if (leaf === "settings/questions") return "prompts";

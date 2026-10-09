@@ -130,6 +130,51 @@ make build              # builds the dashboard, then the craftsail-growth binary
 The result is a single binary with the dashboard embedded. Copy it to any
 machine of the same OS and architecture; nothing else is needed at runtime.
 
+### In-app updates
+
+Admins can open **Workspace → System updates** to check GitHub releases, read
+release notes, install the latest stable version, roll back, and restart. As in
+sub2api, the dashboard checks automatically (20-minute cache), but installation
+and restart are explicit administrator actions. Members cannot access these APIs.
+
+Public release images and download archives contain the **same executable**, with
+the web dashboard embedded. Installation requires a matching Linux/macOS archive,
+a mandatory SHA-256 checksum from that release, and a writable executable directory.
+Source builds (`--version` reports `dev`) can check releases but must be upgraded
+through their build workflow. No orchestration CLI or Docker socket is required.
+
+- Back up the database and configuration before upgrading. Rollback restores only
+  the program, **not database migrations**; verify schema compatibility before
+  choosing an older version. The local backup works without GitHub access; the
+  three most recent compatible older stable releases can also be downloaded.
+- Installation preserves the previous executable and atomically replaces the
+  launch path. The current process keeps serving until restarted. A pending
+  installation can be cancelled by restoring the local backup.
+- In-app restart is available to a Linux process running as PID 1 in a container,
+  or a native supervised service with `CRAFTSAIL_GROWTH_RESTART_ON_EXIT=1`.
+  Configure Docker `restart: unless-stopped`/`always` or systemd `Restart=always`
+  (not `on-failure`: restart exits with code 0). Running background jobs block
+  restart; queued resumable jobs continue after startup. Other setups must restart
+  through their service manager.
+- An update survives restarting **the same container**. Recreating a container
+  restores its image version and discards the local executable backup, just like
+  sub2api. For a lasting deployment, pull the desired versioned image and recreate
+  the container, retaining the config and data volumes. Read-only containers and
+  multiple replicas should use image rollouts instead of in-app installation.
+- `CRAFTSAIL_GROWTH_UPDATE_GITHUB_TOKEN` optionally increases GitHub API limits.
+  It is sent only to the GitHub API, never release downloads. Fork releases use
+  the repository baked into their build metadata; users cannot submit arbitrary
+  download URLs. `craftsail-growth --version-json` shows that metadata without
+  loading configuration or opening the database.
+
+Maintainers publish a stable `vMAJOR.MINOR.PATCH` tag through the release workflow.
+It builds Linux/macOS archives for amd64/arm64, `checksums.txt`, and multi-platform
+GHCR images from the same binaries, then publishes the GitHub Release. A manual
+workflow run must select an existing stable tag. Local packaging after building
+`web/dist` uses `scripts/build-release.sh v1.2.3`; set `GITHUB_REPOSITORY=owner/repo`
+for a fork. Existing images built before this feature need a one-time image
+upgrade; they cannot gain the updater merely by checking for updates.
+
 ## How it works
 
 ```mermaid

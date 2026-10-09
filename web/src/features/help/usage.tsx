@@ -36,6 +36,14 @@ export function usageBodies({ t, n, page, topic }: Kit) {
   ];
   const issues = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
   return {
+    updates: <>
+      <h2>{t("helpTopics.updates.label")}</h2>
+      <p>{t("update.help", { system: n("nav.system") })}</p>
+      <p>{page("settings/system", "nav.system")}</p>
+      <Warn>{t("update.rollbackHelp")}</Warn>
+      <p>{t("update.restartHelp")}</p><p>{t("update.restartUnavailable")}</p>
+      <Tip>{t("update.containerHelp")}</Tip>
+    </>,
     start: section("start", "helpUsage.startIntro", <>
       {steps(["helpUsage.startCreate", "helpUsage.startEvidence", "helpUsage.startAction", "helpUsage.startOptional"])}
       <p>{page("settings/projects", "nav.projects")}{" · "}{page("overview", "nav.overview")}</p>

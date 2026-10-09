@@ -10,7 +10,7 @@ import type { TipId } from "../../app/tips";
 export const TOPIC_IDS = [
   "start", "setup", "prompts", "terms", "numbers", "pages", "search", "channels",
   "opportunities", "observations", "indexing", "reports", "audit",
-  "manual", "providers", "google", "schedule", "access", "troubleshooting", "limits",
+  "manual", "providers", "google", "schedule", "access", "updates", "troubleshooting", "limits",
 ] as const;
 export type TopicId = (typeof TOPIC_IDS)[number];
 export type GroupId = "start" | "read" | "act" | "connect" | "help";
@@ -20,7 +20,7 @@ const TOPIC_GROUPS: Record<TopicId, GroupId> = {
   start: "start", setup: "start", prompts: "start", terms: "read", numbers: "read", pages: "read",
   search: "read", channels: "read", opportunities: "act", observations: "act", indexing: "act",
   reports: "act", audit: "act", manual: "act", providers: "connect", google: "connect",
-  schedule: "connect", access: "connect", troubleshooting: "help", limits: "help",
+  schedule: "connect", access: "connect", updates: "help", troubleshooting: "help", limits: "help",
 };
 export const TOPICS = Object.fromEntries(TOPIC_IDS.map(id => [id, {
   group: TOPIC_GROUPS[id], label: `helpTopics.${id}.label`, keys: `helpTopics.${id}.keys`,
@@ -46,7 +46,7 @@ export type HelpDoc = {
 };
 
 export function makeKit(slug: string, go: (id: TopicId) => void, t: Kit["t"]): Kit {
-  const to = (path: string) => (slug ? `/p/${slug}/${path}` : "/");
+  const to = (path: string) => (slug ? `/p/${slug}/${path}` : path === "settings/system" ? "/settings/system" : "/");
   return {
     n: t, t,
     page: (path, label) => <Link to={to(path)}>{t(label)}</Link>,

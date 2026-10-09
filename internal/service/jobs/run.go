@@ -40,13 +40,15 @@ type Spec struct {
 }
 
 type Service struct {
-	db       *gorm.DB
-	projects *project.Service
-	jobs     *repo.Jobs
-	specs    map[string]Spec
-	mu       sync.Mutex
-	cancels  map[uint64]context.CancelFunc
-	hooks    []func(*model.Job)
+	db         *gorm.DB
+	projects   *project.Service
+	jobs       *repo.Jobs
+	specs      map[string]Spec
+	mu         sync.Mutex
+	admission  sync.RWMutex
+	restarting bool
+	cancels    map[uint64]context.CancelFunc
+	hooks      []func(*model.Job)
 }
 
 func New(db *gorm.DB) *Service {
@@ -70,6 +72,11 @@ func (s *Service) RegisterSpec(action string, spec Spec) {
 }
 
 func (s *Service) Start(ctx context.Context, slug, action string, args map[string]any) (*model.Job, error) {
+	s.admission.RLock()
+	defer s.admission.RUnlock()
+	if s.restarting {
+		return nil, ErrBusy
+	}
 	s.mu.Lock()
 	sp, ok := s.specs[action]
 	s.mu.Unlock()
@@ -315,4 +322,18 @@ func or(a, b string) string {
 		return a
 	}
 	return b
+}
+
+// PrepareRestart closes admission only when all executing work has finished.
+// Queued resumable jobs remain durable and will resume in the new process.
+func (s *Service) PrepareRestart() error {
+	s.admission.Lock()
+	defer s.admission.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(s.cancels) > 0 {
+		return ErrBusy
+	}
+	s.restarting = true
+	return nil
 }

@@ -25,6 +25,7 @@ import (
 	"github.com/craftsail/craftsail-growth/internal/service/project"
 	"github.com/craftsail/craftsail-growth/internal/service/report"
 	"github.com/craftsail/craftsail-growth/internal/service/sample"
+	"github.com/craftsail/craftsail-growth/internal/service/update"
 	"github.com/craftsail/craftsail-growth/internal/service/webstats"
 )
 
@@ -54,6 +55,7 @@ func Wire(db *gorm.DB, token string, js *jobs.Service) (*Handler, error) {
 	}
 	h.web = webstats.New(db)
 	h.jobs = js
+	h.updater = update.New(js.PrepareRestart)
 	h.opportunity = opportunity.NewDB(db)
 	h.accounts = account.New(db)
 	h.EnvRoot = dotenv.FindRoot()

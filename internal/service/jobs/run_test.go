@@ -149,3 +149,41 @@ func waitStatus(t *testing.T, svc *Service, id uint64, want string) {
 	}
 	t.Fatalf("job %d status %s want %s", id, st, want)
 }
+
+func TestRestartAdmissionWaitsForJobs(t *testing.T) {
+	db := jobDB(t)
+	p, err := project.New(db).Create(context.Background(), project.CreateInput{Name: "Restart fixture", NoSite: true, Materials: "A fixture for background job restart admission."})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := New(db)
+	gate := make(chan struct{})
+	s.Register("slow", func(context.Context, string, map[string]any, func(string)) error { <-gate; return nil })
+	j, err := s.Start(context.Background(), p.Slug, "slow", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.PrepareRestart(); !errors.Is(err, ErrBusy) {
+		t.Fatalf("running job: %v", err)
+	}
+	close(gate)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := s.Wait(ctx, j.ID); err != nil {
+		t.Fatal(err)
+	}
+	for {
+		if err := s.PrepareRestart(); err == nil {
+			break
+		}
+		select {
+		case <-ctx.Done():
+			t.Fatal("finished job still blocks restart")
+		case <-time.After(time.Millisecond):
+		}
+	}
+	if _, err := s.Start(context.Background(), p.Slug, "slow", nil); !errors.Is(err, ErrBusy) {
+		t.Fatalf("admission still open: %v", err)
+	}
+	s.ResumeDue(context.Background())
+}

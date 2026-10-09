@@ -820,3 +820,26 @@ export function samplingPreview(slug: string, platforms: string, repeat: number,
 
 export type PageMapping = { state:"candidate"|"ambiguous"|"unmatched"|"unverified"; landing:string; hosts:{hostname:string;landing:string}[]; urls:string[]; ga_coverage:GrainCoverage; gsc_coverage:GrainCoverage };
 export function getPageMapping(slug:string, params:URLSearchParams){return request<PageMapping>(`/api/projects/${slug}/ga-page-mapping?${params}`);}
+
+export type SystemVersion = {
+  current: { version: string; commit: string; date: string; build_type: string; repository: string };
+  instance: string;
+  latest?: { tag_name: string; name: string; body: string; published_at: string; html_url: string };
+  has_update: boolean;
+  can_update: boolean;
+  can_restart: boolean;
+  pending_version?: string;
+  backup_version?: string;
+  rollbacks: string[];
+  warning?: string;
+  cached: boolean;
+  checked_at?: string;
+};
+let versionRequest: Promise<SystemVersion> | undefined;
+// The sidebar and settings page share one request, including during startup.
+export function getSystemVersion(force = false): Promise<SystemVersion> {
+  if (!versionRequest) versionRequest = request<SystemVersion>(`/api/system/version${force ? "?force=true" : ""}`, { signal: AbortSignal.timeout(30_000) }).finally(() => { versionRequest = undefined; });
+  return versionRequest;
+}
+export const applySystemUpdate = (version: string, rollback = false) => request<{ need_restart: boolean }>(`/api/system/${rollback ? "rollback" : "update"}`, { method: "POST", body: JSON.stringify({ version }) });
+export const restartSystem = () => request<{ restarting: boolean }>("/api/system/restart", { method: "POST", body: "{}" });

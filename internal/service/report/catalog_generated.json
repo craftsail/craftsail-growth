@@ -279,6 +279,7 @@
       "scenario": "At this site’s reference CTR ({ctr}%), the current impressions imply {clicks} additional clicks as a scenario. This is not a forecast or evidence that a title change will work."
     },
     "nav": {
+      "system": "System updates",
       "sections": {
         "measure": "AI visibility",
         "improve": "Improve",
@@ -597,6 +598,7 @@
       "scenario": "按本站参考 CTR（{ctr}%），当前展示对应额外 {clicks} 次点击的情景估计。这不是预测，也不能证明修改标题会有效。"
     },
     "nav": {
+      "system": "系统更新",
       "sections": {
         "measure": "AI 可见性",
         "improve": "优化",
@@ -1147,6 +1149,7 @@
       "scenario": "Com o CTR de referência deste site ({ctr}%), as impressões atuais sugerem {clicks} cliques adicionais em um cenário. Não é uma previsão nem evidência de que mudar o título funcionará."
     },
     "nav": {
+      "system": "Atualizações do sistema",
       "sections": {
         "measure": "Visibilidade em IA",
         "improve": "Melhorar",
