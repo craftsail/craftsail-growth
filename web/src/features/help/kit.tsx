@@ -3,18 +3,28 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { IconAlertTriangle, IconBulb } from "@tabler/icons-react";
-import type { Key } from "../../i18n";
+import type { Key, Vars } from "../../i18n";
 import type { TipId } from "../../app/tips";
 
 // Topic order is the reading order; the Next button follows it.
 export const TOPIC_IDS = [
-  "start", "setup", "prompts", "terms", "numbers", "pages", "opportunities", "audit",
+  "start", "setup", "prompts", "terms", "numbers", "pages", "search", "channels",
+  "opportunities", "observations", "indexing", "reports", "audit",
   "manual", "providers", "google", "schedule", "access", "troubleshooting", "limits",
 ] as const;
 export type TopicId = (typeof TOPIC_IDS)[number];
 export type GroupId = "start" | "read" | "act" | "connect" | "help";
 
-export type Topic = { group: GroupId; label: string; keys: string };
+export type Topic = { group: GroupId; label: Key; keys: Key };
+const TOPIC_GROUPS: Record<TopicId, GroupId> = {
+  start: "start", setup: "start", prompts: "start", terms: "read", numbers: "read", pages: "read",
+  search: "read", channels: "read", opportunities: "act", observations: "act", indexing: "act",
+  reports: "act", audit: "act", manual: "act", providers: "connect", google: "connect",
+  schedule: "connect", access: "connect", troubleshooting: "help", limits: "help",
+};
+export const TOPICS = Object.fromEntries(TOPIC_IDS.map(id => [id, {
+  group: TOPIC_GROUPS[id], label: `helpTopics.${id}.label`, keys: `helpTopics.${id}.keys`,
+}])) as Record<TopicId, Topic>;
 
 // Kit is what topic bodies use to link into the app. Page names come from
 // the nav catalog, so the help text follows any rename.
@@ -22,24 +32,24 @@ export type Kit = {
   page: (path: string, label: Key) => ReactNode;
   topic: (id: TopicId, text: string) => ReactNode;
   n: (label: Key) => string;
+  t: (key: Key, vars?: Vars) => string;
 };
 
-// One HelpDoc per locale. Bodies are prose, so each locale writes its own
-// instead of splitting sentences into catalog keys.
+// Legacy reference prose stays in each locale document. Current workflows
+// share catalog-backed rendering through usageBodies and usageButtons.
 export type HelpDoc = {
   groups: Record<GroupId, string>;
-  topics: Record<TopicId, Topic>;
   body: (k: Kit) => Record<TopicId, ReactNode>;
   // buttons adds detail to each button's tip, shown under "Buttons on this
   // page" in the button's topic. Every tip must have an entry.
   buttons: (k: Kit) => Record<TipId, ReactNode>;
 };
 
-export function makeKit(slug: string, go: (id: TopicId) => void, n: (label: Key) => string): Kit {
+export function makeKit(slug: string, go: (id: TopicId) => void, t: Kit["t"]): Kit {
   const to = (path: string) => (slug ? `/p/${slug}/${path}` : "/");
   return {
-    n,
-    page: (path, label) => <Link to={to(path)}>{n(label)}</Link>,
+    n: t, t,
+    page: (path, label) => <Link to={to(path)}>{t(label)}</Link>,
     topic: (id, text) => <button type="button" className="text-primary-600 hover:underline" onClick={() => go(id)}>{text}</button>,
   };
 }
@@ -88,7 +98,6 @@ export const FX = {
   pageScore: "page score = crawlability (15) + length (15) + structure (20)\n           + extractable blocks (25) + authority (15) + relevance (10)   = 0–100\ngrade: A ≥ 80 · B ≥ 65 · C ≥ 45 · D otherwise\nsite average = mean score of reachable pages",
   pageParts: "crawlability  HTTP 200 +7 (other 2xx/3xx +3) · no noindex +3 · canonical +2 · ≥120 words +3\nlength        15 × factor: ≥1500 words 1.00 · ≥1000 0.85 · ≥600 0.60 · ≥300 0.35 · ≥120 0.15\nstructure     one H1 +4 (several +2) · H2 count ×6 · paragraphs ×5 · list density ×5\nblocks        definition +7 · ≥3 numbers with units +7 · comparison +6 · steps +5\nauthority     date +4 · author +2 · external links ×4 · schema types ×5\nrelevance     share of question keywords in title, H1 and H2, ×10",
   gap: "citation gap on a question = competitor sites are cited AND your site is not\n                             (over the answers in the chosen period)",
-  striking: "striking distance : position 4–20 and impressions ≥ 20\nlow click-through : impressions ≥ 50, position ≤ 15 and expected CTR − actual CTR > 2 points\n   expected CTR by position: 1 → 28% · 2 → 15% · 3 → 11% · ≤5 → 7% · ≤10 → 3% · ≤20 → 1%\npage decay        : previous clicks ≥ 10 and change ≤ −25%\ncannibalization   : two or more of your pages get impressions for one query (top page ≥ 20)",
   verify: "audit action   passes when the rule no longer fires in the latest audit\ncitation action passes when visibility on that question is significantly up (Newcombe)\nvisibility drop passes when visibility is no longer significantly below the baseline\nverified → regressed when a later check fails",
   calls: "calls per day   = enabled questions × engines with a key × runs per day\ntokens per call ≈ 60 (question) + 900 (answer) = 960\ntokens per day  ≈ calls per day × 960",
   callsExample: "20 questions × 3 engines × 3 runs = 180 calls ≈ 172,800 tokens a day",

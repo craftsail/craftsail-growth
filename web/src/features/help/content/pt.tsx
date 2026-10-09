@@ -1,92 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { Formula, FX, Table, Tip, Warn, type HelpDoc } from "../kit";
+import { usageBodies, usageButtons } from "../usage";
+import { Formula, FX, Table, Warn, type HelpDoc } from "../kit";
 
 export const pt: HelpDoc = {
   groups: { start: "Primeiros passos", read: "Entender os resultados", act: "Agir", connect: "Conexões", help: "Ajuda" },
-  topics: {
-    start: { group: "start", label: "Comece aqui", keys: "visão geral ciclo o que é início rápido primeiro" },
-    setup: { group: "start", label: "Configurar um projeto", keys: "projeto criar checklist chaves marca concorrentes perguntas agenda onboarding" },
-    prompts: { group: "start", label: "Escrever boas perguntas", keys: "pergunta prompt lista grupo com marca sem marca categoria genérica zero" },
-    terms: { group: "read", label: "Termos principais", keys: "glossário visibilidade reconhecimento participação de voz citação expansão período execução amostra acesso" },
-    numbers: { group: "read", label: "Como os números funcionam", keys: "fórmula fórmulas intervalo ic wilson newcombe amostra pequena não medido api web falhas estabilidade" },
-    pages: { group: "read", label: "Página por página", keys: "visão geral visibilidade participação citações expansão respostas busca relatórios navegação menu" },
-    opportunities: { group: "act", label: "Plano de ação", keys: "oportunidades aceitar descartar prioridade corrigir primeiro verificada regrediu status" },
-    audit: { group: "act", label: "Auditoria do site", keys: "prontidão camadas acesso descoberta compreensão citação bloqueado severidade evidência problemas exportar" },
-    manual: { group: "act", label: "Amostragem manual", keys: "planilha importar exportar chatgpt web google ai overviews baidu sem api" },
-    providers: { group: "connect", label: "Provedores de modelos", keys: "api chave mecanismo relay endpoint modelo busca na web custo" },
-    google: { group: "connect", label: "Google Search e GA4", keys: "oauth cliente conta de serviço search console ga4 propriedade sincronizar redirecionamento" },
-    access: { group: "connect", label: "Usuários e acesso", keys: "usuário usuários função administrador membro permissão ver editar senha compartilhar convidar equipe login" },
-    schedule: { group: "connect", label: "Agenda e execuções", keys: "período todo dia execuções por dia tokens custo tentar de novo tarefa interrompida" },
-    troubleshooting: { group: "help", label: "Solução de problemas", keys: "problema erro 0% não medido falhou travado reconectar vazio spa bloqueado" },
-    limits: { group: "help", label: "O que isto não é", keys: "limites promessa garantia palavra-chave backlink" },
-  },
-  body: ({ page, topic, n }) => ({
-    start: (
-      <>
-        <h2>Comece aqui</h2>
-        <p>O craftsail-growth responde a uma pergunta: <strong>quando as pessoas perguntam aos mecanismos de IA sobre a sua categoria, as respostas mencionam e citam você, e isso está melhorando?</strong></p>
-        <p>Ele funciona como um ciclo que se repete a cada período:</p>
-        <ol>
-          <li><strong>Medir.</strong> Faz suas perguntas a cada mecanismo várias vezes e registra cada resposta: quem é mencionado, em que ordem e quais fontes são citadas.</li>
-          <li><strong>Diagnosticar.</strong> Rastreia e audita seu site em quatro camadas: os mecanismos conseguem buscá-lo, encontrá-lo, entendê-lo e citá-lo.</li>
-          <li><strong>Agir.</strong> Achados da auditoria, lacunas de citação, dados de busca e quedas viram um único plano de ação ordenado. Você aceita os itens que vai fazer.</li>
-          <li><strong>Verificar.</strong> O período seguinte confere cada ação aceita pela sua regra e a marca como verificada, ou como regrediu se ela voltar a falhar.</li>
-        </ol>
-        <p>A barra lateral segue o mesmo ciclo: <strong>{n("nav.sections.measure")}</strong> mede, <strong>{n("nav.sections.improve")}</strong> diagnostica e age, <strong>{n("nav.sections.project")}</strong> guarda a configuração deste projeto e <strong>{n("nav.sections.workspace")}</strong> o que todos os projetos compartilham.</p>
-        <h3>Seus primeiros 15 minutos</h3>
-        <ol>
-          <li>Adicione pelo menos uma chave de mecanismo em {page("settings/providers", "nav.providers")}. Faça isso <strong>antes</strong> de criar um projeto; a chave também é usada para rascunhar os fatos da marca e as perguntas.</li>
-          <li>Crie um projeto em {page("settings/projects", "nav.projects")} com “Executar agora o primeiro período” marcado.</li>
-          <li>Enquanto ele roda, leia {topic("prompts", "Escrever boas perguntas")} e depois confira a lista rascunhada em {page("settings/questions", "nav.questions")}.</li>
-          <li>Quando terminar, abra {page("overview", "nav.overview")} e depois o {page("opportunities", "nav.actionPlan")}.</li>
-        </ol>
-        <p>Depois, administradores podem convidar colegas ou clientes em {page("settings/users", "nav.users")}; veja {topic("access", "Usuários e acesso")}.</p>
-        <Tip>O primeiro período só mostra onde você está. O valor vem de repeti-lo: ative uma agenda em {page("settings/schedule", "nav.schedule")}.</Tip>
-      </>
-    ),
-    setup: (
-      <>
-        <h2>Configurar um projeto</h2>
-        <p>Um projeto é uma marca e o seu site. Todo o resto, das perguntas aos relatórios, pertence a um projeto. Troque de projeto pelo nome do projeto no início da trilha de navegação, no topo de cada página.</p>
-        <Table head={["Passo", "Onde", "Por que importa"]} rows={[
-          ["1. Conectar mecanismos", page("settings/providers", "nav.providers"), "Sem chave nada é amostrado, e as perguntas voltam a modelos genéricos."],
-          ["2. Criar o projeto", page("settings/projects", "nav.projects"), "Informe a URL do site. Sem site, marque “Sem site próprio” e informe o nome da marca."],
-          ["3. Conferir os fatos da marca", page("settings/brand", "nav.brand"), "Um formulário curto: nome e outros nomes, definição em uma linha, categoria, público, números-chave com fontes, quando serve e limites. Rascunhado a partir do site; campos vazios não foram encontrados lá. O llms.txt e o JSON-LD gerados vêm daqui."],
-          ["4. Conferir concorrentes", page("settings/competitors", "nav.competitors"), "De três a seis concorrentes reais, com apelidos. A participação de voz e a posição são contadas contra essa lista."],
-          ["5. Ajustar as perguntas", page("settings/questions", "nav.questions"), <>O passo mais importante. Veja {topic("prompts", "Escrever boas perguntas")}.</>],
-          ["6. Conectar o Google (opcional)", page("settings/google", "nav.google"), "Adiciona cliques, consultas e sessões de busca, e itens de busca no plano de ação."],
-          ["7. Agendar", page("settings/schedule", "nav.schedule"), "Execute um período por semana ou por dia para que tendências e verificações funcionem."],
-          ["8. Convidar pessoas (opcional)", page("settings/users", "nav.users"), "Adicione colegas ou clientes e compartilhe cada projeto para ver ou editar."],
-        ]} />
-        <Warn>Criou o projeto antes de adicionar uma chave? As perguntas dele são modelos genéricos. Adicione uma chave, abra {page("settings/questions", "nav.questions")} e clique em <strong>Refazer com IA</strong>. Isso substitui as perguntas e os concorrentes por um rascunho escrito a partir do seu site; revise os dois depois.</Warn>
-      </>
-    ),
-    prompts: (
-      <>
-        <h2>Escrever boas perguntas</h2>
-        <p>Perguntas, também chamadas de prompts, são o que a ferramenta pergunta a cada mecanismo. Elas decidem o que é medido; uma lista fraca torna todos os outros números sem sentido. Edite-as em {page("settings/questions", "nav.questions")}.</p>
-        <h3>Nomeie a categoria como um comprador faria</h3>
-        <Table head={["Fraca", "Melhor"]} rows={[
-          ["Quais são as melhores ferramentas desta categoria?", "Quais são as melhores ferramentas de linha de comando para converter documentos Word em PDF?"],
-          ["O que uma equipe pequena deve usar?", "Qual API de automação de documentos uma pequena equipe de SaaS deve usar?"],
-          ["Por onde começo no primeiro dia?", "Como gerar relatórios Excel em Python sem o Microsoft Office?"],
-        ]} />
-        <p>Uma pergunta que não nomeia a categoria faz os mecanismos pedirem esclarecimento em vez de recomendar algo. A visibilidade fica então em 0%, faça o que fizer no site.</p>
-        <h3>Grupos</h3>
-        <p>Cada pergunta pertence a um grupo. Recomendação, Comparação, Alternativas e Preço são perguntas de <strong>comprador</strong>. Riscos e Caso de uso explicam a categoria. <strong>Verificação de marca</strong> cita sua marca de propósito.</p>
-        <h3>Com marca e sem marca</h3>
-        <p>Uma pergunta que contém o nome da marca, um apelido ou o seu domínio é <strong>com marca</strong>; a coluna Sistema mostra isso. Perguntas com marca mencionam você quase por definição, então são contadas como <strong>reconhecimento</strong> e nunca entram na visibilidade. Prefira perguntas de comprador sem marca.</p>
-        <h3>Regras práticas</h3>
-        <ul>
-          <li>Escreva as perguntas no idioma dos seus compradores. Cada pergunta ativa é feita em cada mecanismo conectado.</li>
-          <li>Comece com 10 a 20 perguntas. Cada uma custa uma chamada por mecanismo por execução.</li>
-          <li>Use suas próprias tags (por exemplo, uma linha de produto) para filtrar as páginas de visibilidade em IA.</li>
-          <li>Desative uma pergunta em vez de excluí-la para manter o histórico.</li>
-          <li><strong>Refazer com IA</strong> pede a um modelo conectado uma nova lista escrita a partir do seu site. Ela substitui as perguntas e os concorrentes atuais.</li>
-        </ul>
-      </>
-    ),
+  body: (k) => { const { page, n } = k; return ({
+    ...usageBodies(k),
     terms: (
       <>
         <h2>Termos principais</h2>
@@ -143,61 +63,6 @@ export const pt: HelpDoc = {
         <h3>Estabilidade das citações</h3>
         <p>O quanto o conjunto de sites citados muda de um dia para o outro. Nota baixa significa que as fontes ainda estão abertas a novos sites; nota alta significa que os mecanismos citam sempre os mesmos. Serve só para ordenar sugestões.</p>
         <Formula>{FX.stability}</Formula>
-      </>
-    ),
-    pages: (
-      <>
-        <h2>Página por página</h2>
-        <p>Páginas com várias visões, como {n("nav.audit")} e {n("nav.search")}, mostram-nas como abas abaixo do título.</p>
-        <Table head={["Página", "Responde à pergunta", "O que fazer em seguida"]} rows={[
-          [page("overview", "nav.overview"), "Onde estamos? Visibilidade, participação de voz, citações próprias, prontidão, principais ações.", "Abra a área mais fraca."],
-          [page("ai/visibility", "nav.visibility"), "Quais perguntas nos mencionam, em qual mecanismo, ao longo do tempo.", "Abra uma pergunta para ler as respostas."],
-          [page("ai/share-of-voice", "nav.sov"), "Quem é citado no nosso lugar.", <>Adicione concorrentes que faltam em {n("nav.competitors")}.</>],
-          [page("ai/citations", "nav.citations"), "Em quais fontes os mecanismos se apoiam, por tipo de fonte e de página; quais citam concorrentes e não nós.", <>Trabalhe essas fontes a partir do {n("nav.actionPlan")}.</>],
-          [page("ai/fan-out", "nav.fanout"), "O que os mecanismos realmente buscam. Só mecanismos com busca na web informam isso.", "Use as palavras adicionadas nas suas páginas e perguntas."],
-          [page("ai/answers", "nav.answers"), "Cada resposta bruta, com citações e buscas.", "Corrija leituras erradas; importe amostras manuais."],
-          [page("opportunities", "nav.actionPlan"), "O que fazer em seguida, em ordem, e se funcionou.", "Aceitar, começar, marcar como concluída."],
-          [page("audit", "nav.audit"), "Os mecanismos conseguem buscar, encontrar, entender e citar o site.", "Corrija a primeira camada que falha."],
-          [page("search", "nav.search"), "Cliques, impressões, sessões, consultas e páginas de entrada do Google.", "Compare com a visibilidade em IA."],
-          [page("reports", "nav.reports"), "Uma página compartilhável por período.", "Baixe em HTML ou Markdown."],
-        ]} />
-        <p>Quando o título da página mostra <strong>{n("access.viewOnly")}</strong>, você só pode ver esse projeto: todos os botões que alteram dados ficam ocultos. Veja {topic("access", "Usuários e acesso")}.</p>
-        <Tip>Os filtros (modelos, tags, período) ficam no topo de cada página de visibilidade em IA. Eles ficam no endereço da página, então você pode salvar ou compartilhar uma visão filtrada.</Tip>
-      </>
-    ),
-    opportunities: (
-      <>
-        <h2>Plano de ação</h2>
-        <p>O {page("opportunities", "nav.actionPlan")} é a única lista de tarefas. As sugestões vêm de quatro fontes e são agrupadas em <strong>Corrigir primeiro</strong>, <strong>Vale a pena</strong> e <strong>Se sobrar tempo</strong>:</p>
-        <Table head={["Fonte", "Exemplo", "Grupo"]} rows={[
-          ["Auditoria do site", "Um WAF bloqueia rastreadores de IA; sem dados estruturados", "Crítico → Corrigir primeiro, aviso → Vale a pena, informação → Se sobrar tempo. Regras observacionais nunca vão para Corrigir primeiro."],
-          ["Citações em IA", "Concorrentes são citados numa pergunta e você não", "Vale a pena, ou Se sobrar tempo quando a fonte é difícil de alcançar"],
-          ["Busca", "Uma consulta fica logo fora das três primeiras posições; taxa de cliques baixa", "Se sobrar tempo"],
-          ["Mudança de métrica", "A visibilidade caiu além do ruído", "Corrigir primeiro"],
-        ]} />
-        <h3>Abas e ciclo de vida</h3>
-        <ol>
-          <li><strong>Sugestões</strong>: aceite um item ou descarte-o se não se aplicar. Itens descartados podem ser restaurados na aba deles.</li>
-          <li><strong>Em andamento</strong>: itens aceitos são registrados com uma linha de base, por exemplo “3 páginas afetadas”. Clique em Começar e depois em Marcar como concluída.</li>
-          <li><strong>Verificadas</strong> quando a verificação do período seguinte passa. Uma ação verificada que volta a falhar fica como <strong>Regrediu</strong> e retorna para Em andamento.</li>
-        </ol>
-        <h3>Como “concluída” é verificada</h3>
-        <ul>
-          <li>Ações de auditoria passam quando o problema some da auditoria mais recente.</li>
-          <li>Ações de citação passam quando a visibilidade naquela pergunta sobe além do ruído.</li>
-          <li>Uma queda de visibilidade passa quando a visibilidade volta ao ruído da linha de base.</li>
-          <li>Ações de busca são verificadas por você: marque como concluída quando terminar.</li>
-        </ul>
-        <h3>Quando cada sugestão aparece</h3>
-        <p><strong>Citações em IA.</strong> Uma pergunta recebe uma sugestão de citação quando os mecanismos citam sites de concorrentes para ela e nunca o seu:</p>
-        <Formula>{FX.gap}</Formula>
-        <p><strong>Busca.</strong> Do Google Search Console, em 28 dias que terminam três dias atrás (os dados do Google chegam com atraso), comparados com os 28 dias anteriores:</p>
-        <Formula>{FX.striking}</Formula>
-        <p><strong>Mudança de métrica.</strong> A visibilidade dos últimos 30 dias comparada com os 30 dias anteriores, com a regra “Alta, queda ou ruído” de {topic("numbers", "Como os números funcionam")}.</p>
-        <h3>Como uma ação é verificada</h3>
-        <Formula>{FX.verify}</Formula>
-        <p>Consultas de busca com a sua marca ficam de fora: quem busca pelo seu nome já encontrou você.</p>
-        <Tip>Cada item mostra “Como corrigir” e “Concluída quando”. A CLI tem a mesma lista: <code>craftsail-growth opportunities --slug &lt;project&gt;</code>.</Tip>
       </>
     ),
     audit: (
@@ -258,26 +123,6 @@ export const pt: HelpDoc = {
         <Formula>{FX.callsExample}</Formula>
       </>
     ),
-    google: (
-      <>
-        <h2>Google Search e GA4</h2>
-        <p>Opcional. Adiciona cliques, impressões e consultas do Search Console e sessões do GA4 a {n("nav.search")}, e itens de busca ao plano de ação. A visibilidade em IA e a auditoria funcionam sem isso.</p>
-        <h3>Passo 1: conectar uma conta Google</h3>
-        <p>Este servidor precisa do seu próprio <strong>cliente OAuth</strong> uma vez. Ele é a identidade do app no Google: ao clicar em Conectar Google, o Google mostra a tela de consentimento deste app e envia o resultado de volta para a URI de redirecionamento. Uma instalação própria não pode compartilhar um cliente, porque cada servidor tem seu próprio endereço.</p>
-        <ol>
-          <li>Ative a Search Console API, a Google Analytics Data API e a Analytics Admin API no Google Cloud.</li>
-          <li>Crie um cliente OAuth do tipo Aplicativo da Web e adicione exatamente a URI de redirecionamento mostrada na página.</li>
-          <li>Cole o ID e a chave secreta do cliente, salve e clique em Conectar Google.</li>
-        </ol>
-        <p>Prefere não entrar pelo navegador? Use uma <strong>conta de serviço</strong> em Avançado e adicione o e-mail dela à propriedade do Search Console e como Leitor na propriedade do GA4.</p>
-        <h3>Passo 2: escolher as propriedades</h3>
-        <p>Escolha a propriedade do Search Console e a do GA4 deste projeto e clique em <strong>Sincronizar agora</strong>. Cada cartão mostra o status e o último dia importado.</p>
-        <h3>Como os números de busca são calculados</h3>
-        <p>Os totais vêm dos totais diários do Google. As linhas por consulta e por página deixam de fora consultas anonimizadas, então somam sempre menos; a diferença é mostrada, nunca preenchida.</p>
-        <Formula>{FX.search}</Formula>
-        <Warn>Enquanto a tela de consentimento estiver em Teste, o Google expira o login após cerca de 7 dias e o status muda para “Precisa entrar de novo”. Publique o app ou reconecte quando isso acontecer. Os dados importados são mantidos.</Warn>
-      </>
-    ),
     schedule: (
       <>
         <h2>Agenda e execuções</h2>
@@ -325,27 +170,6 @@ export const pt: HelpDoc = {
         </ul>
       </>
     ),
-    troubleshooting: (
-      <>
-        <h2>Solução de problemas</h2>
-        <Table head={["Você vê", "Causa provável", "O que fazer"]} rows={[
-          ["Visibilidade 0% em todas as perguntas", "As perguntas não nomeiam a categoria, então os mecanismos perguntam o que você quer dizer. Comum quando o projeto foi criado sem chave de mecanismo.", <>Reescreva-as ({topic("prompts", "guia")}) ou conecte um modelo e clique em Refazer com IA em {n("nav.questions")}.</>],
-          ["“Não medido” ou —", "Ainda não há o que contar, por exemplo nenhum concorrente citado.", "Adicione concorrentes; faça mais amostras."],
-          ["“amostra pequena”", "Menos de 30 respostas no período.", "Aumente as execuções por dia ou amplie o período."],
-          ["Muitas execuções com falha", "Chave errada, cota, ou um relay que não conhece o modelo.", "Teste o provedor; confira o nome do modelo em Avançado; Tentar de novo as falhas."],
-          ["Nenhuma resposta", "Nenhum mecanismo conectado, ou a amostragem nunca rodou.", "Conecte um provedor e clique em Amostrar agora."],
-          ["Camada de acesso falhando: AI_UA_BLOCKED", "Uma CDN ou WAF rejeita user agents de rastreadores de IA enquanto navegadores funcionam.", "Libere GPTBot, ClaudeBot, PerplexityBot e similares nas configurações de bots da CDN."],
-          ["Páginas quase sem texto", "O site é renderizado em JavaScript; os rastreadores veem uma casca vazia.", "Renderize no servidor ou pré-renderize as páginas principais."],
-          ["Google “Precisa entrar de novo”", "O token de atualização expirou (modo Teste) ou foi revogado.", <>Reconecte em {n("nav.google")}.</>],
-          ["Totais de busca ≠ soma das consultas", "O Google oculta consultas anonimizadas nos relatórios por linha.", "Esperado. Os totais vêm dos totais diários do Google."],
-          ["Uma tarefa continua “em execução”", "Ainda está trabalhando; períodos com muitas perguntas demoram.", <>Acompanhe em {n("nav.schedule")}; reinicie o servidor só se o log parar.</>],
-          ["Um projeto não aparece na minha lista", "Ele não foi compartilhado com você.", <>Peça a um administrador para dar Ver ou Editar em {n("nav.users")}.</>],
-          [<>Sem botões de salvar ou executar; o título mostra {n("access.viewOnly")}</>, "Você só pode ver este projeto.", "Peça a um administrador o acesso Editar."],
-          ["Saí da conta depois que um administrador mudou algo", "Sua senha foi redefinida ou sua conta foi desativada.", "Entre com a nova senha ou fale com o administrador."],
-          ["Mensagens ou relatório em inglês", "Mensagens do servidor, logs de tarefas e o conteúdo dos relatórios estão em inglês em todos os idiomas.", "Esperado por enquanto."],
-        ]} />
-      </>
-    ),
     limits: (
       <>
         <h2>O que isto não é</h2>
@@ -358,12 +182,11 @@ export const pt: HelpDoc = {
         </ul>
       </>
     ),
-  }),
-  buttons: ({ n, page }) => ({
+  }); },
+  buttons: (k) => { const { n, page } = k; return ({
     indexing: <>{n("tips.indexing")}</>,
     serve: <>Use depois de configurar um projeto ou mudar muita coisa de uma vez. O progresso e o log ficam em Tarefas, em {page("settings/schedule", "nav.schedule")}; roda uma tarefa por projeto de cada vez. Com a agenda ligada, roda sozinho.</>,
     sample: <>Só uma rodada. Para intervalos mais estreitos, aumente “Execuções por pergunta e mecanismo por dia” e deixe a agenda rodar. Cada chamada gasta tokens; veja a fórmula de custo em {n("nav.providers")}.</>,
-    syncGoogle: <>Precisa do Google conectado e das propriedades escolhidas em {page("settings/google", "nav.google")}. Os dados do Google chegam com uns três dias de atraso.</>,
     crawl: <>Só busca as páginas; não muda a auditoria. Rode a auditoria depois ou use “{n("audit.actions.crawl")}” em {page("audit", "nav.audit")}.</>,
     audit: <>É rápido porque nada é buscado. Se você mudou o site, rastreie antes, ou a auditoria ainda vê as páginas antigas.</>,
     verify: <>Uma ação passa quando sua regra é atendida e vai para Verificadas; uma ação verificada que falha depois fica como Regrediu. Veja as regras em {n("nav.actionPlan")}.</>,
@@ -378,21 +201,15 @@ export const pt: HelpDoc = {
     correct: <>Use quando a ferramenta deixou passar uma menção (por exemplo, um apelido) ou marcou uma errada. Adicione o apelido como nome alternativo em {n("nav.brand")} para ser reconhecido na próxima vez.</>,
     addQuestion: <>Nomeie a categoria como um comprador faria; veja “Escrever boas perguntas”. O grupo decide como a pergunta é contada.</>,
     saveQuestions: <>Desative uma pergunta em vez de excluí-la para manter o histórico. Perguntas que citam a sua marca ficam marcadas como com marca e contam como reconhecimento.</>,
-    redraft: <>Roda em segundo plano e pode levar alguns minutos; você pode sair da página. Não começa se outra tarefa estiver rodando no projeto. Revise as duas listas depois.</>,
-    createProject: <>Adicione uma chave de modelo antes, senão as perguntas voltam a modelos genéricos. Sem site, marque “{n("projects.noSite")}” e informe o nome da marca.</>,
     saveBrand: <>Campos vazios não foram encontrados no site; preencha o que você sabe. Só administradores mudam o nome da marca, porque ele também é o nome do projeto.</>,
     addCompetitor: <>Adicione de três a seis concorrentes reais, com os nomes que as pessoas usam. Concorrentes não confirmados encontrados nas respostas podem ser confirmados aqui.</>,
     saveCompetitors: <>Respostas antigas não são recontadas; vale a partir da próxima amostragem.</>,
     accept: <>A linha de base (por exemplo “3 páginas afetadas”) é registrada neste momento, então a verificação compara com o ponto de partida.</>,
     dismiss: <>Itens descartados vão para a aba Descartadas e não são sugeridos de novo enquanto estiverem descartados.</>,
-    progress: <>Começar marca a ação como Em andamento; Marcar como concluída a entrega à verificação do próximo período. Ações de busca são verificadas por você.</>,
     restore: <>Ela volta como ação aceita em Em andamento, pronta para Começar.</>,
-    buildReport: <>Usa os mesmos números e regras do painel. O texto do relatório é em inglês, qualquer que seja o idioma do painel.</>,
     downloadReport: <>O HTML abre em qualquer navegador e pode ser enviado por e-mail como está; o Markdown serve para colar em documentos e wikis.</>,
-    searchSync: <>Os totais vêm dos totais diários do Google e as linhas dos relatórios de consulta; eles diferem porque o Google oculta consultas anonimizadas.</>,
     saveKeyword: <>Salvar marca a consulta neste projeto para você achá-la de novo entre muitas linhas.</>,
     googleConnect: <>Precisa do cliente OAuth deste servidor uma vez (em Avançado). O Google mostra a tela de consentimento e traz você de volta.</>,
-    googleSyncNow: <>Cada cartão mostra o último dia importado. A primeira importação pode demorar em propriedades grandes.</>,
     saveProperties: <>Escolha a propriedade do Search Console e a do GA4 que correspondem ao site deste projeto; cada projeto tem as suas.</>,
     googleDisconnect: <>Interrompe as próximas importações de todos os projetos deste servidor. Reconecte com “{n("google.connect")}”.</>,
     testConnection: <>Uma falha mostra a mensagem do provedor: chave errada, sem cota ou um nome de modelo que o endpoint não conhece.</>,
@@ -404,5 +221,6 @@ export const pt: HelpDoc = {
     disableUser: <>Você não pode desativar a si mesmo nem o último administrador ativo.</>,
     deleteUser: <>Não dá para desfazer. Você não pode excluir a si mesmo nem o último administrador ativo.</>,
     changePassword: <>Digite a senha atual primeiro. Este navegador continua conectado.</>,
-  }),
+    ...usageButtons(k),
+  }); },
 };

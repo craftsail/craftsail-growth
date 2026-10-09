@@ -2,6 +2,182 @@
 
 // UI strings. Edit en.ts, zh.ts and pt.ts together: zh and pt are typed against en, so a missing key fails the build.
 export const en = {
+  helpTopics: {
+  "start": {
+    "label": "Start here",
+    "keys": "overview loop what is quick start first"
+  },
+  "setup": {
+    "label": "Set up a project",
+    "keys": "project create checklist keys brand competitors questions prompts schedule onboarding"
+  },
+  "prompts": {
+    "label": "Write good questions",
+    "keys": "question prompt library group branded unbranded category generic zero"
+  },
+  "terms": {
+    "label": "Key terms",
+    "keys": "glossary visibility recognition share of voice citation fan-out period run sample access"
+  },
+  "numbers": {
+    "label": "How the numbers work",
+    "keys": "formula formulas interval ci wilson newcombe small sample not measured api web failed stability share of voice"
+  },
+  "pages": {
+    "label": "Page by page",
+    "keys": "overview visibility share citations fan-out answers search reports navigation menu"
+  },
+  "opportunities": {
+    "label": "Action plan",
+    "keys": "opportunities accept dismiss priority fix first verified regressed status"
+  },
+  "audit": {
+    "label": "Site audit",
+    "keys": "readiness layers access discover understand cite blocked severity evidence issues export"
+  },
+  "manual": {
+    "label": "Manual sampling",
+    "keys": "sheet import export chatgpt web google ai overviews baidu no api"
+  },
+  "providers": {
+    "label": "Model providers",
+    "keys": "api key engine relay endpoint model web search cost"
+  },
+  "google": {
+    "label": "Google Search & GA4",
+    "keys": "oauth client service account search console ga4 property sync redirect"
+  },
+  "access": {
+    "label": "Users and access",
+    "keys": "user users role admin member permission view edit password share invite team login"
+  },
+  "schedule": {
+    "label": "Schedule & runs",
+    "keys": "period every day runs per day tokens cost retry job interrupted"
+  },
+  "troubleshooting": {
+    "label": "Troubleshooting",
+    "keys": "problem error 0% not measured failed stuck reconnect empty spa blocked"
+  },
+  "limits": {
+    "label": "What this is not",
+    "keys": "limits promise guarantee keyword backlink"
+  },
+  "search": {
+    "label": "Search analysis",
+    "keys": "gsc query page country device brand csv coverage CTR filters"
+  },
+  "channels": {
+    "label": "Channels and landing pages",
+    "keys": "ga4 events sessions landing country device conversion sign_up candidates"
+  },
+  "indexing": {
+    "label": "URL discovery and indexing",
+    "keys": "sitemap indexing inspection publication queue"
+  },
+  "observations": {
+    "label": "Release and effect review",
+    "keys": "release baseline observation window guardrail effect"
+  },
+  "reports": {
+    "label": "Weekly reports",
+    "keys": "weekly report language html markdown review"
+  }
+},
+  helpUsage: {
+  "startIntro": "Use search and AI evidence to choose one useful change, then review what happened. You can start without Google or a model API key.",
+  "startCreate": "Create a project in {projects}. For a website, run the first site check; a no-site brand can begin with its brand profile and questions.",
+  "startEvidence": "In {overview}, open one finding and inspect its evidence. Review the brand and question drafts before confirming them.",
+  "startAction": "In {actions}, accept one useful recommendation. After making the change on your own website, record its release and return to review the observation.",
+  "startOptional": "Connect models for AI sampling or Google for traffic analysis when needed. A full cycle and scheduled runs are separate choices in {schedule}.",
+  "demo": "Demo projects contain simulated data. Follow the guide and compare the new-site and historical scenarios; their results do not prove real growth.",
+  "setupIntro": "A project holds one brand, its site, questions, evidence and reports. Use the project selector to switch context.",
+  "setupCreate": "Enter the website URL, or select the no-site option and provide a brand name. The first site check runs independently of optional AI and Google tasks.",
+  "setupLanguages": "In {projects}, set the sampling language, site language, report language and target market separately. Changing the interface language does not translate saved questions.",
+  "setupReview": "Review names and aliases in {brand}, real competitors in {competitors}, and buyer questions in {questions}. Confirm the current brand and question versions in {overview}.",
+  "setupRetry": "If the first task cannot start, the project still exists. Retry from its overview instead of creating a duplicate.",
+  "promptsIntro": "Write questions that a buyer would actually ask, including the category and use case. Review generated drafts before spending on sampling.",
+  "promptExample": "Example: “Which document automation API suits a small SaaS team?” is more useful than “Which tool is best?”",
+  "promptBrand": "Unbranded buyer questions measure visibility. Questions that name your brand, aliases or domain measure recognition separately. Disable unwanted questions to preserve history.",
+  "promptVersions": "Saving or redrafting preserves question-library revisions. Review the new wording and confirm it again; changing questions changes what is measured.",
+  "promptPreview": "Before sampling, inspect the call preview in {schedule}: enabled questions, available engines, language, revision and estimated calls. A preview does not call a model.",
+  "promptCompare": "Keep engine, access mode, language, question revision, model and strategy comparable across periods. Missing legacy metadata is unknown, not proof that two samples match.",
+  "googleIntro": "Google is optional. An administrator connects the account in {google}, then selects the Search Console and GA4 properties for each project.",
+  "googleOAuth": "Configure this server’s OAuth client in the advanced settings. Enable Search Console API, Google Analytics Data API and Analytics Admin API, and copy the callback URL shown by the application exactly. Save the client settings, then connect Google.",
+  "googleSA": "Alternatively, use a service account and grant its email access to the Search Console property and viewer access to the GA4 property.",
+  "googleHistory": "Select and save the project’s properties. In {projects}, choose a history start date if needed, then start sync. Moving the start date forward limits future fetching; it does not delete stored history.",
+  "googleCoverage": "Open sync details in {search}. Check each report’s date range, covered days, missing dates, last success and retry time. Recent days may not yet be available from Google.",
+  "googleRetry": "Queued or quota-delayed tasks can continue later while the server is running. Fix expired authorization or property access before retrying. A completed task does not mean every report is supported or complete.",
+  "searchIntro": "Start with the traffic summary, then use the keyword, page, country or device tabs to locate a change. Check the displayed period and data quality first.",
+  "searchFilter": "In the analysis tables, choose 7, 28 or 90 days, or a custom range, and compare with the preceding equal-length period. Apply search type, brand, country, device and text filters where available before reading the ranking.",
+  "searchDrill": "Open a query or page to inspect related evidence. Export CSV for all matching rows, not just the visible page. Query and page reports are independent; do not add them together.",
+  "searchQuality": "Site totals come from Google’s daily totals. Hidden queries, row limits and aggregation differences can make detail disagree with totals. Covered dates do not guarantee complete detail; missing data is not zero.",
+  "searchStage": "For a new site or sparse data, focus on discovery, indexing, first impressions and absolute changes. Established-site decline signals require enough comparable history and quality. Choose the stage in project settings when automatic classification does not fit.",
+  "channelsIntro": "Use {channels} to compare sources and media, and {landings} to inspect entry pages. Choose the period, then filter country and device.",
+  "channelsSessions": "Leave value events empty to inspect sessions, engaged sessions, engagement rate and engagement duration. Missing duration remains unavailable rather than becoming zero.",
+  "channelsEvents": "Enter exact GA4 event names separated by commas, up to 20. Names are case-sensitive: sign_up and Sign_Up differ. Use GA4’s country name. Selected events use a separate report of occurrences, not a user conversion rate or a session funnel.",
+  "channelsMapping": "From a landing row, find search-page candidates. Review host, path and URL parameters. Multiple hosts or URLs are ambiguous; incomplete coverage leaves candidates unverified. Even one candidate needs review: the GA host is event context, not proof of the landing host.",
+  "channelsUnavailable": "An incompatible or unavailable report is shown explicitly. Retry after resolving configuration or compatibility; do not substitute a broader session total for a missing segment.",
+  "indexingIntro": "The indexing tab tracks known URLs, where they were discovered, inspection results and history. It is separate from traffic synchronization.",
+  "indexingDiscover": "Discover URLs from crawls, search data and sitemaps. Add a sitemap entry when needed; large sitemap trees continue in later batches. Discovery alone does not prove Google has indexed a URL.",
+  "indexingInspect": "Connect a Search Console property, then run indexing checks. The queue checks due URLs within shared quotas; inspect the latest successful result and the individual attempt history.",
+  "indexingDates": "Enter the real publication date if known. “First observed indexed” is when this tool first observed indexing, not Google’s original indexing date. A failed inspection preserves the last successful evidence.",
+  "actionsIntro": "Choose actions from evidence, not from score alone. Read the source, affected URLs, data quality, suggested fix and acceptance condition.",
+  "actionsRank": "Use impact, confidence, ease and effort to review priority. The short recommendation list helps focus work; manual scores express your judgment, not a forecast of traffic.",
+  "actionsCTR": "Search recommendations use comparable evidence and, when sufficient, the site’s own nonbrand CTR reference. There is no universal CTR table. Estimated click gains are scenarios, not promised results.",
+  "actionsState": "Accept a recommendation, start it and mark the work complete. Rule-based verification may later verify or regress an action. Completion and verification are separate from measuring the effect of a release.",
+  "observationsIntro": "After a change is live, open its accepted action in {actions} and record the release. Use the actual release date, not the date you accepted the recommendation.",
+  "observationsRecord": "Record the hypothesis, metric, affected URLs or questions, guardrails, owner, effort, waiting period and observation window. Add control URLs when useful. Saving freezes the baseline and windows.",
+  "observationsEvaluate": "After the waiting period and observation window, evaluate the release. Each evaluation adds a result and preserves earlier results. To correct a release contract, create a new record.",
+  "observationsLimits": "Missing coverage, sparse samples, incompatible sampling metadata, stale crawls or overlapping releases can prevent a conclusion. A pending or inconclusive observation is not a failed task. The result is evidence to review, not proof of causation.",
+  "reportsIntro": "Generate a report in {reports} after checking source freshness. Select English, Chinese or Portuguese; report language is independent of interface and sampling language.",
+  "reportsRead": "Review the project stage, source coverage, completed work, pending observations and next priorities. New-site reports focus on discovery and early signals instead of implying mature traffic.",
+  "reportsExport": "Download HTML to read or share, or Markdown for a knowledge base. Generating again on the same report date updates that day’s saved report; download a copy first if you need to keep an earlier version.",
+  "reportsLimit": "Reports summarize available evidence and do not fetch missing Google history by themselves. Simulation, unavailable data and inconclusive observations remain identified.",
+  "pagesIntro": "Choose a page by the question you want to answer. Tabs stay within their parent page; workspace settings are visible to administrators.",
+  "pageColumn": "Page",
+  "useColumn": "What to do here",
+  "page_overview": "Review first-check evidence and confirm setup.",
+  "page_visibility": "Compare mentions with uncertainty and sampling scope.",
+  "page_sov": "Compare brand and competitor mentions.",
+  "page_citations": "Inspect cited domains and source concentration.",
+  "page_fanout": "Inspect searches exposed by the engine.",
+  "page_answers": "Read original answers, correct extraction or import manual samples.",
+  "page_search": "Check coverage, compare queries and pages, then drill into evidence.",
+  "page_indexing": "Track URL discovery, inspection attempts and publication dates.",
+  "page_channels": "Compare session quality or selected event occurrences.",
+  "page_actions": "Prioritize work, accept actions and record releases.",
+  "page_audit": "Read readiness layers, issue evidence and affected pages.",
+  "page_reports": "Review the week and download a report in the chosen language.",
+  "page_questions": "Review buyer wording, revisions and enabled questions.",
+  "page_schedule": "Preview calls, start individual tasks and inspect jobs.",
+  "problem": "Symptom",
+  "next": "What to check next",
+  "issue0": "No Google data",
+  "fix0": "Check the selected property, authorization, history start and per-report missing dates. A successful empty day is different from a failed day.",
+  "issue1": "Sync is queued or delayed",
+  "fix1": "Inspect the retry time and keep the server running. Repeated manual starts do not increase shared provider quotas.",
+  "issue2": "Totals differ from detail",
+  "fix2": "Compare the same property, dates and search type. Hidden queries and aggregation limits can still leave differences.",
+  "issue3": "A new report is empty after an update",
+  "fix3": "Run Google sync to populate the new report. Old totals cannot reconstruct missing event, country, device or host detail.",
+  "issue4": "GA4 event results look wrong",
+  "fix4": "Check exact event spelling and case, country name, device and report compatibility. Event occurrences are not conversion rates.",
+  "issue5": "No visibility or no comparison",
+  "fix5": "Distinguish a measured zero from unavailable data. Inspect failed calls, question wording and matching language, revision, model and access mode.",
+  "issue6": "Observation remains inconclusive",
+  "fix6": "Read its stated reason. Check coverage, sample size, elapsed window, fresh crawl and overlapping changes before evaluating again.",
+  "issue7": "Report uses another language",
+  "fix7": "Select the report language and generate again. Changing interface language does not rewrite a saved report or question library.",
+  "issue8": "No edit or run buttons",
+  "fix8": "Ask an administrator to check project access. View-only members can read evidence but cannot start tasks or record releases.",
+  "related": "Continue with",
+  "btnCreate": "A model key is optional for creating a project and the first site check. Review any fallback question templates before sampling.",
+  "btnReport": "Choose a report language before generating. A same-day generation updates the saved report, so download an earlier copy first if needed.",
+  "btnSync": "Sync traffic reports for the selected properties, then inspect per-report coverage and missing dates. Index inspections run separately.",
+  "btnProgress": "Marking work complete does not prove an effect. Once the change is live, record a release and evaluate its fixed observation window separately.",
+  "btnRedraft": "Redrafting updates the current questions and competitors. Earlier question revisions remain available; review the new version before confirming and sampling."
+},
   demoGuide: {
   "title": "Five-minute guided demo",
   "banner": "Demo project: AI answers and Google figures are simulated, not a connected account or evidence of real growth.",
@@ -1075,7 +1251,6 @@ landing_context: "Landing host context",
     empty: "No report yet",
     emptyHint: "Build one now, or run a full period; each period ends with a report.",
     frame: "Report",
-    englishOnly: "The report itself is written in English.",
   },
   competitors: {
     description: "Rivals that answers should be compared against. Share of voice and rank are counted against this list, so a missing rival makes you look better than you are.",

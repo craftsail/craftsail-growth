@@ -4,18 +4,21 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { IconSearch } from "@tabler/icons-react";
 import { useI18n, type Locale } from "../../i18n";
-import { TOPIC_IDS, makeKit, type HelpDoc, type TopicId } from "./kit";
+import { TOPIC_IDS, TOPICS, makeKit, type HelpDoc, type TopicId } from "./kit";
 import { TIPS, TIP_IDS } from "../../app/tips";
 import type { Key } from "../../i18n";
 import { en } from "./content/en";
 import { zh } from "./content/zh";
 import { pt } from "./content/pt";
+import { en as english } from "../../i18n/locales/en";
 
 const DOCS: Record<Locale, HelpDoc> = { en, zh, pt };
 
 // The hash is #<topic> or #<topic>/<button>, the second form from a "?" tip.
 function topicFromHash(): TopicId {
-  const id = window.location.hash.replace(/^#/, "").split("/")[0];
+  const [id, button] = window.location.hash.replace(/^#/, "").split("/");
+  const tip = TIP_IDS.find(id => id === button);
+  if (tip) return TIPS[tip].topic;
   return (TOPIC_IDS as readonly string[]).includes(id) ? (id as TopicId) : "start";
 }
 
@@ -65,11 +68,11 @@ export function Help() {
     const s = q.trim().toLowerCase();
     if (!s) return [...TOPIC_IDS];
     return TOPIC_IDS.filter((id) => {
-      const a = doc.topics[id], b = en.topics[id];
-      return [a.label, a.keys, b.label, b.keys].join(" ").toLowerCase().includes(s);
+      const a = TOPICS[id], b = english.helpTopics[id];
+      return [t(a.label), t(a.keys), b.label, b.keys].join(" ").toLowerCase().includes(s);
     });
-  }, [q, doc]);
-  const groups = [...new Set(shown.map((id) => doc.topics[id].group))];
+  }, [q, t]);
+  const groups = [...new Set(shown.map((id) => TOPICS[id].group))];
   const next = TOPIC_IDS[TOPIC_IDS.indexOf(topic) + 1];
 
   return (
@@ -83,8 +86,8 @@ export function Help() {
         {groups.map((g) => (
           <div key={g} className="mb-2">
             <div className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wider text-gray-400">{doc.groups[g]}</div>
-            {shown.filter((id) => doc.topics[id].group === g).map((id) => (
-              <button key={id} type="button" className={"subnav-link" + (topic === id ? " subnav-link-active" : "")} onClick={() => go(id)}>{doc.topics[id].label}</button>
+            {shown.filter((id) => TOPICS[id].group === g).map((id) => (
+              <button key={id} type="button" className={"subnav-link" + (topic === id ? " subnav-link-active" : "")} onClick={() => go(id)}>{t(TOPICS[id].label)}</button>
             ))}
           </div>
         ))}
@@ -109,7 +112,7 @@ export function Help() {
         )}
         {next && (
           <div className="mt-8 flex justify-end border-t border-gray-100 pt-4">
-            <button type="button" className="btn btn-secondary" onClick={() => go(next)}>{t("helpCenter.next", { label: doc.topics[next].label })}</button>
+            <button type="button" className="btn btn-secondary" onClick={() => go(next)}>{t("helpCenter.next", { label: t(TOPICS[next].label) })}</button>
           </div>
         )}
       </article>

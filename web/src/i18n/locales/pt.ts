@@ -4,6 +4,182 @@
 import type { Messages } from "./en";
 
 export const pt: Messages = {
+  helpTopics: {
+  "start": {
+    "label": "Comece aqui",
+    "keys": "visão geral ciclo o que é início rápido primeiro"
+  },
+  "setup": {
+    "label": "Configurar um projeto",
+    "keys": "projeto criar checklist chaves marca concorrentes perguntas agenda onboarding"
+  },
+  "prompts": {
+    "label": "Escrever boas perguntas",
+    "keys": "pergunta prompt lista grupo com marca sem marca categoria genérica zero"
+  },
+  "terms": {
+    "label": "Termos principais",
+    "keys": "glossário visibilidade reconhecimento participação de voz citação expansão período execução amostra acesso"
+  },
+  "numbers": {
+    "label": "Como os números funcionam",
+    "keys": "fórmula fórmulas intervalo ic wilson newcombe amostra pequena não medido api web falhas estabilidade"
+  },
+  "pages": {
+    "label": "Página por página",
+    "keys": "visão geral visibilidade participação citações expansão respostas busca relatórios navegação menu"
+  },
+  "opportunities": {
+    "label": "Plano de ação",
+    "keys": "oportunidades aceitar descartar prioridade corrigir primeiro verificada regrediu status"
+  },
+  "audit": {
+    "label": "Auditoria do site",
+    "keys": "prontidão camadas acesso descoberta compreensão citação bloqueado severidade evidência problemas exportar"
+  },
+  "manual": {
+    "label": "Amostragem manual",
+    "keys": "planilha importar exportar chatgpt web google ai overviews baidu sem api"
+  },
+  "providers": {
+    "label": "Provedores de modelos",
+    "keys": "api chave mecanismo relay endpoint modelo busca na web custo"
+  },
+  "google": {
+    "label": "Google Search e GA4",
+    "keys": "oauth cliente conta de serviço search console ga4 propriedade sincronizar redirecionamento"
+  },
+  "access": {
+    "label": "Usuários e acesso",
+    "keys": "usuário usuários função administrador membro permissão ver editar senha compartilhar convidar equipe login"
+  },
+  "schedule": {
+    "label": "Agenda e execuções",
+    "keys": "período todo dia execuções por dia tokens custo tentar de novo tarefa interrompida"
+  },
+  "troubleshooting": {
+    "label": "Solução de problemas",
+    "keys": "problema erro 0% não medido falhou travado reconectar vazio spa bloqueado"
+  },
+  "limits": {
+    "label": "O que isto não é",
+    "keys": "limites promessa garantia palavra-chave backlink"
+  },
+  "search": {
+    "label": "Análise de busca",
+    "keys": "gsc consultas páginas país dispositivo marca csv exportar cobertura CTR filtros"
+  },
+  "channels": {
+    "label": "Canais e páginas de entrada",
+    "keys": "ga4 eventos sessões entrada país dispositivo conversão sign_up candidatas"
+  },
+  "indexing": {
+    "label": "Descoberta e indexação de URLs",
+    "keys": "sitemap indexação inspeção publicação fila descoberta"
+  },
+  "observations": {
+    "label": "Publicação e avaliação de efeito",
+    "keys": "publicação linha de base observação janela efeito controle"
+  },
+  "reports": {
+    "label": "Relatórios semanais",
+    "keys": "relatório semanal idioma html markdown revisão"
+  }
+},
+  helpUsage: {
+  "startIntro": "Use evidências de busca e IA para escolher uma mudança útil e depois revisar o resultado. É possível começar sem Google ou chave de API de modelos.",
+  "startCreate": "Crie um projeto em {projects}. Com um site, execute a primeira verificação; sem site, comece pelo perfil da marca e pelas perguntas.",
+  "startEvidence": "Em {overview}, abra uma descoberta e confira as evidências. Revise os rascunhos da marca e das perguntas antes de confirmá-los.",
+  "startAction": "Em {actions}, aceite uma recomendação útil. Após alterar e publicar seu próprio site, registre a publicação e volte para avaliar a observação.",
+  "startOptional": "Conecte modelos para amostragem de IA ou o Google para análise de tráfego quando necessário. O ciclo completo e as execuções agendadas são opções separadas em {schedule}.",
+  "demo": "Projetos de demonstração usam dados simulados. Siga o guia e compare os cenários de site novo e histórico; os resultados não comprovam crescimento real.",
+  "setupIntro": "Um projeto reúne uma marca, seu site, perguntas, evidências e relatórios. Use o seletor de projetos para mudar de contexto.",
+  "setupCreate": "Informe a URL do site ou selecione a opção sem site e informe a marca. A primeira verificação funciona independentemente das tarefas opcionais de IA e Google.",
+  "setupLanguages": "Em {projects}, configure separadamente idioma de amostragem, idioma do site, idioma do relatório e mercado-alvo. Trocar o idioma da interface não traduz perguntas salvas.",
+  "setupReview": "Revise nomes e aliases em {brand}, concorrentes reais em {competitors} e perguntas de compradores em {questions}. Confirme as versões atuais em {overview}.",
+  "setupRetry": "Se a primeira tarefa não iniciar, o projeto continua existindo. Tente novamente pela visão geral, sem criar uma cópia.",
+  "promptsIntro": "Escreva perguntas reais de compradores, incluindo a categoria e o caso de uso. Revise rascunhos gerados antes de gastar com amostragem.",
+  "promptExample": "Por exemplo, “Qual API de automação de documentos atende uma pequena equipe SaaS?” é mais útil que “Qual ferramenta é a melhor?”.",
+  "promptBrand": "Perguntas sem a marca medem visibilidade. Perguntas com a marca, aliases ou domínio medem reconhecimento separadamente. Desative perguntas indesejadas para preservar o histórico.",
+  "promptVersions": "Salvar ou gerar novamente preserva revisões da biblioteca. Revise e confirme o novo texto; mudar perguntas muda o que é medido.",
+  "promptPreview": "Antes de amostrar, confira a prévia em {schedule}: perguntas ativas, mecanismos disponíveis, idioma, revisão e chamadas estimadas. A prévia não chama modelos.",
+  "promptCompare": "Compare períodos com mecanismo, modo de acesso, idioma, revisão, modelo e estratégia compatíveis. Metadados ausentes em registros antigos são desconhecidos, não evidência de equivalência.",
+  "googleIntro": "O Google é opcional. Um administrador conecta a conta em {google} e seleciona as propriedades do Search Console e GA4 de cada projeto.",
+  "googleOAuth": "Configure o cliente OAuth deste servidor nas opções avançadas. Ative Search Console API, Google Analytics Data API e Analytics Admin API e copie exatamente a URL de retorno exibida. Salve e conecte o Google.",
+  "googleSA": "Como alternativa, use uma conta de serviço e conceda ao e-mail acesso à propriedade do Search Console e permissão de leitura no GA4.",
+  "googleHistory": "Selecione e salve as propriedades do projeto. Se necessário, escolha o início do histórico em {projects} e sincronize. Avançar essa data limita novas buscas, sem apagar o histórico salvo.",
+  "googleCoverage": "Abra os detalhes da sincronização em {search}. Confira intervalo, dias cobertos, lacunas, último sucesso e nova tentativa de cada relatório. Os dias recentes podem ainda não estar disponíveis no Google.",
+  "googleRetry": "Tarefas na fila ou adiadas por cota podem continuar enquanto o servidor estiver ativo. Corrija autorização expirada ou acesso antes de tentar novamente. Uma tarefa concluída não garante que todos os relatórios sejam compatíveis ou completos.",
+  "searchIntro": "Comece pelo resumo de tráfego e use as abas de consultas, páginas, países ou dispositivos para localizar uma mudança. Confira primeiro o período e a qualidade dos dados.",
+  "searchFilter": "Nas tabelas, escolha 7, 28 ou 90 dias ou um intervalo personalizado e compare com o período anterior de mesma duração. Aplique os filtros disponíveis de tipo de busca, marca, país, dispositivo e texto antes de ler o ranking.",
+  "searchDrill": "Abra uma consulta ou página para examinar evidências relacionadas. O CSV inclui todas as linhas filtradas, além da página visível. Relatórios de consultas e páginas são independentes; não os some.",
+  "searchQuality": "Totais do site vêm dos totais diários do Google. Consultas ocultas, limites de linhas e diferenças de agregação podem causar divergências. Datas cobertas não garantem detalhes completos; ausência não é zero.",
+  "searchStage": "Em sites novos ou com poucos dados, observe descoberta, indexação, primeiras impressões e mudanças absolutas. Sinais de queda exigem histórico suficiente, comparável e de qualidade. Ajuste a fase nas configurações se a classificação automática não servir.",
+  "channelsIntro": "Use {channels} para comparar origens e mídias e {landings} para examinar páginas de entrada. Escolha o período e filtre país e dispositivo.",
+  "channelsSessions": "Deixe os eventos de valor vazios para ver sessões, sessões engajadas, taxa e duração de engajamento. Duração ausente permanece indisponível, sem virar zero.",
+  "channelsEvents": "Informe até 20 nomes exatos de eventos do GA4 separados por vírgulas. Maiúsculas importam: sign_up e Sign_Up são diferentes. Use o nome de país do GA4. Eventos selecionados mostram ocorrências em relatório separado, não uma taxa de conversão por usuário ou funil de sessões.",
+  "channelsMapping": "Na linha de uma página de entrada, busque candidatas de busca e confira host, caminho e parâmetros. Vários hosts ou URLs são ambíguos; cobertura incompleta deixa candidatas não verificadas. Mesmo uma candidata exige revisão: o host do GA é contexto do evento, não prova do host de entrada.",
+  "channelsUnavailable": "Relatórios incompatíveis ou indisponíveis são indicados. Resolva a configuração ou compatibilidade antes de tentar novamente; não substitua um segmento ausente pelo total geral de sessões.",
+  "indexingIntro": "A aba de indexação acompanha URLs conhecidas, fontes de descoberta, resultados e histórico. Ela funciona separadamente da sincronização de tráfego.",
+  "indexingDiscover": "Descubra URLs por rastreamento, dados de busca e sitemaps. Adicione uma entrada de sitemap quando necessário; árvores grandes continuam em lotes posteriores. Descoberta não comprova indexação no Google.",
+  "indexingInspect": "Conecte uma propriedade do Search Console e execute as verificações. A fila verifica URLs no prazo dentro das cotas compartilhadas; consulte o último resultado bem-sucedido e o histórico das tentativas.",
+  "indexingDates": "Informe a data real de publicação quando conhecida. “Primeira indexação observada” é quando a ferramenta a observou, não a data original do Google. Uma falha preserva a última evidência bem-sucedida.",
+  "actionsIntro": "Escolha ações pelas evidências, não apenas pela pontuação. Leia a origem, URLs afetadas, qualidade dos dados, correção sugerida e condição de aceitação.",
+  "actionsRank": "Revise a prioridade por impacto, confiança, facilidade e esforço. A lista curta ajuda a focar; notas manuais refletem julgamento, não previsão de tráfego.",
+  "actionsCTR": "Recomendações de busca usam evidências comparáveis e, quando suficientes, a referência de CTR sem marca do próprio site. Não há tabela universal de CTR; ganhos estimados são cenários, não promessas.",
+  "actionsState": "Aceite uma recomendação, inicie e marque o trabalho como concluído. Verificações posteriores podem validá-la ou indicar regressão. Conclusão e validação por regras são separadas da medição do efeito de uma publicação.",
+  "observationsIntro": "Após publicar a mudança, abra a ação aceita em {actions} e registre a publicação. Use a data real, não a data em que aceitou a recomendação.",
+  "observationsRecord": "Registre hipótese, métrica, URLs ou perguntas afetadas, limites de controle, responsável, esforço, espera e janela de observação. Inclua URLs de controle quando útil. Salvar fixa a linha de base e as janelas.",
+  "observationsEvaluate": "Avalie após o período de espera e a janela de observação. Cada avaliação acrescenta um resultado e preserva os anteriores. Para corrigir o registro da publicação, crie um novo.",
+  "observationsLimits": "Cobertura ausente, amostras pequenas, metadados incompatíveis, rastreamento antigo ou publicações sobrepostas podem impedir uma conclusão. Observação pendente ou inconclusiva não significa tarefa fracassada; é evidência para revisão, não prova de causalidade.",
+  "reportsIntro": "Gere um relatório em {reports} após conferir a atualização das fontes. Escolha inglês, chinês ou português; o idioma do relatório é independente da interface e da amostragem.",
+  "reportsRead": "Revise fase do projeto, cobertura, trabalho concluído, observações pendentes e prioridades. Relatórios de sites novos focam descoberta e sinais iniciais, sem presumir tráfego consolidado.",
+  "reportsExport": "Baixe HTML para ler ou compartilhar, ou Markdown para uma base de conhecimento. Gerar novamente na mesma data atualiza o relatório salvo daquele dia; baixe uma cópia antes se precisar da versão anterior.",
+  "reportsLimit": "Relatórios resumem evidências disponíveis e não buscam, por si só, histórico ausente do Google. Simulações, dados indisponíveis e observações inconclusivas continuam identificados.",
+  "pagesIntro": "Escolha a página pela pergunta que deseja responder. As abas ficam na página principal; configurações do espaço de trabalho são visíveis a administradores.",
+  "pageColumn": "Página",
+  "useColumn": "Como usar",
+  "page_overview": "Revise evidências iniciais e confirme a preparação.",
+  "page_visibility": "Compare menções com incerteza e escopo de amostragem.",
+  "page_sov": "Compare menções da marca e dos concorrentes.",
+  "page_citations": "Examine domínios citados e concentração de fontes.",
+  "page_fanout": "Examine buscas expostas pelo mecanismo.",
+  "page_answers": "Leia respostas originais, corrija a extração ou importe amostras manuais.",
+  "page_search": "Confira cobertura, compare consultas e páginas e detalhe as evidências.",
+  "page_indexing": "Acompanhe descoberta de URLs, inspeções e datas de publicação.",
+  "page_channels": "Compare qualidade de sessões ou ocorrências de eventos.",
+  "page_actions": "Priorize trabalho, aceite ações e registre publicações.",
+  "page_audit": "Leia camadas de prontidão, evidências de problemas e páginas afetadas.",
+  "page_reports": "Revise a semana e baixe o relatório no idioma escolhido.",
+  "page_questions": "Revise linguagem de compradores, revisões e perguntas ativas.",
+  "page_schedule": "Confira chamadas, execute tarefas individuais e acompanhe trabalhos.",
+  "problem": "Sintoma",
+  "next": "O que conferir",
+  "issue0": "Sem dados do Google",
+  "fix0": "Confira propriedade, autorização, início do histórico e lacunas por relatório. Um dia vazio com sucesso é diferente de um dia com falha.",
+  "issue1": "Sincronização na fila ou adiada",
+  "fix1": "Confira a próxima tentativa e mantenha o servidor ativo. Inícios manuais repetidos não aumentam as cotas compartilhadas.",
+  "issue2": "Totais diferentes dos detalhes",
+  "fix2": "Compare propriedade, datas e tipo de busca iguais. Consultas ocultas e limites de agregação ainda podem causar diferenças.",
+  "issue3": "Novo relatório vazio após atualização",
+  "fix3": "Sincronize o Google para preencher o novo relatório. Totais antigos não reconstroem detalhes ausentes de eventos, países, dispositivos ou hosts.",
+  "issue4": "Eventos do GA4 parecem incorretos",
+  "fix4": "Confira grafia e maiúsculas dos eventos, país, dispositivo e compatibilidade. Ocorrências não são taxas de conversão.",
+  "issue5": "Sem visibilidade ou comparação",
+  "fix5": "Diferencie zero medido de dados indisponíveis. Confira falhas, texto das perguntas e compatibilidade de idioma, revisão, modelo e modo de acesso.",
+  "issue6": "Observação continua inconclusiva",
+  "fix6": "Leia o motivo indicado. Confira cobertura, tamanho da amostra, janela encerrada, rastreamento recente e mudanças sobrepostas antes de avaliar novamente.",
+  "issue7": "Relatório em outro idioma",
+  "fix7": "Selecione o idioma do relatório e gere novamente. Trocar a interface não reescreve relatórios nem bibliotecas salvas.",
+  "issue8": "Sem botões de edição ou execução",
+  "fix8": "Peça ao administrador para conferir o acesso ao projeto. Membros com leitura podem ver evidências, mas não iniciar tarefas nem registrar publicações.",
+  "related": "Continue com",
+  "btnCreate": "A chave de modelo é opcional para criar o projeto e verificar o site. Revise modelos de perguntas de fallback antes da amostragem.",
+  "btnReport": "Escolha o idioma antes de gerar. Gerar no mesmo dia atualiza o relatório salvo; baixe a versão anterior se necessário.",
+  "btnSync": "Sincronize relatórios de tráfego das propriedades selecionadas e confira cobertura e lacunas por relatório. Inspeções de indexação são separadas.",
+  "btnProgress": "Marcar como concluído não comprova efeito. Após publicar, registre a publicação e avalie a janela fixa separadamente.",
+  "btnRedraft": "Gerar novamente atualiza perguntas e concorrentes atuais. Revisões anteriores permanecem disponíveis; revise a nova versão antes de confirmar e amostrar."
+},
   demoGuide: {
   "title": "Demonstração guiada de cinco minutos",
   "banner": "Projeto de demonstração: respostas de IA e dados do Google são simulados, não representam uma conta conectada nem crescimento real.",
@@ -1077,7 +1253,6 @@ landing_context: "Contexto de host da entrada",
     empty: "Ainda sem relatório",
     emptyHint: "Gere agora ou execute um período completo; cada período termina com um relatório.",
     frame: "Relatório",
-    englishOnly: "O conteúdo do relatório é escrito em inglês.",
   },
   competitors: {
     description: "Concorrentes usados na comparação das respostas. Participação de voz e posição são contadas contra esta lista, então um rival ausente faz você parecer melhor do que é.",
