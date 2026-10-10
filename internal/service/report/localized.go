@@ -88,8 +88,31 @@ func (s *Service) weeklyMarkdown(ctx context.Context, p *model.Project, lang str
 	if p.DemoScenario != "" {
 		fmt.Fprintf(&b, "\n%s\n", reportText(lang, "demoGuide.banner"))
 	}
+	status, statusErr := s.playbook.Status(ctx, p.Slug)
 	web := webstats.New(s.db)
 	board, boardErr := web.SearchBoard(ctx, p.Slug)
+	var seoStage string
+	if statusErr == nil {
+		seoStage = status.SeoStage
+		seo := t("noSite")
+		if seoStage != "" {
+			seo = t(seoStage)
+		}
+		product := t("stageUnset")
+		if status.ProductStage != "" {
+			product = strings.ToUpper(status.ProductStage)
+		}
+		target := "/p/" + url.PathEscape(p.Slug) + "/help#start"
+		link := fmt.Sprintf("[%s](%s)", reportText(lang, "nav.help"), target)
+		line(t("stagesLine", "seo", seo, "ai", t(status.AiStage), "product", product, "link", link))
+	} else if board != nil && board.Observation != nil && board.Observation.Mode == "established" {
+		// playbook.Status failed; fall back to a coarse stage from the search
+		// board alone so the weekly table still renders. The stage line
+		// itself is skipped since the rest of status is unavailable.
+		seoStage = "seoGrow"
+	} else {
+		seoStage = "seoNew"
+	}
 	heading("health")
 	coverage := func(source string, c webstats.GrainCoverage) {
 		line(t("coverage", "source", source, "from", c.From, "through", c.Through, "covered", fmt.Sprint(c.CoveredDays), "total", fmt.Sprint(c.TotalDays)))
@@ -144,19 +167,34 @@ func (s *Service) weeklyMarkdown(ctx context.Context, p *model.Project, lang str
 		}
 	}
 	line(t("official"))
-	heading("stage")
-	stage := "new_site"
-	if board != nil && board.Observation != nil && board.Observation.Mode == "established" {
-		stage = "established"
+	if !p.NoSite {
+		if weekly, err := web.WeeklySearch(ctx, p, time.Time{}); err != nil {
+			line(t("unavailable"))
+		} else {
+			writeWeeklyTable(&b, weekly, seoStage, lang)
+		}
 	}
-	line(t(stage))
-	if inv, e := web.IndexInventory(ctx, p.Slug, "", "", 1, 1); e != nil {
-		line(t("unavailable"))
-	} else if inv != nil && inv.Known > 0 {
-		line(t("indexing", "known", fmt.Sprint(inv.Known), "inspected", fmt.Sprint(inv.Inspected), "indexed", fmt.Sprint(inv.Indexed)))
+	observations, err := (&repo.Observations{DB: s.db}).List(ctx, p.ID, "")
+	if err != nil {
+		return "", nil, err
 	}
-	if board != nil && board.Period.Measured {
-		line(t("search", "clicks", fmt.Sprintf("%.0f", board.Period.Clicks), "impressions", fmt.Sprintf("%.0f", board.Period.Impressions), "from", board.Observation.Coverage.From, "through", board.Observation.Coverage.Through))
+	heading("shipped")
+	shippedSince := now.AddDate(0, 0, -7).Unix()
+	written := false
+	shipped := map[uint64]bool{}
+	for _, o := range observations {
+		if shipped[o.TaskID] {
+			continue
+		}
+		shipped[o.TaskID] = true
+		if o.ReleasedAt < shippedSince {
+			continue
+		}
+		line(markdownText(o.TaskCode + " · " + o.Hypothesis))
+		written = true
+	}
+	if !written {
+		line(t("none"))
 	}
 	heading("google")
 	if insight, e := web.Insight(ctx, p); e != nil {
@@ -257,7 +295,7 @@ func (s *Service) weeklyMarkdown(ctx context.Context, p *model.Project, lang str
 	if err != nil {
 		return "", nil, err
 	}
-	written := false
+	written = false
 	for _, task := range tasks {
 		if task.UpdatedAt < now.AddDate(0, 0, -7).Unix() {
 			continue
@@ -273,10 +311,6 @@ func (s *Service) weeklyMarkdown(ctx context.Context, p *model.Project, lang str
 		line(t("none"))
 	}
 	heading("observations")
-	observations, err := (&repo.Observations{DB: s.db}).List(ctx, p.ID, "")
-	if err != nil {
-		return "", nil, err
-	}
 	written = false
 	latest := map[uint64]bool{}
 	for _, o := range observations {

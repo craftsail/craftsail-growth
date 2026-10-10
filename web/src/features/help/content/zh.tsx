@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { usageBodies, usageButtons } from "../usage";
+import { playbookBodies } from "../playbook";
 import { Formula, FX, Table, Warn, type HelpDoc } from "../kit";
 
 export const zh: HelpDoc = {
-  groups: { start: "入门", read: "读懂结果", act: "采取行动", connect: "接入", help: "帮助" },
+  groups: { start: "开始", seo: "SEO 剧本", ai: "AI 剧本", loop: "每周", fix: "出问题时", reference: "参考" },
   body: (k) => { const { page, n } = k; return ({
     ...usageBodies(k),
+    ...playbookBodies(k),
     terms: (
       <>
         <h2>术语表</h2>

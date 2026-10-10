@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "check:cjk": "node scripts/check-cjk.mjs",
+    "check:playbook": "node scripts/check-playbook.mjs",
     "generate:report": "node scripts/report-resources.mjs",
     "check:report": "node scripts/report-resources.mjs --check"
   },

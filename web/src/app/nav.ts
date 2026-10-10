@@ -3,7 +3,7 @@
 import type { Key } from "../i18n";
 
 export type NavIcon =
-  | "home" | "eye" | "pie" | "quote" | "split" | "messages"
+  | "home" | "eye" | "pie" | "quote" | "messages"
   | "listcheck" | "stethoscope" | "search" | "report"
   | "folders" | "id" | "users" | "list" | "calendar" | "cpu" | "google" | "usercog";
 
@@ -21,8 +21,12 @@ export const NAV: NavSection[] = [
     id: "measure", label: "nav.sections.measure", items: [
       { id: "visibility", label: "nav.visibility", icon: "eye", to: "ai/visibility" },
       { id: "sov", label: "nav.sov", icon: "pie", to: "ai/share-of-voice" },
-      { id: "citations", label: "nav.citations", icon: "quote", to: "ai/citations" },
-      { id: "fanout", label: "nav.fanout", icon: "split", to: "ai/fan-out" },
+      {
+        id: "citations", label: "nav.citations", icon: "quote", to: "ai/citations", tabs: [
+          { label: "nav.citations", to: "ai/citations" },
+          { label: "nav.fanout", to: "ai/fan-out" },
+        ],
+      },
       { id: "answers", label: "nav.answers", icon: "messages", to: "ai/answers" },
     ],
   },
@@ -42,10 +46,7 @@ export const NAV: NavSection[] = [
           { label: "nav.tabs.indexing", to: "search/indexing" },
           { label: "nav.tabs.keywords", to: "search/keywords" },
           { label: "nav.tabs.pages", to: "search/pages" },
-          {label:"searchSegments.countries",to:"search/countries"},
-          {label:"searchSegments.devices",to:"search/devices"},
-          { label: "nav.tabs.channels", to: "search/channels" },
-          { label: "nav.tabs.landings", to: "search/landings" },
+          { label: "nav.tabs.arrivals", to: "search/arrivals" },
         ],
       },
       { id: "reports", label: "nav.reports", icon: "report", to: "reports" },
@@ -98,28 +99,33 @@ export function titleFor(path: string): Key {
 
 // Old addresses keep working for bookmarks: when a page moves, map its old
 // leaf here to the new one.
-export const LEGACY_REDIRECTS: Record<string, string> = {};
+export const LEGACY_REDIRECTS: Record<string, string> = {
+  "search/countries": "search?dim=country",
+  "search/devices": "search?dim=device",
+  "search/channels": "search/arrivals",
+  "search/landings": "search/arrivals?view=landing",
+};
 
 
-// helpTopicFor maps a page to the help topic its info icon opens.
+// helpTopicFor maps a page to the help topic its info icon opens: the
+// playbook whose steps use the page, or a reference topic for settings.
 export function helpTopicFor(path: string): string | null {
   const leaf = path.split("/").slice(3).join("/");
   if (leaf === "help") return null;
   if (!leaf || leaf === "overview") return "start";
   if (leaf === "ai/answers") return "manual";
-  if (leaf.startsWith("ai/")) return "numbers";
-  if (leaf.startsWith("opportunities")) return "opportunities";
+  if (leaf.startsWith("ai/")) return "aiRecommend";
+  if (leaf.startsWith("opportunities") || leaf === "reports") return "weekly";
   if (leaf.startsWith("audit")) return "audit";
-  if (leaf === "search/indexing") return "indexing";
-  if (leaf === "search/channels" || leaf === "search/landings") return "channels";
-  if (leaf.startsWith("search")) return "search";
+  if (leaf === "search/keywords") return "seoGrow";
+  if (leaf.startsWith("search")) return "seoNew";
   if (leaf === "settings/system") return "updates";
   if (leaf === "settings/google") return "google";
-  if (leaf === "reports") return "reports";
   if (leaf === "settings/questions") return "prompts";
+  if (leaf === "settings/brand") return "aiKnown";
+  if (leaf === "settings/competitors") return "aiRecommend";
   if (leaf === "settings/providers") return "providers";
   if (leaf === "settings/schedule") return "schedule";
   if (leaf === "settings/users" || leaf === "settings/password") return "access";
-  if (leaf.startsWith("settings/")) return "setup";
   return "start";
 }

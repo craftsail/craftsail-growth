@@ -787,6 +787,28 @@ export function confirmProgress(slug: string, body: { kind: "brand" | "questions
   return request<ProjectProgress>(`/api/projects/${slug}/progress`, { method: "POST", body: JSON.stringify(body) });
 }
 
+export type PlaybookCheck = { state: "done" | "todo" | "no_data"; at?: number };
+export type PlaybookSignal = { state: "met" | "unmet" | "no_data" | "manual"; value?: number; confirmed: boolean };
+export type ProductStage = "" | "s0" | "s1" | "s2";
+export type PlaybookStatus = {
+  product_stage: ProductStage;
+  seo_stage: "" | "seoNew" | "seoGrow";
+  ai_stage: "aiReach" | "aiKnown" | "aiRecommend";
+  seo_met: number;
+  seo_needed: number;
+  checks: Record<string, PlaybookCheck>;
+  signals: Record<string, PlaybookSignal>;
+};
+export function getPlaybook(slug: string) {
+  return request<PlaybookStatus>(`/api/projects/${slug}/playbook`);
+}
+export function putProductStage(slug: string, product_stage: ProductStage) {
+  return request<PlaybookStatus>(`/api/projects/${slug}/playbook/stage`, { method: "PUT", body: JSON.stringify({ product_stage }) });
+}
+export function putPlaybookSignal(slug: string, signal: string, confirmed: boolean) {
+  return request<PlaybookStatus>(`/api/projects/${slug}/playbook/signals/${signal}`, { method: "PUT", body: JSON.stringify({ confirmed }) });
+}
+
 export type IndexURL = {
   from_sitemap: boolean; content_group: string; published_at: number | null; first_impression_at: number | null; last_impression_at: number | null;
   sitemaps: string[] | null; crawl: { status_code: number; final_url: string; fetched_at: number | null; fetch_error: string; analysis: Record<string, string> } | null;

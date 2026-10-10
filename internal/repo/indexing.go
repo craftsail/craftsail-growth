@@ -48,6 +48,28 @@ func (r *Webstats) IndexCandidates(ctx context.Context, projectID uint64, proper
 	return out, nil
 }
 
+// CountPublished counts URLs whose publish date (set on the Indexing tab)
+// falls within [fromUnix, toUnix], inclusive. Used for the weekly "new
+// pages" row; portable across SQLite and MySQL.
+func (r *Webstats) CountPublished(ctx context.Context, projectID uint64, property string, fromUnix, toUnix int64) (int64, error) {
+	var n int64
+	err := r.DB.WithContext(ctx).Model(&model.IndexURL{}).
+		Where("project_id = ? AND "+r.indexBinary("property")+" = ? AND published_at IS NOT NULL AND published_at BETWEEN ? AND ?", projectID, property, fromUnix, toUnix).
+		Count(&n).Error
+	return n, err
+}
+
+// HasPublished reports whether the project has ever recorded a publish date
+// for this property, regardless of week. The weekly "new pages" cell is nil,
+// not zero, for projects that never set one.
+func (r *Webstats) HasPublished(ctx context.Context, projectID uint64, property string) (bool, error) {
+	var ids []int64
+	err := r.DB.WithContext(ctx).Model(&model.IndexURL{}).
+		Where("project_id = ? AND "+r.indexBinary("property")+" = ? AND published_at IS NOT NULL", projectID, property).
+		Select("1").Limit(1).Find(&ids).Error
+	return len(ids) > 0, err
+}
+
 func (r *Webstats) DiscoverIndexURLs(ctx context.Context, rows []model.IndexURL) error {
 	// Merge each source independently, retaining earlier provenance and scheduling.
 	for _, source := range []string{"from_crawl", "from_search", "from_sitemap"} {

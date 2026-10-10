@@ -5,26 +5,37 @@ import { Link } from "react-router-dom";
 import { IconAlertTriangle, IconBulb } from "@tabler/icons-react";
 import type { Key, Vars } from "../../i18n";
 import type { TipId } from "../../app/tips";
+import type { PlaybookStatus, ProductStage } from "../../api";
 
-// Topic order is the reading order; the Next button follows it.
+// Topic order is the reading order; the Next button follows it. Playbook
+// topics come first; reference topics explain numbers and settings.
 export const TOPIC_IDS = [
-  "start", "setup", "prompts", "terms", "numbers", "pages", "search", "channels",
-  "opportunities", "observations", "indexing", "reports", "audit",
-  "manual", "providers", "google", "schedule", "access", "updates", "troubleshooting", "limits",
+  "start", "seoNew", "seoGrow", "aiReach", "aiKnown", "aiRecommend", "weekly", "troubleshooting",
+  "terms", "numbers", "audit", "prompts", "manual", "google", "providers", "schedule", "access", "updates", "limits",
 ] as const;
 export type TopicId = (typeof TOPIC_IDS)[number];
-export type GroupId = "start" | "read" | "act" | "connect" | "help";
+export type GroupId = "start" | "seo" | "ai" | "loop" | "fix" | "reference";
 
 export type Topic = { group: GroupId; label: Key; keys: Key };
 const TOPIC_GROUPS: Record<TopicId, GroupId> = {
-  start: "start", setup: "start", prompts: "start", terms: "read", numbers: "read", pages: "read",
-  search: "read", channels: "read", opportunities: "act", observations: "act", indexing: "act",
-  reports: "act", audit: "act", manual: "act", providers: "connect", google: "connect",
-  schedule: "connect", access: "connect", updates: "help", troubleshooting: "help", limits: "help",
+  start: "start", seoNew: "seo", seoGrow: "seo", aiReach: "ai", aiKnown: "ai", aiRecommend: "ai",
+  weekly: "loop", troubleshooting: "fix", terms: "reference", numbers: "reference", audit: "reference",
+  prompts: "reference", manual: "reference", google: "reference", providers: "reference",
+  schedule: "reference", access: "reference", updates: "reference", limits: "reference",
 };
 export const TOPICS = Object.fromEntries(TOPIC_IDS.map(id => [id, {
   group: TOPIC_GROUPS[id], label: `helpTopics.${id}.label`, keys: `helpTopics.${id}.keys`,
 }])) as Record<TopicId, Topic>;
+
+// PlaybookCtx is the current project's progress for the playbook topics.
+// status is null while loading, outside a project, or after an error.
+export type PlaybookCtx = {
+  status: PlaybookStatus | null;
+  error: string;
+  canEdit: boolean;
+  setStage: (stage: ProductStage) => void;
+  confirm: (signal: string, on: boolean) => void;
+};
 
 // Kit is what topic bodies use to link into the app. Page names come from
 // the nav catalog, so the help text follows any rename.
@@ -33,10 +44,12 @@ export type Kit = {
   topic: (id: TopicId, text: string) => ReactNode;
   n: (label: Key) => string;
   t: (key: Key, vars?: Vars) => string;
+  playbook: PlaybookCtx;
 };
 
 // Legacy reference prose stays in each locale document. Current workflows
-// share catalog-backed rendering through usageBodies and usageButtons.
+// share catalog-backed rendering through usageBodies and usageButtons;
+// playbook topics come from playbookBodies (features/help/playbook.tsx).
 export type HelpDoc = {
   groups: Record<GroupId, string>;
   body: (k: Kit) => Record<TopicId, ReactNode>;
@@ -45,12 +58,13 @@ export type HelpDoc = {
   buttons: (k: Kit) => Record<TipId, ReactNode>;
 };
 
-export function makeKit(slug: string, go: (id: TopicId) => void, t: Kit["t"]): Kit {
+export function makeKit(slug: string, go: (id: TopicId) => void, t: Kit["t"], playbook: PlaybookCtx): Kit {
   const to = (path: string) => (slug ? `/p/${slug}/${path}` : path === "settings/system" ? "/settings/system" : "/");
   return {
     n: t, t,
     page: (path, label) => <Link to={to(path)}>{t(label)}</Link>,
     topic: (id, text) => <button type="button" className="text-primary-600 hover:underline" onClick={() => go(id)}>{text}</button>,
+    playbook,
   };
 }
 

@@ -12,7 +12,7 @@ import (
 func AutoMigrate(db *gorm.DB) error {
 	models := []any{
 		&Project{},
-		&ProjectProgress{},
+		&ProjectProgress{}, &PlaybookConfirmation{},
 		&Question{}, &QuestionLibrary{},
 		&Competitor{},
 		&Fact{},

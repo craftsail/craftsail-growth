@@ -22,6 +22,7 @@ import (
 	"github.com/craftsail/craftsail-growth/internal/service/jobs"
 	"github.com/craftsail/craftsail-growth/internal/service/opportunity"
 	"github.com/craftsail/craftsail-growth/internal/service/plan"
+	"github.com/craftsail/craftsail-growth/internal/service/playbook"
 	"github.com/craftsail/craftsail-growth/internal/service/project"
 	"github.com/craftsail/craftsail-growth/internal/service/report"
 	"github.com/craftsail/craftsail-growth/internal/service/sample"
@@ -54,6 +55,7 @@ func Wire(db *gorm.DB, token string, js *jobs.Service) (*Handler, error) {
 		jobs.Bind(js, db)
 	}
 	h.web = webstats.New(db)
+	h.playbook = playbook.New(db)
 	h.jobs = js
 	h.updater = update.New(js.PrepareRestart)
 	h.opportunity = opportunity.NewDB(db)

@@ -48,6 +48,7 @@ export function Overview() {
     <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-5">
       {ctx?.project?.demo_scenario && <DemoGuide project={ctx.project} />}
       {ctx?.project && <FirstCheck key={slug} project={ctx.project} onAudit={setAudit} />}
+      <Link to={`/p/${slug}/help#start`} className="self-end text-sm text-primary-600 hover:underline">{t("overview.playbookLink")}</Link>
       <FilterBar {...m} onChange={m.setFilter} />
       {m.err && <p className="text-sm text-red-700">{m.err}</p>}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">

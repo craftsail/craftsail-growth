@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { TimeSeries, type ChartPoint } from "../../components/charts/series";
 import { getJob, getWebstats, runningJob, startJob, stopJob, type JobRow, type GoogleSyncProgress, type OfficialRow, type SourceView, type WebQueryRow, type WebstatsSnapshot } from "../../api";
 import { useI18n, type Key, type Vars } from "../../i18n";
 import { HelpTip } from "../../components/HelpTip";
 import { SearchObservationCard } from "./search-observation";
+import { SearchExplorer } from "./explore";
 import { useAccess } from "../../app/access";
 
 function num(v: number | null | undefined) {
@@ -215,6 +216,39 @@ export function Webstats() {
           <QueryTable title={t("search.gaps")} rows={gaps} />
         </>
       )}
+      <SplitBy />
+    </section>
+  );
+}
+
+// SplitBy shows country and device lists on demand. They answer "where did
+// a change happen", a diagnostic step, so they sit under the overview
+// numbers instead of having their own tabs.
+function SplitBy() {
+  const { t } = useI18n();
+  const [params, setParams] = useSearchParams();
+  const dim = params.get("dim") === "device" ? "device" : params.get("dim") === "country" ? "country" : "";
+  const choose = (d: "" | "country" | "device") => {
+    const next = new URLSearchParams();
+    if (params.has("lang")) next.set("lang", params.get("lang")!);
+    if (d) next.set("dim", d);
+    setParams(next);
+  };
+  // Mount-only: scroll into view when a split is already selected on load (a
+  // deep link), not on every later choice.
+  useEffect(() => { if (dim) document.getElementById("split")?.scrollIntoView(); }, []);
+  return (
+    <section className="mt-5 card p-5" id="split">
+      <div className="stat-label">{t("searchViews.splitBy")}</div>
+      <div className="mt-3 tabs" role="group" aria-label={t("searchViews.splitBy")}>
+        {(["country", "device"] as const).map((d) => (
+          <button key={d} type="button" aria-pressed={dim === d} onClick={() => choose(dim === d ? "" : d)}
+            className={"tab " + (dim === d ? "tab-active" : "")}>
+            {t(`searchViews.${d}`)}
+          </button>
+        ))}
+      </div>
+      {dim && <div className="mt-4"><SearchExplorer key={dim} kind={dim} /></div>}
     </section>
   );
 }

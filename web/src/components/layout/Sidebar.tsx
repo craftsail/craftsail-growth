@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation, useParams } from "react-router-dom";
 import {
-  IconArrowsSplit2, IconBook, IconBrandGoogle, IconCalendarTime, IconChartPie, IconCheck, IconCpu, IconEye,
+  IconBook, IconBrandGoogle, IconCalendarTime, IconChartPie, IconCheck, IconCpu, IconEye,
   IconFolders, IconHome, IconId, IconKey, IconLanguage, IconListCheck, IconListDetails, IconLogout, IconMessages,
   IconQuote, IconReport, IconSelector, IconStethoscope, IconUserCog, IconUsersGroup, IconWorldSearch, type Icon as TablerIcon,
 } from "@tabler/icons-react";
@@ -14,7 +14,7 @@ import { LOCALES, useI18n } from "../../i18n";
 import { useAccess } from "../../app/access";
 
 const ICONS: Record<NavIcon, TablerIcon> = {
-  home: IconHome, eye: IconEye, pie: IconChartPie, quote: IconQuote, split: IconArrowsSplit2, messages: IconMessages,
+  home: IconHome, eye: IconEye, pie: IconChartPie, quote: IconQuote, messages: IconMessages,
   listcheck: IconListCheck, stethoscope: IconStethoscope, search: IconWorldSearch, report: IconReport,
   folders: IconFolders, id: IconId, users: IconUsersGroup, list: IconListDetails, calendar: IconCalendarTime,
   cpu: IconCpu, google: IconBrandGoogle, usercog: IconUserCog,

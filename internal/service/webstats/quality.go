@@ -57,10 +57,17 @@ func mergeQuality(dst *model.GoogleQuality, src model.GoogleQuality) {
 	dst.Aggregations = merge(dst.Aggregations, src.Aggregations)
 }
 
+// trustworthyGA is the shared quality gate for GA4 data: known metadata,
+// never sampled, thresholded, diluted by an "(other)" row, restricted or
+// empty. Callers that also need period comparability or a single time zone
+// check those separately.
+func trustworthyGA(q model.GoogleQuality) bool {
+	return q.Known && !q.Sampled && !q.Thresholded && !q.OtherRow && !q.Restricted && !q.EmptyReason
+}
+
 func comparableGA(a, b GrainCoverage) bool {
 	good := func(c GrainCoverage) bool {
-		q := c.Quality
-		return c.State == "covered" && q.Known && !q.Sampled && !q.Thresholded && !q.OtherRow && !q.Restricted && !q.EmptyReason && len(q.TimeZones) == 1
+		return c.State == "covered" && trustworthyGA(c.Quality) && len(c.Quality.TimeZones) == 1
 	}
 	return good(a) && good(b) && a.Quality.TimeZones[0] == b.Quality.TimeZones[0]
 }

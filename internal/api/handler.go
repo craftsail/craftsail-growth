@@ -20,6 +20,7 @@ import (
 	"github.com/craftsail/craftsail-growth/internal/service/jobs"
 	"github.com/craftsail/craftsail-growth/internal/service/opportunity"
 	"github.com/craftsail/craftsail-growth/internal/service/plan"
+	"github.com/craftsail/craftsail-growth/internal/service/playbook"
 	"github.com/craftsail/craftsail-growth/internal/service/project"
 	"github.com/craftsail/craftsail-growth/internal/service/report"
 	"github.com/craftsail/craftsail-growth/internal/service/sample"
@@ -37,6 +38,7 @@ type Handler struct {
 	report      *report.Service
 	jobs        *jobs.Service
 	web         *webstats.Service
+	playbook    *playbook.Service
 	opportunity *opportunity.Service
 	token       string
 	accounts    *account.Service
@@ -121,6 +123,7 @@ func Mount(engine *gin.Engine, h *Handler) {
 	r("POST", "/projects/:slug/tasks/:code/observations/:id/evaluate", permEdit, h.evaluateObservation)
 	r("GET", "/projects/:slug/opportunities", permView, h.listOpportunities)
 	r("GET", "/projects/:slug/report", permView, h.getReport)
+	r("GET", "/projects/:slug/playbook", permView, h.getPlaybook)
 
 	// Project, change.
 	r("POST", "/projects/:slug/jobs", permEdit, h.startJob)
@@ -139,6 +142,8 @@ func Mount(engine *gin.Engine, h *Handler) {
 	r("PATCH", "/projects/:slug/tasks/:code", permEdit, h.patchTask)
 	r("POST", "/projects/:slug/report", permEdit, h.buildReport)
 	r("PATCH", "/projects/:slug/monitor", permEdit, h.patchMonitor)
+	r("PUT", "/projects/:slug/playbook/stage", permEdit, h.putPlaybookStage)
+	r("PUT", "/projects/:slug/playbook/signals/:signal", permEdit, h.putPlaybookSignal)
 
 }
 

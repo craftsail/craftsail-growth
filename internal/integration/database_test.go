@@ -108,6 +108,22 @@ func TestDatabaseAcceptance(t *testing.T) {
 			t.Run("concurrent_quota", func(t *testing.T) { testConcurrentQuota(t, db) })
 			t.Run("release_and_report", func(t *testing.T) { testReleaseAndReport(t, db) })
 			t.Run("index_history", func(t *testing.T) { testIndexHistory(t, db) })
+			t.Run("playbook", func(t *testing.T) {
+				ctx := context.Background()
+				r := &repo.Playbook{DB: db}
+				if err := r.SetStage(ctx, 42, "s1"); err != nil {
+					t.Fatal(err)
+				}
+				for _, on := range []bool{true, true, false, true} {
+					if err := r.Confirm(ctx, 42, "crawlUp", 1, on); err != nil {
+						t.Fatal(err)
+					}
+				}
+				got, err := r.Confirmations(ctx, 42)
+				if err != nil || !got["crawlUp"] || len(got) != 1 {
+					t.Fatalf("confirmations = %v, %v", got, err)
+				}
+			})
 			t.Run("legacy_sample_version_migration", func(t *testing.T) {
 				ctx := context.Background()
 				day := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC)

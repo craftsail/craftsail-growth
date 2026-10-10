@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { IconSearch } from "@tabler/icons-react";
 import { useI18n, type Locale } from "../../i18n";
@@ -11,14 +11,24 @@ import { en } from "./content/en";
 import { zh } from "./content/zh";
 import { pt } from "./content/pt";
 import { en as english } from "../../i18n/locales/en";
+import { getPlaybook, putPlaybookSignal, putProductStage, type PlaybookStatus } from "../../api";
+import { useAccess } from "../../app/access";
 
 const DOCS: Record<Locale, HelpDoc> = { en, zh, pt };
+
+// Topics replaced when the help center became playbooks. Old links and
+// bookmarks land on the playbook that covers the same work.
+const LEGACY_TOPICS: Record<string, TopicId> = {
+  setup: "start", pages: "start", search: "seoNew", channels: "seoNew", indexing: "seoNew",
+  opportunities: "weekly", observations: "weekly", reports: "weekly",
+};
 
 // The hash is #<topic> or #<topic>/<button>, the second form from a "?" tip.
 function topicFromHash(): TopicId {
   const [id, button] = window.location.hash.replace(/^#/, "").split("/");
   const tip = TIP_IDS.find(id => id === button);
   if (tip) return TIPS[tip].topic;
+  if (Object.hasOwn(LEGACY_TOPICS, id)) return LEGACY_TOPICS[id];
   return (TOPIC_IDS as readonly string[]).includes(id) ? (id as TopicId) : "start";
 }
 
@@ -45,8 +55,37 @@ export function Help() {
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
+  const { canEdit } = useAccess();
+  const [status, setStatus] = useState<PlaybookStatus | null>(null);
+  const [statusErr, setStatusErr] = useState("");
+  // slugRef lets a PUT response started for one project ignore itself if the
+  // user has since switched to another project before it came back.
+  const slugRef = useRef(slug);
+  useEffect(() => {
+    slugRef.current = slug;
+    setStatus(null);
+    setStatusErr("");
+    if (!slug) return;
+    let live = true;
+    getPlaybook(slug)
+      .then((s) => { if (live) { setStatus(s); setStatusErr(""); } })
+      .catch(() => { if (live) setStatusErr("playbook.status.loadError"); });
+    return () => { live = false; };
+  }, [slug]);
+  const playbook = useMemo(() => ({
+    status, error: statusErr ? t(statusErr as Key) : "", canEdit: canEdit && !!slug,
+    setStage: (stage: PlaybookStatus["product_stage"]) =>
+      putProductStage(slug, stage)
+        .then((s) => { if (slugRef.current === slug) { setStatus(s); setStatusErr(""); } })
+        .catch(() => { if (slugRef.current === slug) setStatusErr("playbook.status.saveError"); }),
+    confirm: (signal: string, on: boolean) =>
+      putPlaybookSignal(slug, signal, on)
+        .then((s) => { if (slugRef.current === slug) { setStatus(s); setStatusErr(""); } })
+        .catch(() => { if (slugRef.current === slug) setStatusErr("playbook.status.saveError"); }),
+  }), [status, statusErr, canEdit, slug, t]);
+
   const go = (id: TopicId) => { window.location.hash = id; setTopic(id); window.scrollTo({ top: 0 }); };
-  const kit = useMemo(() => makeKit(slug, go, t), [slug, t]);
+  const kit = useMemo(() => makeKit(slug, go, t, playbook), [slug, t, playbook]);
   const body = useMemo(() => doc.body(kit), [doc, kit]);
   const buttons = useMemo(() => doc.buttons(kit), [doc, kit]);
   const topicButtons = TIP_IDS.filter((id) => TIPS[id].topic === topic);
