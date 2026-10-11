@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { usageBodies, usageButtons } from "../usage";
+import { playbookBodies } from "../playbook";
 import { Formula, FX, Table, Warn, type HelpDoc } from "../kit";
 
 export const en: HelpDoc = {
-  groups: { start: "Getting started", read: "Reading results", act: "Taking action", connect: "Connecting", help: "Help" },
+  groups: { start: "Start", seo: "SEO playbook", ai: "AI playbook", loop: "Every week", fix: "When something is wrong", reference: "Reference" },
   body: (k) => { const { page, n } = k; return ({
     ...usageBodies(k),
+    ...playbookBodies(k),
     terms: (
       <>
         <h2>Key terms</h2>

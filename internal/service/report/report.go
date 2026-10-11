@@ -22,6 +22,7 @@ import (
 	"github.com/craftsail/craftsail-growth/internal/service/audit"
 	"github.com/craftsail/craftsail-growth/internal/service/metrics"
 	"github.com/craftsail/craftsail-growth/internal/service/opportunity"
+	"github.com/craftsail/craftsail-growth/internal/service/playbook"
 	"github.com/craftsail/craftsail-growth/internal/service/project"
 	"github.com/craftsail/craftsail-growth/internal/service/sample"
 	"github.com/craftsail/craftsail-growth/internal/service/verify"
@@ -34,6 +35,7 @@ type Service struct {
 	sample      *sample.Service
 	verify      *verify.Service
 	opportunity *opportunity.Service
+	playbook    *playbook.Service
 	tasks       *repo.Tasks
 	reports     *repo.Reports
 }
@@ -41,7 +43,7 @@ type Service struct {
 func New(db *gorm.DB) *Service {
 	return &Service{
 		db: db, projects: project.New(db), audit: audit.New(db), sample: sample.New(db, sample.NewAsker()),
-		verify: verify.New(db), opportunity: opportunity.NewDB(db),
+		verify: verify.New(db), opportunity: opportunity.NewDB(db), playbook: playbook.New(db),
 		tasks: &repo.Tasks{DB: db}, reports: &repo.Reports{DB: db},
 	}
 }

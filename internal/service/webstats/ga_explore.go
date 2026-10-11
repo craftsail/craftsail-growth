@@ -178,10 +178,7 @@ func (s *Service) analyticsFilter(ctx context.Context, slug, report string, in E
 	if err != nil {
 		return f, nil, err
 	}
-	trustworthy := func(q model.GoogleQuality) bool {
-		return q.Known && !q.Sampled && !q.Thresholded && !q.OtherRow && !q.Restricted && !q.EmptyReason
-	}
-	out.Comparable = out.Coverage.State == "covered" && out.PreviousCoverage.State == "covered" && trustworthy(out.Quality) && trustworthy(out.PreviousQuality) && len(out.Quality.TimeZones) == 1 && len(out.PreviousQuality.TimeZones) == 1 && out.Quality.TimeZones[0] == out.PreviousQuality.TimeZones[0]
+	out.Comparable = out.Coverage.State == "covered" && out.PreviousCoverage.State == "covered" && trustworthyGA(out.Quality) && trustworthyGA(out.PreviousQuality) && len(out.Quality.TimeZones) == 1 && len(out.PreviousQuality.TimeZones) == 1 && out.Quality.TimeZones[0] == out.PreviousQuality.TimeZones[0]
 	return f, out, nil
 }
 

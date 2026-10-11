@@ -3,7 +3,7 @@
 import { CTRReferenceCard } from "./ctr-reference";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { exportSearchCSV, getSavedKeywords, getSearchDetail, getSearchExplore, saveKeyword, type SearchDetail, type SearchExplore, type SearchMetric } from "../../api";
+import { exportSearchCSV, getPlaybook, getSavedKeywords, getSearchDetail, getSearchExplore, saveKeyword, type SearchDetail, type SearchExplore, type SearchMetric } from "../../api";
 import { useI18n } from "../../i18n";
 import { useAccess } from "../../app/access";
 import { TimeSeries } from "../../components/charts/series";
@@ -25,6 +25,15 @@ export function SearchExplorer({ kind }: { kind: Kind }) {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [refresh, setRefresh] = useState(0);
+  // On a new site, CTR and position in this table rest on tiny samples; say
+  // so once, where the numbers are, using the same stage as the playbooks.
+  const [newSite, setNewSite] = useState(false);
+  useEffect(() => {
+    let live = true;
+    setNewSite(false);
+    if (slug && (kind === "query" || kind === "page")) getPlaybook(slug).then((s) => { if (live) setNewSite(s.seo_stage === "seoNew"); }).catch(() => undefined);
+    return () => { live = false; };
+  }, [slug, kind]);
 
   useEffect(() => {
     let stale = false;
@@ -49,6 +58,7 @@ export function SearchExplorer({ kind }: { kind: Kind }) {
     const next = new URLSearchParams();
     new FormData(event.currentTarget).forEach((v, k) => { if (String(v)) next.set(k, String(v)); });
     if (params.has("lang")) next.set("lang",params.get("lang")!);
+    if (params.has("dim")) next.set("dim", params.get("dim")!);
     if (value) next.set("value", value);
     setParams(next);
   }
@@ -56,7 +66,7 @@ export function SearchExplorer({ kind }: { kind: Kind }) {
     const next = new URLSearchParams(params); if (data) { next.set("from", data.filters.from); next.set("through", data.filters.through); } next.set("page", String(number)); setParams(next);
   }
   function target(name: string, targetKind: Kind) {
-    const next = new URLSearchParams(params); if (data) { next.set("from", data.filters.from); next.set("through", data.filters.through); } next.delete("page"); next.delete("q");
+    const next = new URLSearchParams(params); if (data) { next.set("from", data.filters.from); next.set("through", data.filters.through); } next.delete("page"); next.delete("q"); next.delete("dim");
     if(targetKind==="country"||targetKind==="device") {next.set(targetKind,name);next.delete("value");return `/p/${slug}/search/pages?${next}`;}
     if(targetKind!=="query") next.delete("brand");
     next.set("value", name);
@@ -84,6 +94,7 @@ export function SearchExplorer({ kind }: { kind: Kind }) {
   const filters = data?.filters;
   return <section>
     <p className="page-description mb-5">{t(kind === "query" ? "search.kwDescription" : kind==="page" ? "search.pagesDescription" : "searchSegments.description")}</p>
+    {newSite && <p className="alert alert-info mb-5">{t("search.newSiteHint")} <Link className="text-primary-700 underline" to={`/p/${slug}/help#seoNew`}>{t("helpTopics.seoNew.label")}</Link></p>}
     {value && <Link className="mb-4 inline-block text-primary-700 underline" to={`/p/${slug}/search/${kind === "query" ? "keywords" : "pages"}?${(() => { const next = new URLSearchParams(params); next.delete("value"); next.delete("page"); return next; })()}`}>{t("search.explore.back")}</Link>}
     <form key={`${query}/${filters?.from || ""}`} onSubmit={apply} className="mb-5 flex flex-wrap items-end gap-3">
       <label className="flex flex-col text-sm text-gray-700">{t("search.explore.from")}<input aria-label={t("search.explore.from")} className="input mt-1" type="date" name="from" defaultValue={params.get("from") || filters?.from || ""} /></label>
@@ -101,7 +112,7 @@ export function SearchExplorer({ kind }: { kind: Kind }) {
       <label className="flex flex-col text-sm text-gray-700">{t("search.explore.direction")}<select className="input mt-1" name="direction" defaultValue={params.get("direction") || "desc"}><option value="desc">{t("search.explore.desc")}</option><option value="asc">{t("search.explore.asc")}</option></select></label>
       <label className="flex flex-col text-sm text-gray-700">{t("search.explore.pageSize")}<select className="input mt-1" name="page_size" defaultValue={params.get("page_size") || "50"}>{[25, 50, 100, 200].map(n => <option key={n} value={n}>{num(n)}</option>)}</select></label>
       <button className="btn btn-primary" disabled={loading}>{t("search.explore.apply")}</button>
-      <button type="button" className="btn btn-secondary" onClick={() => setParams(value ? { value } : {})}>{t("search.explore.reset")}</button>
+      <button type="button" className="btn btn-secondary" onClick={() => { const keep = new URLSearchParams(); if (value) keep.set("value", value); if (params.has("lang")) keep.set("lang", params.get("lang")!); if (params.has("dim")) keep.set("dim", params.get("dim")!); setParams(keep); }}>{t("search.explore.reset")}</button>
     </form>
     {kind==="query" && <p className="hint mb-4">{t("searchSegments.brandNote")}</p>}
     {error && <p className="alert alert-error" role="alert">{error}</p>}

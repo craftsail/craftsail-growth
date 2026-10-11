@@ -24,6 +24,9 @@ type ProjectProgress struct {
 	FirstValueBy         uint64 `json:"first_value_by"`
 	FirstValueKind       string `gorm:"size:32" json:"first_value_kind"`
 	FirstValueRef        uint64 `json:"first_value_ref"`
+	// ProductStage is the user's answer to "which stage is your product in"
+	// (s0, s1, s2; empty when not answered). It only changes playbook hints.
+	ProductStage string `gorm:"size:8;not null;default:''" json:"product_stage"`
 }
 
 func reviewHash(value any) string {

@@ -36,6 +36,8 @@ jobs:
       - run: npm ci
       - run: ./node_modules/.bin/tsc --noEmit
       - run: npm run check:cjk
+      - run: npm run check:playbook
+      - run: npm run check:report
       - run: npm run build
 
   docker:

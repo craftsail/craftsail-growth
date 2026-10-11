@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { Link, Navigate, Route, Routes } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useEffect, useState, type ReactNode } from "react";
 import { SIGNED_OUT, getSession, listProjects, logout, type Project, type SessionUser } from "./api";
 import { useAccess } from "./app/access";
@@ -30,9 +30,8 @@ import { GoogleData } from "./features/settings/google";
 import { Readiness } from "./features/audit/readiness";
 import { AuditIssues } from "./features/audit/issues";
 import { AuditPages } from "./features/audit/pages";
-import { GAExplorer } from "./features/search/ga-explore";
+import { Arrivals } from "./features/search/arrivals";
 import { Indexing } from "./features/search/indexing";
-import { SearchExplorer } from "./features/search/explore";
 import { GscPages } from "./features/search/gsc-pages";
 import { Keywords } from "./features/search/keywords";
 import { Webstats } from "./features/search/webstats";
@@ -132,12 +131,9 @@ export function App() {
         <Route path="audit/pages" element={<AuditPages />} />
         <Route path="search" element={<Webstats />} />
         <Route path="search/keywords" element={<Keywords />} />
-        <Route path="search/countries" element={<SearchExplorer kind="country" />} />
-        <Route path="search/devices" element={<SearchExplorer kind="device" />} />
         <Route path="search/pages" element={<GscPages />} />
         <Route path="search/indexing" element={<Indexing />} />
-        <Route path="search/channels" element={<GAExplorer report="channel" />} />
-        <Route path="search/landings" element={<GAExplorer report="landing" />} />
+        <Route path="search/arrivals" element={<Arrivals />} />
         <Route path="reports" element={<Reports />} />
         <Route path="settings/projects" element={<AdminOnly><Projects /></AdminOnly>} />
         <Route path="settings/system" element={<AdminOnly><SystemUpdates /></AdminOnly>} />
@@ -151,7 +147,7 @@ export function App() {
         <Route path="settings/google" element={<AdminOnly><GoogleData /></AdminOnly>} />
         <Route path="help" element={<Help />} />
         {Object.entries(LEGACY_REDIRECTS).map(([from, to]) => (
-          <Route key={from} path={from} element={<Navigate to={`../${to}`} replace />} />
+          <Route key={from} path={from} element={<LegacyRedirect to={to} />} />
         ))}
         <Route path="*" element={<Navigate to="overview" replace />} />
       </Route>
@@ -160,6 +156,20 @@ export function App() {
 }
 
 
+
+// LegacyRedirect sends an old address's query string along to its
+// replacement: the incoming params survive, but the target's own params
+// (e.g. a fixed `dim` or `view`) win on a key collision.
+function LegacyRedirect({ to }: { to: string }) {
+  const location = useLocation();
+  const [path, targetQuery] = to.split("?");
+  const search = new URLSearchParams(location.search);
+  for (const [k, v] of new URLSearchParams(targetQuery)) {
+    search.set(k, v);
+  }
+  const query = search.toString();
+  return <Navigate to={{ pathname: "../" + path, search: query ? `?${query}` : "" }} replace />;
+}
 
 // AdminOnly keeps members off workspace pages typed in by hand; the server
 // refuses their requests anyway.

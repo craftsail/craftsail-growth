@@ -33,7 +33,7 @@ export function GAExplorer({ report }: { report: "channel" | "landing" }) {
   function apply(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const next = new URLSearchParams();
-    if (params.has("lang")) next.set("lang", params.get("lang")!);
+    for (const k of ["lang", "view"]) if (params.has(k)) next.set(k, params.get(k)!);
     new FormData(event.currentTarget).forEach((v, k) => { if (String(v)) next.set(k, String(v)); });
     setParams(next);
   }
@@ -66,7 +66,7 @@ export function GAExplorer({ report }: { report: "channel" | "landing" }) {
       <label className="flex flex-col text-sm text-gray-700">{t("search.explore.direction")}<select className="input mt-1" name="direction" defaultValue={params.get("direction") || "desc"}><option value="desc">{t("search.explore.desc")}</option><option value="asc">{t("search.explore.asc")}</option></select></label>
       <label className="flex flex-col text-sm text-gray-700">{t("search.explore.pageSize")}<select className="input mt-1" name="page_size" defaultValue={params.get("page_size") || "50"}>{[25, 50, 100, 200].map(n => <option key={n} value={n}>{num(n)}</option>)}</select></label>
       <button className="btn btn-primary" disabled={loading}>{t("search.explore.apply")}</button>
-      <button type="button" className="btn btn-secondary" onClick={() => setParams(params.has("lang") ? { lang: params.get("lang")! } : {})}>{t("search.explore.reset")}</button>
+      <button type="button" className="btn btn-secondary" onClick={() => { const keep = new URLSearchParams(); for (const k of ["lang", "view"]) if (params.has(k)) keep.set(k, params.get(k)!); setParams(keep); }}>{t("search.explore.reset")}</button>
     </form>
     <p className="hint mb-4">{t("gaSegments.note")}</p>
     {error && <p role="alert" className="alert alert-error">{error}</p>}

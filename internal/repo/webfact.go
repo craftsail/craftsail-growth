@@ -4,6 +4,7 @@ package repo
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"gorm.io/gorm"
@@ -201,12 +202,38 @@ func (r *Webstats) ListGscSlice(ctx context.Context, projectID uint64, property,
 	return out, err
 }
 
+// VisibleClicks sums clicks on the web query slice for one date range,
+// treating an unset search_type the same as "web" (older rows predate that
+// column being filled in). Portable across SQLite and MySQL.
+func (r *Webstats) VisibleClicks(ctx context.Context, projectID uint64, property string, from, to time.Time) (float64, error) {
+	var sum sql.NullFloat64
+	err := r.DB.WithContext(ctx).Model(&model.GscFact{}).
+		Where("project_id = ? AND property = ? AND slice = ? AND search_type IN ('', 'web') AND date(day) >= ? AND date(day) <= ?",
+			projectID, property, "query", from.Format("2006-01-02"), to.Format("2006-01-02")).
+		Select("SUM(clicks)").Row().Scan(&sum)
+	if err != nil {
+		return 0, err
+	}
+	return sum.Float64, nil
+}
+
 // ListGaSessionFacts returns the GA4 session report rows for one property.
 func (r *Webstats) ListGaSessionFacts(ctx context.Context, projectID uint64, property string, from, to time.Time) ([]model.GaFact, error) {
 	var out []model.GaFact
 	err := r.DB.WithContext(ctx).
 		Where("project_id = ? AND property = ? AND report = ? AND date(day) >= ? AND date(day) <= ?",
 			projectID, property, "session", from.Format("2006-01-02"), to.Format("2006-01-02")).
+		Find(&out).Error
+	return out, err
+}
+
+// ListGaChannelFacts returns the GA4 channel report rows for one property,
+// mirroring ListGaSessionFacts for report = "channel".
+func (r *Webstats) ListGaChannelFacts(ctx context.Context, projectID uint64, property string, from, to time.Time) ([]model.GaFact, error) {
+	var out []model.GaFact
+	err := r.DB.WithContext(ctx).
+		Where("project_id = ? AND property = ? AND report = ? AND date(day) >= ? AND date(day) <= ?",
+			projectID, property, "channel", from.Format("2006-01-02"), to.Format("2006-01-02")).
 		Find(&out).Error
 	return out, err
 }
